@@ -6,14 +6,13 @@ Created on Sun Mar  3 11:14:40 2024
 """
 
 import numpy as np
-import pandas as pd
 from json_ntv import Ntv
 from abc import ABC, abstractmethod
 from copy import copy
 
 class Darray(ABC):
     ''' Representation of a one dimensional Array'''
-    def __init__(self, data, ref=None, coding=None):
+    def __init__(self, data, ref=None, coding=None, dtype=None):
         if isinstance(data, Darray):
             self.data = data.data
             self.ref = data.ref
@@ -23,7 +22,7 @@ class Darray(ABC):
         if len(data) > 0 and isinstance(data[0], (list, np.ndarray)):
             self.data = np.fromiter(data, dtype='object')
         else:
-            self.data = np.array(data).reshape(-1)
+            self.data = np.array(data, dtype=dtype).reshape(-1)
         self.ref = ref
         self.coding = np.array(coding)
         return
@@ -61,10 +60,10 @@ class Darray(ABC):
         return self.__class__(self)
     
     @staticmethod 
-    def read_list(val):
+    def read_list(val, dtype=None):
         val = val if isinstance(val, list) else [val]
         if not val or not isinstance(val[0], list):
-            return Dfull(val)
+            return Dfull(val, dtype=dtype)
         match val:
             case [data, ref, coding] if (isinstance(ref, (int, str)) and 
                                          isinstance(coding, list) and
@@ -79,9 +78,9 @@ class Darray(ABC):
             case [data, coding] if (isinstance(coding, list) and
                                     isinstance(coding[0], int) and
                                     max(coding) < len(data)):
-                return Dcomplete(data, None, coding)
+                return Dcomplete(data, None, coding, dtype=dtype)
             case _:
-                return Dfull(val)
+                return Dfull(val, dtype=dtype)
     
     
     @abstractmethod
@@ -100,8 +99,8 @@ class Darray(ABC):
     
 class Dfull(Darray):    
     ''' Representation of a one dimensional Array with full representation'''
-    def __init__(self, data, ref=None, coding=None):
-        super().__init__(data, None, None)
+    def __init__(self, data, ref=None, coding=None, dtype=None):
+        super().__init__(data, None, None, dtype=dtype)
     
     def to_list(self):
         return self.data.tolist()
@@ -117,7 +116,7 @@ class Dfull(Darray):
 
 class Dcomplete(Darray):    
     ''' Representation of a one dimensional Array with full representation'''
-    def __init__(self, data, ref=None, coding=None):
+    def __init__(self, data, ref=None, coding=None, dtype=None):
         if coding is None:
             try:
                 data, coding = np.unique(data, return_inverse=True)
@@ -125,7 +124,7 @@ class Dcomplete(Darray):
                 dat, idx, coding = np.unique(np.frompyfunc(Ntv.from_obj, 1, 1)(data),
                                          return_index=True, return_inverse=True)
                 data = data[idx]
-        super().__init__(data, None, coding)
+        super().__init__(data, None, coding, dtype=dtype)
     
     def to_list(self):
         return [self.data.tolist(), self.coding.tolist()]

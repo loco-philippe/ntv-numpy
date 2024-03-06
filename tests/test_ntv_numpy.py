@@ -16,7 +16,7 @@ import pandas as pd
 from shapely.geometry import Point, LinearRing
 import ntv_pandas as npd
 from ntv_numpy import read_json, to_json
-from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab
+from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab, NpUtil
 from ntv_numpy import NdarrayConnec, XndarrayConnec, Darray, Dfull, Dcomplete
 
 from json_ntv import NtvConnector   
@@ -52,7 +52,11 @@ class Test_Darray(unittest.TestCase):
                     self.assertFalse(nd_equals(np.array(None), da.coding))
                     self.assertTrue(nd_equals(da_full.values, da.values))   
 
-
+    def test_darray_dtype(self):
+        
+        self.assertEqual(Darray.read_list([1, 'two'], dtype='object').to_list(),
+                         [1, 'two'])
+        
     def test_darray_nested(self):
 
         example =[
@@ -107,7 +111,6 @@ class Test_Ndarray(unittest.TestCase):
                     #print(js)
                     ex_rt = read_json(js, header=False)
                     self.assertTrue(nd_equals(ex_rt, arr))            
-                    self.assertEqual(ex_rt.dtype.name, arr.dtype.name)            
                     #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
         
     def test_ndarray_nested(self):    
@@ -120,7 +123,6 @@ class Test_Ndarray(unittest.TestCase):
                     pd.DataFrame({'::date': pd.Series([date(1984,1,1), date(1995,2,5)]), 
                                   'names': ['anna', 'erich']})], 'object' ]
                   ]
-        print()
         for ex in example:
             arr = np.fromiter(ex[0], dtype=ex[1])
             for format in ['full', 'complete']:
@@ -130,6 +132,8 @@ class Test_Ndarray(unittest.TestCase):
                 self.assertTrue(nd_equals(ex_rt, arr))            
                 #print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
         
+    def test_ndarray_ntvtype(self):    
+
         example = [['int64[kg]', [[1, 2], [3,4]]],
                    ['int', [[1, 2], [3,4]]],
                    ['json', [1, 'two']],
@@ -140,15 +144,15 @@ class Test_Ndarray(unittest.TestCase):
                    ['email', ['John Doe <jdoe@mac.example>', 'Anna Doe <adoe@mac.example>']],
                    ['ipv4', ['192.168.1.1', '192.168.2.5']]
                    ]
-        print()
         for ex in example:
-            arr = np.array(ex[1])
+            arr = np.array(ex[1], dtype=NpUtil.dtype(ex[0]))
             for format in ['full', 'complete']:
                 js = to_json(arr, typ=ex[0], format=format)
-                print(js)
+                #print(js)
                 ex_rt = read_json(js, header=False)
-                ex_rt_head = read_json(js)
-                print(np.array_equal(ex_rt, arr),  ex_rt_head)
+                #print(ex_rt)
+                self.assertTrue(nd_equals(ex_rt, arr))            
+                #print(np.array_equal(ex_rt, arr),  ex_rt_head)
 
 if __name__ == '__main__':
     

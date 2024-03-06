@@ -2,7 +2,27 @@
 """
 Created on Thu Feb 15 10:49:49 2024
 
-@author: a lab in the Air
+@author: Philippe@loco-labs.io
+
+The `numpy_ntv_connector` module is part of the `ntv-numpy.ntv_numpy` package
+([specification document](
+https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
+
+A NtvConnector is defined by:
+- clas_obj: str - define the class name of the object to convert
+- clas_typ: str - define the NTVtype of the converted object
+- to_obj_ntv: method - converter from JsonNTV to the object
+- to_json_ntv: method - converter from the object to JsonNTV
+
+It contains :
+
+- functions `read_json` and `to_json` to convert JSON data and numpy entities
+
+- the child classes of `NTV.json_ntv.ntv.NtvConnector` abstract class:
+    - `NdarrayConnec`: 'ndarray'   connector
+    - `XndarrayConnec`: 'xndarray' connector
+
+- an utility class with static methods : `NpUtil`
 """
 
 import os
@@ -17,7 +37,6 @@ from decimal import Decimal
 from json_ntv.ntv import Ntv, NtvList, NtvSingle
 from json_ntv.ntv_util import NtvUtil
 from json_ntv.ntv_connector import ShapelyConnec
-from tab_dataset.cfield import Cfield
 from data_array import Dfull, Dcomplete, Darray
 
 from json_ntv import NtvConnector   
@@ -29,7 +48,8 @@ def read_json(jsn, **kwargs):
 
     *parameters*
 
-    - **jsn** : JSON text or JSON value to convert
+    - **noadd** : boolean (default False) - If True additional data is not include
+    - **header** : boolean (default True) - If True NTV entity with NTVtype is included
     '''
     option = {'noadd': False, 'header': True} | kwargs
     jso = json.loads(jsn) if isinstance(jsn, str) else jsn
@@ -137,27 +157,17 @@ class NdarrayConnec(NtvConnector):
     clas_typ = 'ndarray'
 
     @staticmethod
-    def to_obj_ntv(ntv_value, **kwargs):  # reindex=True, decode_str=False):
-        ''' convert json ntv_value into a ndarray.
-
-        *Parameters*
-
-        - **index** : list (default None) - list of index values,
-        - **alias** : boolean (default False) - if True, alias dtype else default dtype
-        - **annotated** : boolean (default False) - if True, NTV names are not included.'''
-        data = ntv_value[-1]
+    def to_obj_ntv(ntv_value, **kwargs):
+        ''' convert json ntv_value into a ndarray.'''
+        ntv_type = None
+        shape = None
         match ntv_value[:-1]:
-            case [ntv_type, shape]:
-                param = (data, ntv_type, shape)
-            case [ntv_type] if isinstance(ntv_type, str):
-                param = (data, ntv_type, None)
-            case [shape] if isinstance(shape, list):
-                param = (data, None, shape)
-            case _:
-                param = (data, None, None)
-        #if kwargs.get('header', False):
-        #    return (ntv_type, NdarrayConnec.to_array(*param))
-        return NdarrayConnec.to_array(*param)
+            case [ntv_type, shape]:...
+            case [ntv_type] if isinstance(ntv_type, str):...
+            case [shape] if isinstance(shape, list):...
+        darray = Darray.read_list(ntv_value[-1], dtype=NpUtil.dtype(ntv_type) )
+        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False)
+        return darray.values.reshape(shape)
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
@@ -194,7 +204,7 @@ class NdarrayConnec(NtvConnector):
 
     @staticmethod
     def to_jsonv(value):
-        ''' convert a 1D ndarray into json-value.'''    
+        ''' convert a ndarray into json-value.'''    
         if len(value) == 0:
             return [[]]
         dtype = value.dtype.name
@@ -211,12 +221,6 @@ class NdarrayConnec(NtvConnector):
 
         lis = [ntv_type, shape, js_val]        
         return [val for val in lis if not val is None]
-
-    @staticmethod
-    def to_array(darray_js, ntv_type=None, shape=None):
-        darray = Darray.read_list(darray_js)
-        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False)
-        return darray.values.reshape(shape)
 
     @staticmethod 
     def equals(npself, npother):
@@ -299,23 +303,23 @@ class NpUtil:
     '''ntv-ndarray utilities.'''
 
     DATATION_DT = {'date': 'datetime64[D]', 'year': 'datetime64[Y]',
-                'yearmonth': 'datetime64[M]', 
-                'datetime': 'datetime64[s]', 'datetime[ms]': 'datetime64[ms]',
-                'datetime[us]': 'datetime64[us]', 'datetime[ns]': 'datetime64[ns]', 
-                'datetime[ps]': 'datetime64[ps]', 'datetime[fs]': 'datetime64[fs]',
-                'timedelta': 'timedelta64[s]', 'timedelta[ms]': 'timedelta64[ms]',
-                'timedelta[us]': 'timedelta64[us]', 'timedelta[ns]': 'timedelta64[ns]', 
-                'timedelta[ps]': 'timedelta64[ps]', 'timedelta[fs]': 'timedelta64[fs]',
-                'timedelta[D]': 'timedelta64[D]', 'timedelta[Y]': 'timedelta64[Y]',
-                'timedelta[M]': 'timedelta64[M]'}
+        'yearmonth': 'datetime64[M]', 
+        'datetime': 'datetime64[s]', 'datetime[ms]': 'datetime64[ms]',
+        'datetime[us]': 'datetime64[us]', 'datetime[ns]': 'datetime64[ns]', 
+        'datetime[ps]': 'datetime64[ps]', 'datetime[fs]': 'datetime64[fs]',
+        'timedelta': 'timedelta64[s]', 'timedelta[ms]': 'timedelta64[ms]',
+        'timedelta[us]': 'timedelta64[us]', 'timedelta[ns]': 'timedelta64[ns]', 
+        'timedelta[ps]': 'timedelta64[ps]', 'timedelta[fs]': 'timedelta64[fs]',
+        'timedelta[D]': 'timedelta64[D]', 'timedelta[Y]': 'timedelta64[Y]',
+        'timedelta[M]': 'timedelta64[M]'}
     DT_DATATION = {val:key for key, val in DATATION_DT.items()}
     
     CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}    
     DT_CONNECTOR = {val:key for key, val in CONNECTOR_DT.items()}
     
-    PYTHON_DT = {'array': 'list',
-                'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
-                'ndarray': 'ndarray'}
+    PYTHON_DT = {'array': 'list', 'time': 'datetime.time',
+                 'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
+                 'ndarray': 'ndarray'}
     DT_PYTHON = {val:key for key, val in PYTHON_DT.items()}
 
     OTHER_DT = {'boolean': 'bool', 'string': 'str'}
@@ -324,10 +328,10 @@ class NpUtil:
     LOCATION_DT = {'point': 'Point', 'line': 'LinearRing', 'polygon': 'Polygon'}
     DT_LOCATION = {val:key for key, val in LOCATION_DT.items()}
     
-    DT_NUMBER = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
+    NUMBER_DT = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
                  'wday': 'int', 'yday': 'int', 'week': 'hour', 'minute': 'int',
                  'second': 'int'}
-    DT_STRING = {'base16': 'str', 'base32': 'str', 'base64': 'str', 
+    STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str', 
                  'period': 'str', 'duration': 'str', 'jpointer': 'str',
                  'uri': 'str', 'uriref': 'str', 'iri': 'str', 'iriref': 'str',
                  'email': 'str', 'regex': 'str', 'hostname': 'str', 'ipv4': 'str',
@@ -373,9 +377,6 @@ class NpUtil:
                 case _:
                     return nda
         else:
-            DTYPE = (NpUtil.DT_DATATION | NpUtil.DT_LOCATION | 
-                     NpUtil.DT_CONNECTOR | NpUtil.DT_OTHER | NpUtil.DT_PYTHON |
-                     NpUtil.DT_NUMBER | NpUtil.DT_STRING)
             match ntv_type:
                 case dat if dat in NpUtil.DATATION_DT:
                     return nda.astype(NpUtil.DATATION_DT[dat])
@@ -395,9 +396,7 @@ class NpUtil:
                 case 'point' | 'line' | 'polygon' | 'geometry':
                     return np.frompyfunc(ShapelyConnec.to_geometry, 1, 1)(nda)
                 case _:
-                    type_base = NpUtil.split_typ(ntv_type)[0]
-                    dtype = DTYPE.get(ntv_type, DTYPE.get(type_base, type_base))
-                    return nda.astype(dtype)
+                    return nda.astype(NpUtil.dtype(ntv_type))
         
     @staticmethod
     def ntv_val(ntv_type, nda, form):
@@ -424,7 +423,7 @@ class NpUtil:
             case 'point' | 'line' | 'polygon' | 'geometry':
                 data = np.frompyfunc(ShapelyConnec.to_coord, 1, 1)(darray.data)
             case _:
-                data = NpUtil.convert(ntv_type, darray.data).tolist()
+                data = NpUtil.convert(ntv_type, darray.data)
         return Format(data, ref=ref, coding=coding).to_list()
     
     @staticmethod
@@ -453,8 +452,15 @@ class NpUtil:
 
     @staticmethod
     def dtype(ntv_type):
-        ''' return (dtype, extension) from ntv_type'''
-        return NpUtil.DATATION_DT.get(ntv_type)
+        ''' return dtype from ntv_type'''
+        DTYPE = (NpUtil.DATATION_DT |  NpUtil.NUMBER_DT | NpUtil.OTHER_DT | 
+                 NpUtil.STRING_DT)        
+        OBJECT = NpUtil.LOCATION_DT | NpUtil.CONNECTOR_DT | NpUtil.PYTHON_DT      
+        type_base = NpUtil.split_typ(ntv_type)[0]
+        if type_base in OBJECT:
+            return 'object'
+        return DTYPE.get(ntv_type, DTYPE.get(type_base, type_base))
+
 
 class NdarrayError(Exception):
     '''Multidimensional exception'''
