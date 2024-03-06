@@ -18,7 +18,11 @@ import ntv_pandas as npd
 from ntv_numpy import read_json, to_json
 from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab
 from ntv_numpy import NdarrayConnec, XndarrayConnec, Darray, Dfull, Dcomplete
-from ntv_pandas import SeriesConnec, DataFrameConnec
+
+from json_ntv import NtvConnector   
+SeriesConnec = NtvConnector.connector()['SeriesConnec']
+DataFrameConnec = NtvConnector.connector()['DataFrameConnec']
+nd_equals = NdarrayConnec.equals
 
 #read_json({':ndarray': ['int64', [1, 2]]})
 
@@ -40,13 +44,13 @@ class Test_Darray(unittest.TestCase):
             match ex[1]:
                 case 'Dfull':
                     self.assertIsNone(da.ref)
-                    self.assertTrue(np.array_equal(np.array(None), da.coding))
-                    self.assertTrue(np.array_equal(da.data, da.values))           
+                    self.assertTrue(nd_equals(np.array(None), da.coding))
+                    self.assertTrue(nd_equals(da.data, da.values))           
                 case 'Dcomplete':
                     da_full = Darray.read_list(example[index-1][0])
                     self.assertIsNone(da.ref)
-                    self.assertFalse(np.array_equal(np.array(None), da.coding))
-                    self.assertTrue(np.array_equal(da_full.values, da.values))   
+                    self.assertFalse(nd_equals(np.array(None), da.coding))
+                    self.assertTrue(nd_equals(da_full.values, da.values))   
 
 
     def test_darray_nested(self):
@@ -61,8 +65,8 @@ class Test_Darray(unittest.TestCase):
             da = Dfull(ex)
             self.assertEqual(len(da), len(ex))            
             self.assertIsNone(da.ref)
-            self.assertTrue(np.array_equal(np.array(None), da.coding))
-            self.assertTrue(np.array_equal(da.data, da.values))           
+            self.assertTrue(nd_equals(np.array(None), da.coding))
+            self.assertTrue(nd_equals(da.data, da.values))           
 
         """for ex in example:
             da = Dfull(ex)
@@ -102,7 +106,7 @@ class Test_Ndarray(unittest.TestCase):
                     js = to_json(arr, format=format)
                     #print(js)
                     ex_rt = read_json(js, header=False)
-                    self.assertTrue(np.array_equal(ex_rt, arr))            
+                    self.assertTrue(nd_equals(ex_rt, arr))            
                     self.assertEqual(ex_rt.dtype.name, arr.dtype.name)            
                     #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
         
@@ -111,19 +115,20 @@ class Test_Ndarray(unittest.TestCase):
         example =[[[[1,2], [3,4]], 'object'],
                   [[np.array([1, 2], dtype='int64'), np.array(['test1', 'test2'], dtype='str_')], 'object'],
                   [[pd.Series([1,2,3]), pd.Series([4,5,6])], 'object'],
-                  [[pd.DataFrame({'::date': ['1964-01-01', '1985-02-05'], 
-                                   'names::string': ['john', 'eric']}),
-                             pd.DataFrame({'::date': ['1984-01-01', '1995-02-05'], 
-                                              'names::string': ['anna', 'erich']})], 'object' ]
+                  [[pd.DataFrame({'::date': pd.Series([date(1964,1,1), date(1985,2,5)]), 
+                                  'names': ['john', 'eric']}),
+                    pd.DataFrame({'::date': pd.Series([date(1984,1,1), date(1995,2,5)]), 
+                                  'names': ['anna', 'erich']})], 'object' ]
                   ]
         print()
         for ex in example:
             arr = np.fromiter(ex[0], dtype=ex[1])
             for format in ['full', 'complete']:
                 js = to_json(arr, format=format)
-                print(js)
+                #print(js)
                 ex_rt = read_json(js, header=False)
-                print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+                self.assertTrue(nd_equals(ex_rt, arr))            
+                #print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
         
         example = [['int64[kg]', [[1, 2], [3,4]]],
                    ['int', [[1, 2], [3,4]]],
