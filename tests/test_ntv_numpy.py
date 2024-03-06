@@ -33,7 +33,7 @@ class Test_Darray(unittest.TestCase):
             ([[[10, 20], [1, 2]], [0, 1]], 'Dcomplete')
         ]
 
-        for ex in example:
+        for index, ex in enumerate(example):
             da = Darray.read_list(ex[0])
             self.assertEqual(da.__class__.__name__, ex[1])            
             self.assertEqual(len(da), len(ex[0]))            
@@ -42,24 +42,37 @@ class Test_Darray(unittest.TestCase):
                     self.assertIsNone(da.ref)
                     self.assertTrue(np.array_equal(np.array(None), da.coding))
                     self.assertTrue(np.array_equal(da.data, da.values))           
+                case 'Dcomplete':
+                    da_full = Darray.read_list(example[index-1][0])
+                    self.assertIsNone(da.ref)
+                    self.assertFalse(np.array_equal(np.array(None), da.coding))
+                    self.assertTrue(np.array_equal(da_full.values, da.values))   
 
 
     def test_darray_nested(self):
 
         example =[
             np.array([np.array([1, 2], dtype='int64'), 
-                      np.array(['test1', 'test2'], dtype='str_')], dtype='object')
+                       np.array(['test1', 'test2'], dtype='str_')],
+                      dtype='object')
         ]
 
         for ex in example:
             da = Dfull(ex)
+            self.assertEqual(len(da), len(ex))            
+            self.assertIsNone(da.ref)
+            self.assertTrue(np.array_equal(np.array(None), da.coding))
+            self.assertTrue(np.array_equal(da.data, da.values))           
+
+        """for ex in example:
+            da = Dfull(ex)
             print(type(da), len(da))
             print(da.data, da.ref, da.coding)
-            print(da.values)
+            print(da.values)"""
     
 class Test_Ndarray(unittest.TestCase):    
 
-    def test_ndarray(self):    
+    def test_ndarray_simple(self):    
         
         example =[[[1,2], 'int64'],
                   [[[1,2], [3,4]], 'int64'],
@@ -82,15 +95,19 @@ class Test_Ndarray(unittest.TestCase):
         
         for ex in example:
             if len(ex) == 0:
-                print(to_json(np.array([])))
+                self.assertEqual(to_json(np.array([])), {':ndarray': [[]]})
             else:
                 arr = np.array(ex[0], dtype=ex[1])
                 for format in ['full', 'complete']:
                     js = to_json(arr, format=format)
-                    print(js)
+                    #print(js)
                     ex_rt = read_json(js, header=False)
-                    print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+                    self.assertTrue(np.array_equal(ex_rt, arr))            
+                    self.assertEqual(ex_rt.dtype.name, arr.dtype.name)            
+                    #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
         
+    def test_ndarray_nested(self):    
+
         example =[[[[1,2], [3,4]], 'object'],
                   [[np.array([1, 2], dtype='int64'), np.array(['test1', 'test2'], dtype='str_')], 'object'],
                   [[pd.Series([1,2,3]), pd.Series([4,5,6])], 'object'],
