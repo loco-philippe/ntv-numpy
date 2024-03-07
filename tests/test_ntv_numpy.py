@@ -18,11 +18,12 @@ import ntv_pandas as npd
 from ntv_numpy import read_json, to_json
 from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab, NpUtil
 from ntv_numpy import NdarrayConnec, XndarrayConnec, Darray, Dfull, Dcomplete
+from ntv_numpy.ndarray import Ndarray
 
 from json_ntv import NtvConnector   
 SeriesConnec = NtvConnector.connector()['SeriesConnec']
 DataFrameConnec = NtvConnector.connector()['DataFrameConnec']
-nd_equals = NdarrayConnec.equals
+nd_equals = Ndarray.equals
 
 #read_json({':ndarray': ['int64', [1, 2]]})
 

@@ -9,6 +9,7 @@ import numpy as np
 from json_ntv import Ntv
 from abc import ABC, abstractmethod
 from copy import copy
+import json
 
 class Darray(ABC):
     ''' Representation of a one dimensional Array'''
@@ -33,7 +34,7 @@ class Darray(ABC):
     
     def __str__(self):
         '''return json string format'''
-        return 'str'
+        return json.dumps(self.to_list())
 
     def __eq__(self, other):
         ''' equal if values are equal'''
@@ -111,7 +112,7 @@ class Dfull(Darray):
     
     @property
     def len_val(self):
-        return len(self.values)
+        return len(self.data)
     
 
 class Dcomplete(Darray):    

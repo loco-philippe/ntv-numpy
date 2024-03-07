@@ -38,6 +38,7 @@ from json_ntv.ntv import Ntv, NtvList, NtvSingle
 from json_ntv.ntv_util import NtvUtil
 from json_ntv.ntv_connector import ShapelyConnec
 from data_array import Dfull, Dcomplete, Darray
+from ndarray import Ndarray
 
 from json_ntv import NtvConnector   
 SeriesConnec = NtvConnector.connector().get('SeriesConnec')
@@ -221,30 +222,6 @@ class NdarrayConnec(NtvConnector):
 
         lis = [ntv_type, shape, js_val]        
         return [val for val in lis if not val is None]
-
-    @staticmethod 
-    def equals(npself, npother):
-        '''return True if all elements are equals and dtype are equal'''
-        if not (isinstance(npself, np.ndarray) and isinstance(npother, np.ndarray)):
-            return False
-        if npself.dtype != npother.dtype:
-            return False
-        if npself.shape != npother.shape:
-            return False
-        if len(npself.shape) == 0:
-            return True
-        if len(npself) != len(npother):
-            return False
-        if isinstance(npself[0], (np.ndarray, pd.Series, pd.DataFrame)):
-            equal = {np.ndarray: NdarrayConnec.equals, 
-                     pd.Series: SeriesConnec.equals, 
-                     pd.DataFrame: DataFrameConnec.equals}                      
-            for a, b in zip(npself, npother): 
-                if not equal[type(npself[0])](a, b):
-                    return False
-            return True
-        else:
-            return np.array_equal(npself, npother)
     
 class XndarrayConnec(NtvConnector):
 
