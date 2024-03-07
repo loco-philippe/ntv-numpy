@@ -66,19 +66,17 @@ class Darray(ABC):
         if not val or not isinstance(val[0], list):
             return Dfull(val, dtype=dtype)
         match val:
-            case [data, ref, coding] if (isinstance(ref, (int, str)) and 
-                                         isinstance(coding, list) and
-                                         isinstance(coding[0], int) and 
-                                         max(coding) < len(data)):
+            case [data, ref, list(coding)] if (isinstance(ref, (int, str)) and 
+                                               isinstance(coding[0], int) and 
+                                               max(coding) < len(data)):
                 return None
             case [data, ref] if (isinstance(data, list) and 
                                  isinstance(ref, (int, str))):
                 return None
-            case [data, coef] if isinstance(coef, list) and len(coef) == 1:
+            case [data, list(coef)] if len(coef) == 1:
                 return None
-            case [data, coding] if (isinstance(coding, list) and
-                                    isinstance(coding[0], int) and
-                                    max(coding) < len(data)):
+            case [data, list(coding)] if (isinstance(coding[0], int) and
+                                          max(coding) < len(data)):
                 return Dcomplete(data, None, coding, dtype=dtype)
             case _:
                 return Dfull(val, dtype=dtype)

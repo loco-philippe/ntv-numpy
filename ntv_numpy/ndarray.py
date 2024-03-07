@@ -41,3 +41,17 @@ class Ndarray:
             return True
         else:
             return np.array_equal(npself, npother)    
+        
+    @staticmethod 
+    def add_ext(typ, ext):
+        '''return extended typ'''
+        ext = '['+ ext +']' if ext else ''
+        return '' if not typ else typ + ext
+
+    @staticmethod
+    def split_typ(typ):
+        '''return a tuple with typ and extension'''
+        if not isinstance(typ, str):
+            return (None, None) 
+        spl = typ.split('[', maxsplit=1)
+        return (spl[0], None) if len(spl) == 1 else (spl[0], spl[1][:-1])        

@@ -185,7 +185,7 @@ class NdarrayConnec(NtvConnector):
         option = {'notype': False, 'extension': None, 'format': 'full'} | kwargs
         if len(value) == 0:
             return ([[]], name, 'ndarray')
-        typ, ext = NpUtil.split_typ(typ)
+        typ, ext = Ndarray.split_typ(typ)
         ext = ext if ext else option['extension']
         dtype = value.dtype.name
         dtype = value[0].__class__.__name__ if dtype == 'object' else dtype
@@ -314,20 +314,6 @@ class NpUtil:
                  'email': 'str', 'regex': 'str', 'hostname': 'str', 'ipv4': 'str',
                  'ipv6': 'str', 'file': 'str', 'geojson': 'str',}
     FORMAT_CLS = {'full': Dfull, 'complete': Dcomplete}
-    
-    @staticmethod 
-    def add_ext(typ, ext):
-        '''return extended typ'''
-        ext = '['+ ext +']' if ext else ''
-        return '' if not typ else typ + ext
-    
-    @staticmethod
-    def split_typ(typ):
-        '''return a tuple with typ and extension'''
-        if not isinstance(typ, str):
-            return (None, None) 
-        spl = typ.split('[', maxsplit=1)
-        return (spl[0], None) if len(spl) == 1 else (spl[0], spl[1][:-1])
 
     @staticmethod
     def convert(ntv_type, nda, tojson=True):
@@ -416,16 +402,16 @@ class NpUtil:
         DT_NTVTYPE = (NpUtil.DT_DATATION | NpUtil.DT_LOCATION | 
                       NpUtil.DT_OTHER | NpUtil.DT_CONNECTOR | NpUtil.DT_PYTHON)
         if typ:
-            return NpUtil.add_ext(typ, ext)
+            return Ndarray.add_ext(typ, ext)
         match dtype:
             case dat if dat in DT_NTVTYPE:
-                return NpUtil.add_ext(DT_NTVTYPE[dat], ext)
+                return Ndarray.add_ext(DT_NTVTYPE[dat], ext)
             case string if string[:3] == 'str': 
-                return NpUtil.add_ext('string', ext)
+                return Ndarray.add_ext('string', ext)
             case byte if byte[:5] == 'bytes': 
-                return NpUtil.add_ext('bytes', ext)
+                return Ndarray.add_ext('bytes', ext)
             case _:
-                return NpUtil.add_ext(dtype, ext)
+                return Ndarray.add_ext(dtype, ext)
 
     @staticmethod
     def dtype(ntv_type):
@@ -433,7 +419,7 @@ class NpUtil:
         DTYPE = (NpUtil.DATATION_DT |  NpUtil.NUMBER_DT | NpUtil.OTHER_DT | 
                  NpUtil.STRING_DT)        
         OBJECT = NpUtil.LOCATION_DT | NpUtil.CONNECTOR_DT | NpUtil.PYTHON_DT      
-        type_base = NpUtil.split_typ(ntv_type)[0]
+        type_base = Ndarray.split_typ(ntv_type)[0]
         if type_base in OBJECT:
             return 'object'
         return DTYPE.get(ntv_type, DTYPE.get(type_base, type_base))
