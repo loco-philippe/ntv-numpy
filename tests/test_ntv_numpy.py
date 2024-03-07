@@ -9,16 +9,15 @@ import unittest
 
 from decimal import Decimal
 import numpy as np
-from datetime import datetime, date, time
-from pprint import pprint
-from json_ntv import Ntv
+from datetime import date, time
 import pandas as pd
 from shapely.geometry import Point, LinearRing
+
 import ntv_pandas as npd
 from ntv_numpy import read_json, to_json
 from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab, NpUtil
-from ntv_numpy import NdarrayConnec, XndarrayConnec, Darray, Dfull, Dcomplete
-from ntv_numpy.ndarray import Ndarray
+from ntv_numpy import NdarrayConnec, XndarrayConnec
+from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray
 
 from json_ntv import NtvConnector   
 SeriesConnec = NtvConnector.connector()['SeriesConnec']
@@ -72,12 +71,6 @@ class Test_Darray(unittest.TestCase):
             self.assertIsNone(da.ref)
             self.assertTrue(nd_equals(np.array(None), da.coding))
             self.assertTrue(nd_equals(da.data, da.values))           
-
-        """for ex in example:
-            da = Dfull(ex)
-            print(type(da), len(da))
-            print(da.data, da.ref, da.coding)
-            print(da.values)"""
     
 class Test_Ndarray(unittest.TestCase):    
 
@@ -100,8 +93,7 @@ class Test_Ndarray(unittest.TestCase):
                   [[Decimal('10.5'), Decimal('20.5')], 'object'],
                   [[Point([1,2]), Point([3,4])], 'object'],
                   #[[LinearRing([[0, 0], [0, 1], [1, 1]]), LinearRing([[0, 0], [0, 10], [10, 10]])], 'object'],
-                  []]
-        
+                  []]       
         for ex in example:
             if len(ex) == 0:
                 self.assertEqual(to_json(np.array([])), {':ndarray': [[]]})
@@ -113,7 +105,35 @@ class Test_Ndarray(unittest.TestCase):
                     ex_rt = read_json(js, header=False)
                     self.assertTrue(nd_equals(ex_rt, arr))            
                     #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+
+    def test_ndarray_shape(self):    
         
+        example =[[[1,2], 'int64'],
+                  [[True, False], 'bool'],
+                  [['1+2j', 1], 'complex'],
+                  [['test1', 'test2'], 'str_'], 
+                  [['2022-01-01T10:05:21.0002', '2023-01-01T10:05:21.0002'], 'datetime64'],
+                  [['2022-01-01', '2023-01-01'], 'datetime64[D]'],
+                  [['2022-01', '2023-01'], 'datetime64[M]'],
+                  [['2022', '2023'], 'datetime64[Y]'],
+                  #[[1,2], 'timedelta64[D]'],
+                  [[b'abc\x09', b'abc'], 'bytes'],
+                  [[time(10, 2, 3), time(20, 2, 3)], 'object'],
+                  [[{'one':1}, {'two':2}], 'object'],
+                  [[None, None], 'object'],
+                  [[Decimal('10.5'), Decimal('20.5')], 'object'],
+                  [[Point([1,2]), Point([3,4])], 'object'],
+                  #[[LinearRing([[0, 0], [0, 1], [1, 1]]), LinearRing([[0, 0], [0, 10], [10, 10]])], 'object']
+                  ]        
+        for ex in example:
+            arr = np.array(ex[0], dtype=ex[1]).reshape([2,1])
+            for format in ['full', 'complete']:
+                #print(ex, format)
+                js = to_json(arr, format=format)
+                #print(js)
+                ex_rt = read_json(js, header=False)
+                self.assertTrue(nd_equals(ex_rt, arr))            
+                
     def test_ndarray_nested(self):    
 
         example =[[[[1,2], [3,4]], 'object'],
@@ -153,9 +173,46 @@ class Test_Ndarray(unittest.TestCase):
                 ex_rt = read_json(js, header=False)
                 #print(ex_rt)
                 self.assertTrue(nd_equals(ex_rt, arr))            
-                #print(np.array_equal(ex_rt, arr),  ex_rt_head)
 
-if __name__ == '__main__':
-    
+class Test_Xndarray(unittest.TestCase):    
+
+    def test_xndarray_simple(self):    
+        
+        example =[{'var1': [['int32[kg]', [2, 2], [1, 2, 3, 4]], ['x', 'y']]},
+                  {'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+                            ['x', 'y']]},
+                  {'x': [['string', ['x1', 'x2']], {'test': 21}]},
+                  {'y': [['string', ['y1', 'y2']]]},
+                  {'z': [['string', ['z1', 'z2']], ['x']]},
+                  {'x.mask': [['boolean', [True, False]], ['x']]},
+                  {'x.variance': [['float64', [0.1, 0.2]], ['x']]},
+                  {'z.variance': [['float64', [0.1, 0.2]], ['x']]},
+                  {'unit': 'kg'},
+                  {'info': {'example': 'everything'}},
+                ]
+        
+        for ex in example:
+            self.assertEqual(ex, Xndarray.read_dict(ex).to_dict()) 
+            xa = Xndarray.read_dict(ex)
+            for format in ['full', 'complete']:
+                #print(xa.to_dict(format=format))
+                #print(Xndarray.read_dict(xa.to_dict(format=format)))
+                self.assertEqual(xa, Xndarray.read_dict(xa.to_dict(format=format)))      
+
+        example2 =[{'var1': [['int32[kg]', [2, 2], [1, 2, 3, 4]], ['x', 'y']]},
+                   {'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+                            ['x', 'y']]},
+                   {'x': [[['x1', 'x2']], {'test': 21}]},
+                   {'y': [[['y1', 'y2']]]},
+                   {'z': [[['z1', 'z2']], ['x']]},
+                   {'x.mask': [[[True, False]], ['x']]},
+                   {'x.variance': [[[0.1, 0.2]], ['x']]},
+                   {'z.variance': [[[0.1, 0.2]], ['x']]},
+                  ]
+        for ex, ex2 in zip(example, example2):
+            #print(ex, ex2)
+            self.assertEqual(Xndarray.read_dict(ex2).to_dict(), ex)
+                                                   
+if __name__ == '__main__':    
     unittest.main(verbosity=2)
                                     

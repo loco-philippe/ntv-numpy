@@ -81,8 +81,10 @@ def to_json(ndarray, **kwargs):
     - **encoded** : Boolean (default False) - json value if False else json text
     - **header** : Boolean (default True) - including ndarray or xndarray type
     - **notype** : Boolean (default False) - including data type if True
+    - **noshape** : Boolean (default True) - if False, only shape if dim > 1 
     - **name** : string (default None) - name of the ndarray
     - **typ** : string (default None) - type of the NTV object,
+    - **format** : string (default 'full') - representation format of the ndarray,
     - **extension** : string (default None) - type extension
     - **add** : dict (default None) - additional data :
         - **attrs** : dict (default none) - metadata
@@ -91,7 +93,7 @@ def to_json(ndarray, **kwargs):
     '''
     option = {'encoded': False, 'format': 'full', 'header': True, 
               'name': None, 'typ': None, 'extension':None, 'notype': False, 
-              'add': None} | kwargs
+              'noshape': True, 'add': None} | kwargs
     if ndarray.__class__.__name__ == 'ndarray' and not kwargs.get('add'):
         jsn, nam, typ = NdarrayConnec.to_json_ntv(ndarray, **option)
     else:
@@ -163,9 +165,10 @@ class NdarrayConnec(NtvConnector):
         ntv_type = None
         shape = None
         match ntv_value[:-1]:
+            case []:...
             case [ntv_type, shape]:...
-            case [ntv_type] if isinstance(ntv_type, str):...
-            case [shape] if isinstance(shape, list):...
+            case [str(ntv_type)]:...
+            case [list(shape)]:...
         darray = Darray.read_list(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
         darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False)
         return darray.values.reshape(shape)
@@ -176,50 +179,53 @@ class NdarrayConnec(NtvConnector):
 
         *Parameters*
 
-        - **typ** : string (default None) - type of the NTV object,
-        - **name** : string (default None) - name of the NTV object
-        - **value** : ndarray values
+        - **typ** : string (default None) - ntv_type of the ndarray object,
+        - **name** : string (default None) - name of the ndarray object
+        - **value** : ndarray value
+        - **noshape** : Boolean (default True) - if False, only shape if dim > 1 
         - **notype** : Boolean (default False) - including data type if False
+        - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
         '''    
-        option = {'notype': False, 'extension': None, 'format': 'full'} | kwargs
+        option = {'notype': False, 'extension': None, 'format': 'full',
+                  'noshape': True} | kwargs
+        if value is None:
+            return None
         if len(value) == 0:
             return ([[]], name, 'ndarray')
-        typ, ext = Ndarray.split_typ(typ)
-        ext = ext if ext else option['extension']
-        dtype = value.dtype.name
-        dtype = value[0].__class__.__name__ if dtype == 'object' else dtype
-        ntv_type = NpUtil.ntv_type(dtype, typ, ext)
-        
-        shape = list(value.shape)
-        shape = shape if len(shape) > 1 else None 
 
-        form = option['format']    
-        if shape:
-            js_val   = NpUtil.ntv_val(ntv_type, value.flatten(), form)
-        else:
-            js_val   = NpUtil.ntv_val(ntv_type, value, form)
-            
+        shape = list(value.shape)
+        shape = None if len(shape) < 2 and option['noshape'] else shape 
+        val_flat = value.flatten() if shape else value
+        
+        ntv_type, ext = Ndarray.split_typ(typ)
+        ext = ext if ext else option['extension']
+        dtype = val_flat.dtype.name
+        dtype = val_flat[0].__class__.__name__ if dtype == 'object' else dtype
+        ntv_type = NpUtil.ntv_type(dtype, ntv_type, ext)
+        
+        js_val   = NpUtil.ntv_val(ntv_type, val_flat, option['format'])   
         lis = [ntv_type if not option['notype'] else None, shape, js_val]
         return ([val for val in lis if not val is None], name, 'ndarray')
 
     @staticmethod
     def to_jsonv(value):
-        ''' convert a ndarray into json-value.'''    
+        ''' convert a ndarray into json-value 
+        ('noshape': True, 'format': 'full', 'notype': False)'''    
+        if value is None:
+            return None
         if len(value) == 0:
             return [[]]
+
+        shape = list(value.shape)
+        shape = shape if len(shape) > 1 else None 
+        val_flat = value.flatten() if shape else value
+        
         dtype = value.dtype.name
         dtype = value[0].__class__.__name__ if dtype == 'object' else dtype
         ntv_type = NpUtil.ntv_type(dtype, None, None)
 
-        shape = list(value.shape)
-        shape = shape if len(shape) > 1 else None 
-        
-        if shape:
-            js_val   = NpUtil.ntv_val(ntv_type, value.flatten(), 'full')
-        else:
-            js_val   = NpUtil.ntv_val(ntv_type, value, 'full')
-
+        js_val   = NpUtil.ntv_val(ntv_type, val_flat, 'full')
         lis = [ntv_type, shape, js_val]        
         return [val for val in lis if not val is None]
     
@@ -341,6 +347,8 @@ class NpUtil:
                     return nda
         else:
             match ntv_type:
+                case None: 
+                    return nda
                 case dat if dat in NpUtil.DATATION_DT:
                     return nda.astype(NpUtil.DATATION_DT[dat])
                 case std if std in NpUtil.OTHER_DT:
@@ -390,19 +398,19 @@ class NpUtil:
         return Format(data, ref=ref, coding=coding).to_list()
     
     @staticmethod
-    def ntv_type(dtype, typ, ext):
+    def ntv_type(dtype, ntv_type, ext):
         ''' return NTVtype from dtype, additional type and extension.
 
         *Parameters*
 
         - **dtype** : string - dtype of the ndarray
-        - **typ** : string - additional type
+        - **ntv_type** : string - additional type
         - **ext** : string - type extension
         '''        
         DT_NTVTYPE = (NpUtil.DT_DATATION | NpUtil.DT_LOCATION | 
                       NpUtil.DT_OTHER | NpUtil.DT_CONNECTOR | NpUtil.DT_PYTHON)
-        if typ:
-            return Ndarray.add_ext(typ, ext)
+        if ntv_type:
+            return Ndarray.add_ext(ntv_type, ext)
         match dtype:
             case dat if dat in DT_NTVTYPE:
                 return Ndarray.add_ext(DT_NTVTYPE[dat], ext)

@@ -28,6 +28,8 @@ This package contains the following classes and functions:
 from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec, read_json
 from ntv_numpy.numpy_ntv_connector import to_json
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray
+from ntv_numpy.ndarray import Ndarray
+from ntv_numpy.xndarray import Xndarray
 #import ntv_pandas.pandas_ntv_connector
 
 #path = Path(ntv_numpy.numpy_ntv_connector.__file__).parent

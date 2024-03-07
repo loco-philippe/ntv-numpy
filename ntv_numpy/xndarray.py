@@ -37,7 +37,7 @@ class Xndarray:
     
     def __str__(self):
         '''return json string format'''
-        return json.dumps(self.to_list())
+        return json.dumps(self.to_dict())
 
     def __eq__(self, other):
         ''' equal if values are equal'''
@@ -51,6 +51,8 @@ class Xndarray:
             return False
         if self.meta != other.meta:
             return False
+        if self.nda is None and other.nda is None:
+            return True
         return Ndarray.equals(self.nda, other.nda)
 
     def __len__(self):
@@ -79,7 +81,7 @@ class Xndarray:
             return None
         jso = jso['xndarray'] if 'xndarray' in list(jso)[0] else jso
         name = list(jso)[0]
-        uri = meta = dims = nda = None        
+        uri = meta = dims = str_nda = None        
         match jso[name]:
             case str(meta) | dict(meta):...
             case [str(uri)]:...
@@ -94,14 +96,30 @@ class Xndarray:
             case [list(str_nda), list(dims), str(meta)]:...
             case _:
                 return None
-        #name, ntv_type = Xndarray.split_json_name(json_name)
-        ntv_type = str_nda[0] if isinstance(str_nda[0], str) else None
-        nda = NdarrayConnec.to_obj_ntv(str_nda)
+        ntv_type = str_nda[0] if str_nda and isinstance(str_nda[0], str) else None
+        nda = NdarrayConnec.to_obj_ntv(str_nda) if str_nda else None
         return Xndarray(name, ntv_type=ntv_type, uri=uri, dims=dims, meta=meta,
                         nda=nda)
             
-    def to_dict(self):
-        nda_str = 
+    def to_dict(self, **kwargs):
+        ''' convert a Xndarray into json-value.
+
+        *Parameters*
+
+        - **notype** : Boolean (default False) - including data type if False
+        - **format** : string (default 'full') - representation format of the ndarray,
+        - **extension** : string (default None) - type extension
+        '''            
+        option = {'notype': False, 'extension': None, 'format': 'full', 
+                  'noshape': True} | kwargs
+        if not option['format'] in ['full', 'complete']: 
+            option['noshape'] = False
+        nda_str = NdarrayConnec.to_json_ntv(self.nda, typ=self.ntv_type, **option
+                                            )[0] if not self.nda is None else None
+        lis = [self.uri, nda_str, self.dims, self.meta]
+        lis = [val for val in lis if not val is None]
+        return {self.name : lis[0] if lis == [self.meta] else lis}
+    
     def _to_dict(self):
         return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri, 'nda': self.nda, 
                 'meta': self.meta, 'dims': self.dims}
