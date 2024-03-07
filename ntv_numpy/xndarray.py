@@ -11,20 +11,22 @@ from json_ntv import Ntv
 from copy import copy
 import json
 from ndarray import Ndarray
+from numpy_ntv_connector import NdarrayConnec
 
 class Xndarray:
     ''' Representation of a multidimensional labelled Array'''
-    def __init__(self, json_name, nda=None, uri=None, dims=None, meta=None):    
-        if isinstance(json_name, Xndarray):
-            self.name = json_name.name
-            self.ntv_type = json_name.ntv_type
-            self.nda = json_name.nda
-            self.uri = json_name.uri
-            self.dims = json_name.dims
-            self.meta = json_name.meta
+    def __init__(self, name, ntv_type=None, nda=None, uri=None, dims=None, meta=None):    
+        if isinstance(name, Xndarray):
+            self.name = name.name
+            self.ntv_type = name.ntv_type
+            self.nda = name.nda
+            self.uri = name.uri
+            self.dims = name.dims
+            self.meta = name.meta
             return
         self.name = name
-        self.nda = nda # if isinstance(nda, np.ndarray) else #!!!
+        self.ntv_type = ntv_type
+        self.nda = nda
         self.uri = uri
         self.dims = dims
         self.meta = meta      
@@ -41,6 +43,8 @@ class Xndarray:
         ''' equal if values are equal'''
         if self.name != other.name:
             return False
+        if self.ntv_type != other.ntv_type:
+            return False
         if self.uri != other.uri:
             return False        
         if self.dims != other.dims:
@@ -51,7 +55,7 @@ class Xndarray:
 
     def __len__(self):
         ''' len of values'''
-        return len(self.nda) if self.nda else 0
+        return len(self.nda) if self.nda is not None else 0
 
     def __contains__(self, item):
         ''' item of values'''
@@ -83,17 +87,23 @@ class Xndarray:
             case [str(uri), dict(meta)] | [str(uri), str(meta)]:...
             case [str(uri), list(dims), dict(meta)]:...
             case [str(uri), list(dims), str(meta)]:...
-            case [list(nda)]:...
-            case [list(nda), list(dims)]:...
-            case [list(nda), dict(meta)] | [list(nda), str(meta)]:...
-            case [list(nda), list(dims), dict(meta)]:...
-            case [list(nda), list(dims), str(meta)]:...
+            case [list(str_nda)]:...
+            case [list(str_nda), list(dims)]:...
+            case [list(str_nda), dict(meta)] | [list(str_nda), str(meta)]:...
+            case [list(str_nda), list(dims), dict(meta)]:...
+            case [list(str_nda), list(dims), str(meta)]:...
             case _:
                 return None
-        return Xndarray(name, uri=uri, dims=dims, meta=meta, nda=nda)
+        #name, ntv_type = Xndarray.split_json_name(json_name)
+        ntv_type = str_nda[0] if isinstance(str_nda[0], str) else None
+        nda = NdarrayConnec.to_obj_ntv(str_nda)
+        return Xndarray(name, ntv_type=ntv_type, uri=uri, dims=dims, meta=meta,
+                        nda=nda)
             
     def to_dict(self):
-        return {'name': self.name, 'uri': self.uri, 'nda': self.nda, 
+        nda_str = 
+    def _to_dict(self):
+        return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri, 'nda': self.nda, 
                 'meta': self.meta, 'dims': self.dims}
             
             
