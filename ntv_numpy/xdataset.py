@@ -57,10 +57,25 @@ class Xdataset:
         return self.__class__(self)      
 
     @property 
+    def names(self):
+        return [xnda.name for xnda in self.xnd]
+    
+    @property 
     def coordinates(self):
         dims = set(self.dimensions)
-        return [xnda.name for xnda in self.xnd if set(xnda.dims) != dims and xnda.name in self.variables]
+        if not dims:
+            return []
+        return list(set([xnda.name for xnda in self.xnd 
+                if xnda.xtype == 'variable' and set(xnda.dims) != dims]))
 
+    @property 
+    def data_vars(self):
+        dims = set(self.dimensions)
+        if not dims:
+            return []
+        return [xnda.name for xnda in self.xnd 
+                if xnda.xtype == 'variable' and set(xnda.dims) == dims]
+    
     @property 
     def dimensions(self):
         return [xnda.name for xnda in self.xnd if xnda.xtype == 'dimension']
@@ -77,14 +92,14 @@ class Xdataset:
     def additionals(self):
         return [xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional']    
 
-    @property 
     def var_group(self, name):
         return [xnda.full_name for xnda in self.xnd if xnda.name == name]
 
     @property 
     def partition(self):
         dic = {}
-        dic |= {'variables' : self.variables} if self.variables else {}
+        dic |= {'coordinates' : self.coordinates} if self.coordinates else {}
+        dic |= {'data_vars' : self.data_vars} if self.data_vars else {}
         dic |= {'metadata' : self.metadata} if self.metadata else {}
         dic |= {'dimensions' : self.dimensions} if self.dimensions else {}
         return dic    
