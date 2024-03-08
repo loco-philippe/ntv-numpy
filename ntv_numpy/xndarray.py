@@ -10,7 +10,7 @@ from json_ntv import Ntv
 #from abc import ABC, abstractmethod
 from copy import copy
 import json
-from ndarray import Ndarray
+from ntv_numpy.ndarray import Ndarray
 from numpy_ntv_connector import NdarrayConnec
 
 class Xndarray:
@@ -37,7 +37,7 @@ class Xndarray:
     
     def __str__(self):
         '''return json string format'''
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_json())
 
     def __eq__(self, other):
         ''' equal if values are equal'''
@@ -61,10 +61,12 @@ class Xndarray:
 
     def __contains__(self, item):
         ''' item of values'''
-        return item in self.nda
+        return item in self.nda if self.nda is not None else None
 
     def __getitem__(self, ind):
         ''' return value item'''
+        if nda is None:
+            return None
         if isinstance(ind, tuple):
             return [self.nda[i] for i in ind]
             #return [copy(self.values[i]) for i in ind]
@@ -74,9 +76,13 @@ class Xndarray:
     def __copy__(self):
         ''' Copy all the data '''
         return self.__class__(self)      
+
+    @property 
+    def shape(self):
+        return self.nda.shape if self.nda is not None else None
     
     @staticmethod
-    def read_dict(jso):
+    def read_json(jso):
         if not (isinstance(jso, dict) and len(jso) == 1):
             return None
         jso = jso['xndarray'] if 'xndarray' in list(jso)[0] else jso
@@ -101,7 +107,7 @@ class Xndarray:
         return Xndarray(name, ntv_type=ntv_type, uri=uri, dims=dims, meta=meta,
                         nda=nda)
             
-    def to_dict(self, **kwargs):
+    def to_json(self, **kwargs):
         ''' convert a Xndarray into json-value.
 
         *Parameters*
@@ -119,8 +125,18 @@ class Xndarray:
         lis = [self.uri, nda_str, self.dims, self.meta]
         lis = [val for val in lis if not val is None]
         return {self.name : lis[0] if lis == [self.meta] else lis}
-    
-    def _to_dict(self):
+
+    @property    
+    def mode(self):
+        match [self.nda, self.uri]:
+            case [None, str()]:
+                return 'relative'
+            case [_, None]:
+                return 'absolute'
+            case _:
+                return 'unconsistent'
+            
+    def _to_json(self):
         return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri, 'nda': self.nda, 
                 'meta': self.meta, 'dims': self.dims}
             

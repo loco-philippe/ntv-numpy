@@ -25,10 +25,9 @@ This package contains the following classes and functions:
     
 """
 #from pathlib import Path
-from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec, read_json
-from ntv_numpy.numpy_ntv_connector import to_json
+from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec, read_json, to_json
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray
-from ntv_numpy.ndarray import Ndarray
+from ntv_numpy.ndarray import Ndarray, NpUtil
 from ntv_numpy.xndarray import Xndarray
 #import ntv_pandas.pandas_ntv_connector
 

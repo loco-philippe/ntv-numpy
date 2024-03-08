@@ -25,22 +25,11 @@ It contains :
 - an utility class with static methods : `NpUtil`
 """
 
-import os
-import datetime
 import json
-import configparser
-from pathlib import Path
-import pandas as pd
 import numpy as np
-from decimal import Decimal
+from ntv_numpy.ndarray import Ndarray
 
-from json_ntv.ntv import Ntv, NtvList, NtvSingle
-from json_ntv.ntv_util import NtvUtil
-from json_ntv.ntv_connector import ShapelyConnec
-from data_array import Dfull, Dcomplete, Darray
-from ndarray import Ndarray
-
-from json_ntv import NtvConnector   
+from json_ntv import NtvConnector
 SeriesConnec = NtvConnector.connector().get('SeriesConnec')
 DataFrameConnec = NtvConnector.connector().get('DataFrameConnec')
 
@@ -64,7 +53,7 @@ def read_json(jsn, **kwargs):
             arr = NdarrayConnec.to_obj_ntv(list(jso.values())[0], **option)
             #if option['header']:
             #    return {arr[0] + ':' + list(jso)[0]: arr[1]}
-            return arr 
+            return arr
     if isinstance(jso, list):
         option = {'noadd': False, 'header': False} | kwargs
         arr =  NdarrayConnec.to_obj_ntv(jso, **option)
@@ -81,7 +70,7 @@ def to_json(ndarray, **kwargs):
     - **encoded** : Boolean (default False) - json value if False else json text
     - **header** : Boolean (default True) - including ndarray or xndarray type
     - **notype** : Boolean (default False) - including data type if True
-    - **noshape** : Boolean (default True) - if False, only shape if dim > 1 
+    - **noshape** : Boolean (default True) - if False, only shape if dim > 1
     - **name** : string (default None) - name of the ndarray
     - **typ** : string (default None) - type of the NTV object,
     - **format** : string (default 'full') - representation format of the ndarray,
@@ -91,16 +80,16 @@ def to_json(ndarray, **kwargs):
         - **dims** : array (default none) - name of axis
         - **coords** : dict (default none) - dict of 'xndarray'
     '''
-    option = {'encoded': False, 'format': 'full', 'header': True, 
-              'name': None, 'typ': None, 'extension':None, 'notype': False, 
+    option = {'encoded': False, 'format': 'full', 'header': True,
+              'name': None, 'typ': None, 'extension':None, 'notype': False,
               'noshape': True, 'add': None} | kwargs
     if ndarray.__class__.__name__ == 'ndarray' and not kwargs.get('add'):
         jsn, nam, typ = NdarrayConnec.to_json_ntv(ndarray, **option)
     else:
-        jsn, nam, typ = XndarrayConnec.to_json_ntv(ndarray, **option)        
+        jsn, nam, typ = XndarrayConnec.to_json_ntv(ndarray, **option)
     name = nam if nam else ''
     if option['header'] or name:
-        typ = ':' + typ if option['header'] else '' 
+        typ = ':' + typ if option['header'] else ''
         jsn = {name + typ : jsn}
     if option['encoded']:
         return json.dumps(jsn)
@@ -114,8 +103,8 @@ def to_json_tab(ndarray, add=None, header=True):
     for per in period:
         coefi = coefi // per
         coef.append(coefi)
-    
-    add = add if add else {}   
+
+    add = add if add else {}
     axe_n = add['dims'] if 'dims' in add else ['dim_' + str(i) for i in range(dim)]
     axe_v = [add['coords'][axe] for axe in axe_n if axe in add['coords']] if 'coords' in add else []
     axe_v = [axe[-1] for axe in axe_v] if len(axe_v) == len(axe_n) else [
@@ -138,13 +127,13 @@ def read_json_tab(js):
             shape.append(len(val[0]))
             coef.append(val[1])
             axes_v.append(val[0])
-            axes_n.append(name)            
+            axes_n.append(name)
         else:
             spl = name.split('::')
             nda = np.array(val, dtype=spl[1]) if len(spl)==2 else np.array(val)
-    coef, shape, axes_n, axes_v = list(zip(*sorted(zip(coef, shape, axes_n, 
+    coef, shape, axes_n, axes_v = list(zip(*sorted(zip(coef, shape, axes_n,
                                                        axes_v), reverse=True)))
-    return (nda.reshape(shape), {'dims': list(axes_n), 
+    return (nda.reshape(shape), {'dims': list(axes_n),
             'coords': {axe_n: [axe_v] for axe_n, axe_v in zip(axes_n, axes_v)}})
 
 class NdarrayConnec(NtvConnector):
@@ -162,16 +151,7 @@ class NdarrayConnec(NtvConnector):
     @staticmethod
     def to_obj_ntv(ntv_value, **kwargs):
         ''' convert json ntv_value into a ndarray.'''
-        ntv_type = None
-        shape = None
-        match ntv_value[:-1]:
-            case []:...
-            case [ntv_type, shape]:...
-            case [str(ntv_type)]:...
-            case [list(shape)]:...
-        darray = Darray.read_list(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
-        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False)
-        return darray.values.reshape(shape)
+        return Ndarray.read_json(ntv_value, **kwargs)
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
@@ -182,53 +162,15 @@ class NdarrayConnec(NtvConnector):
         - **typ** : string (default None) - ntv_type of the ndarray object,
         - **name** : string (default None) - name of the ndarray object
         - **value** : ndarray value
-        - **noshape** : Boolean (default True) - if False, only shape if dim > 1 
+        - **noshape** : Boolean (default True) - if False, only shape if dim > 1
         - **notype** : Boolean (default False) - including data type if False
         - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
-        '''    
+        '''
         option = {'notype': False, 'extension': None, 'format': 'full',
                   'noshape': True} | kwargs
-        if value is None:
-            return None
-        if len(value) == 0:
-            return ([[]], name, 'ndarray')
+        return (Ndarray.to_json(value, typ=typ, **option), name, 'ndarray')
 
-        shape = list(value.shape)
-        shape = None if len(shape) < 2 and option['noshape'] else shape 
-        val_flat = value.flatten() if shape else value
-        
-        ntv_type, ext = Ndarray.split_typ(typ)
-        ext = ext if ext else option['extension']
-        dtype = val_flat.dtype.name
-        dtype = val_flat[0].__class__.__name__ if dtype == 'object' else dtype
-        ntv_type = NpUtil.ntv_type(dtype, ntv_type, ext)
-        
-        js_val   = NpUtil.ntv_val(ntv_type, val_flat, option['format'])   
-        lis = [ntv_type if not option['notype'] else None, shape, js_val]
-        return ([val for val in lis if not val is None], name, 'ndarray')
-
-    @staticmethod
-    def to_jsonv(value):
-        ''' convert a ndarray into json-value 
-        ('noshape': True, 'format': 'full', 'notype': False)'''    
-        if value is None:
-            return None
-        if len(value) == 0:
-            return [[]]
-
-        shape = list(value.shape)
-        shape = shape if len(shape) > 1 else None 
-        val_flat = value.flatten() if shape else value
-        
-        dtype = value.dtype.name
-        dtype = value[0].__class__.__name__ if dtype == 'object' else dtype
-        ntv_type = NpUtil.ntv_type(dtype, None, None)
-
-        js_val   = NpUtil.ntv_val(ntv_type, val_flat, 'full')
-        lis = [ntv_type, shape, js_val]        
-        return [val for val in lis if not val is None]
-    
 class XndarrayConnec(NtvConnector):
 
     '''NTV connector for xndarray.
@@ -250,7 +192,7 @@ class XndarrayConnec(NtvConnector):
         - **index** : list (default None) - list of index values,
         - **alias** : boolean (default False) - if True, alias dtype else default dtype
         - **annotated** : boolean (default False) - if True, NTV names are not included.
-        '''        
+        '''
         np_data = NdarrayConnec.to_obj_ntv(ntv_value['data'])
         add = {key: val for key, val in ntv_value.items()
                 if key in ('attrs', 'dims', 'coords')}
@@ -277,160 +219,10 @@ class XndarrayConnec(NtvConnector):
         dims = add.get('dims') if add else None
         attrs = add.get('attrs') if add else None
         coords = add.get('coords') if add else None
-        dic = {'data': NdarrayConnec.to_json_ntv(value, kwargs=kwargs)[0], 
+        dic = {'data': NdarrayConnec.to_json_ntv(value, kwargs=kwargs)[0],
                'dims': dims, 'coords': coords, 'attrs': attrs}
         return ({key: val for key, val in dic.items() if not val is None},
                 name, 'xndarray')
-
-class NpUtil:
-    '''ntv-ndarray utilities.'''
-
-    DATATION_DT = {'date': 'datetime64[D]', 'year': 'datetime64[Y]',
-        'yearmonth': 'datetime64[M]', 
-        'datetime': 'datetime64[s]', 'datetime[ms]': 'datetime64[ms]',
-        'datetime[us]': 'datetime64[us]', 'datetime[ns]': 'datetime64[ns]', 
-        'datetime[ps]': 'datetime64[ps]', 'datetime[fs]': 'datetime64[fs]',
-        'timedelta': 'timedelta64[s]', 'timedelta[ms]': 'timedelta64[ms]',
-        'timedelta[us]': 'timedelta64[us]', 'timedelta[ns]': 'timedelta64[ns]', 
-        'timedelta[ps]': 'timedelta64[ps]', 'timedelta[fs]': 'timedelta64[fs]',
-        'timedelta[D]': 'timedelta64[D]', 'timedelta[Y]': 'timedelta64[Y]',
-        'timedelta[M]': 'timedelta64[M]'}
-    DT_DATATION = {val:key for key, val in DATATION_DT.items()}
-    
-    CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}    
-    DT_CONNECTOR = {val:key for key, val in CONNECTOR_DT.items()}
-    
-    PYTHON_DT = {'array': 'list', 'time': 'datetime.time',
-                 'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
-                 'ndarray': 'ndarray'}
-    DT_PYTHON = {val:key for key, val in PYTHON_DT.items()}
-
-    OTHER_DT = {'boolean': 'bool', 'string': 'str'}
-    DT_OTHER = {val:key for key, val in OTHER_DT.items()}
-    
-    LOCATION_DT = {'point': 'Point', 'line': 'LinearRing', 'polygon': 'Polygon'}
-    DT_LOCATION = {val:key for key, val in LOCATION_DT.items()}
-    
-    NUMBER_DT = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
-                 'wday': 'int', 'yday': 'int', 'week': 'hour', 'minute': 'int',
-                 'second': 'int'}
-    STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str', 
-                 'period': 'str', 'duration': 'str', 'jpointer': 'str',
-                 'uri': 'str', 'uriref': 'str', 'iri': 'str', 'iriref': 'str',
-                 'email': 'str', 'regex': 'str', 'hostname': 'str', 'ipv4': 'str',
-                 'ipv6': 'str', 'file': 'str', 'geojson': 'str',}
-    FORMAT_CLS = {'full': Dfull, 'complete': Dcomplete}
-
-    @staticmethod
-    def convert(ntv_type, nda, tojson=True):
-        ''' convert ndarray with external NTVtype.
-
-        *Parameters*
-
-        - **ntv_type** : string - NTVtype deduced from the ndarray name_type and dtype,
-        - **nda** : ndarray to be converted.
-        - **tojson** : boolean (default True) - apply to json function
-        '''
-        if tojson:
-            match ntv_type:
-                case dat if dat in NpUtil.DATATION_DT:
-                    return nda.astype(NpUtil.DATATION_DT[dat]).astype(str)
-                case 'bytes':
-                    return nda.astype('bytes').astype(str)                
-                case 'time':
-                    return nda.astype(str)    
-                case 'decimal64':
-                    return nda.astype(float)  
-                case 'geojson':
-                    return np.frompyfunc(ShapelyConnec.to_geojson, 1, 1)(nda)
-                case _:
-                    return nda
-        else:
-            match ntv_type:
-                case None: 
-                    return nda
-                case dat if dat in NpUtil.DATATION_DT:
-                    return nda.astype(NpUtil.DATATION_DT[dat])
-                case std if std in NpUtil.OTHER_DT:
-                    return nda.astype(NpUtil.OTHER_DT[std])                    
-                case 'time':
-                    return np.frompyfunc(datetime.time.fromisoformat, 1, 1)(nda)                   
-                case 'decimal64':
-                    return np.frompyfunc(Decimal, 1, 1)(nda)   
-                case 'ndarray':
-                    return np.frompyfunc(NdarrayConnec.to_obj_ntv, 1, 1)(nda) 
-                case python if python in NpUtil.PYTHON_DT:
-                    return nda.astype('object')
-                case connec if connec in NpUtil.CONNECTOR_DT:
-                    return np.fromiter([NtvConnector.uncast(nd, None, connec)[0]
-                                        for nd in nda], dtype='object')
-                case 'point' | 'line' | 'polygon' | 'geometry':
-                    return np.frompyfunc(ShapelyConnec.to_geometry, 1, 1)(nda)
-                case _:
-                    return nda.astype(NpUtil.dtype(ntv_type))
-        
-    @staticmethod
-    def ntv_val(ntv_type, nda, form):
-        ''' convert a simple ndarray into NTV json-value.
-
-        *Parameters*
-
-        - **ntv_type** : string - NTVtype deduced from the ndarray, name_type and dtype,
-        - **nda** : ndarray to be converted.
-        - **form** : format of data ('full', 'complete', 'sparse', 'primary').
-        '''
-        if form == 'complete' and len(nda) < 2:
-            raise NdarrayError("complete format is not available with ndarray length < 2")
-        Format = NpUtil.FORMAT_CLS[form]
-        darray = Format(nda)
-        ref = darray.ref
-        coding = darray.coding
-        match ntv_type:
-            case 'ndarray':
-                #data = np.frompyfunc(NdarrayConnec.to_jsonv, 1, 1)(darray.data) 
-                data = [NdarrayConnec.to_jsonv(nd) for nd in darray.data] 
-            case connec if connec in NpUtil.CONNECTOR_DT:
-                data = [NtvConnector.cast(nd, None, connec)[0] for nd in darray.data] 
-            case 'point' | 'line' | 'polygon' | 'geometry':
-                data = np.frompyfunc(ShapelyConnec.to_coord, 1, 1)(darray.data)
-            case _:
-                data = NpUtil.convert(ntv_type, darray.data)
-        return Format(data, ref=ref, coding=coding).to_list()
-    
-    @staticmethod
-    def ntv_type(dtype, ntv_type, ext):
-        ''' return NTVtype from dtype, additional type and extension.
-
-        *Parameters*
-
-        - **dtype** : string - dtype of the ndarray
-        - **ntv_type** : string - additional type
-        - **ext** : string - type extension
-        '''        
-        DT_NTVTYPE = (NpUtil.DT_DATATION | NpUtil.DT_LOCATION | 
-                      NpUtil.DT_OTHER | NpUtil.DT_CONNECTOR | NpUtil.DT_PYTHON)
-        if ntv_type:
-            return Ndarray.add_ext(ntv_type, ext)
-        match dtype:
-            case dat if dat in DT_NTVTYPE:
-                return Ndarray.add_ext(DT_NTVTYPE[dat], ext)
-            case string if string[:3] == 'str': 
-                return Ndarray.add_ext('string', ext)
-            case byte if byte[:5] == 'bytes': 
-                return Ndarray.add_ext('bytes', ext)
-            case _:
-                return Ndarray.add_ext(dtype, ext)
-
-    @staticmethod
-    def dtype(ntv_type):
-        ''' return dtype from ntv_type'''
-        DTYPE = (NpUtil.DATATION_DT |  NpUtil.NUMBER_DT | NpUtil.OTHER_DT | 
-                 NpUtil.STRING_DT)        
-        OBJECT = NpUtil.LOCATION_DT | NpUtil.CONNECTOR_DT | NpUtil.PYTHON_DT      
-        type_base = Ndarray.split_typ(ntv_type)[0]
-        if type_base in OBJECT:
-            return 'object'
-        return DTYPE.get(ntv_type, DTYPE.get(type_base, type_base))
 
 
 class NdarrayError(Exception):

@@ -34,7 +34,7 @@ class Darray(ABC):
     
     def __str__(self):
         '''return json string format'''
-        return json.dumps(self.to_list())
+        return json.dumps(self.to_json())
 
     def __eq__(self, other):
         ''' equal if values are equal'''
@@ -42,7 +42,7 @@ class Darray(ABC):
 
     def __len__(self):
         ''' len of values'''
-        return self.len_val
+        return self._len_val
 
     def __contains__(self, item):
         ''' item of values'''
@@ -61,7 +61,7 @@ class Darray(ABC):
         return self.__class__(self)
     
     @staticmethod 
-    def read_list(val, dtype=None):
+    def read_json(val, dtype=None):
         val = val if isinstance(val, list) else [val]
         if not val or not isinstance(val[0], list):
             return Dfull(val, dtype=dtype)
@@ -83,7 +83,7 @@ class Darray(ABC):
     
     
     @abstractmethod
-    def to_list(self):
+    def to_json(self):
         pass
     
     @property
@@ -93,7 +93,7 @@ class Darray(ABC):
     
     @property
     @abstractmethod
-    def len_val(self):
+    def _len_val(self):
         pass
     
 class Dfull(Darray):    
@@ -101,7 +101,7 @@ class Dfull(Darray):
     def __init__(self, data, ref=None, coding=None, dtype=None):
         super().__init__(data, None, None, dtype=dtype)
     
-    def to_list(self):
+    def to_json(self):
         return self.data.tolist()
     
     @property 
@@ -109,7 +109,7 @@ class Dfull(Darray):
         return self.data
     
     @property
-    def len_val(self):
+    def _len_val(self):
         return len(self.data)
     
 
@@ -125,7 +125,7 @@ class Dcomplete(Darray):
                 data = data[idx]
         super().__init__(data, None, coding, dtype=dtype)
     
-    def to_list(self):
+    def to_json(self):
         return [self.data.tolist(), self.coding.tolist()]
     
     @property 
@@ -133,6 +133,6 @@ class Dcomplete(Darray):
         return self.data[self.coding]
     
     @property
-    def len_val(self):
+    def _len_val(self):
         return len(self.coding)
     

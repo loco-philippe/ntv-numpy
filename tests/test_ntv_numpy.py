@@ -15,9 +15,9 @@ from shapely.geometry import Point, LinearRing
 
 import ntv_pandas as npd
 from ntv_numpy import read_json, to_json
-from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab, NpUtil
+from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab
 from ntv_numpy import NdarrayConnec, XndarrayConnec
-from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray
+from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray, NpUtil
 
 from json_ntv import NtvConnector   
 SeriesConnec = NtvConnector.connector()['SeriesConnec']
@@ -38,7 +38,7 @@ class Test_Darray(unittest.TestCase):
         ]
 
         for index, ex in enumerate(example):
-            da = Darray.read_list(ex[0])
+            da = Darray.read_json(ex[0])
             self.assertEqual(da.__class__.__name__, ex[1])            
             self.assertEqual(len(da), len(ex[0]))            
             match ex[1]:
@@ -47,14 +47,14 @@ class Test_Darray(unittest.TestCase):
                     self.assertTrue(nd_equals(np.array(None), da.coding))
                     self.assertTrue(nd_equals(da.data, da.values))           
                 case 'Dcomplete':
-                    da_full = Darray.read_list(example[index-1][0])
+                    da_full = Darray.read_json(example[index-1][0])
                     self.assertIsNone(da.ref)
                     self.assertFalse(nd_equals(np.array(None), da.coding))
                     self.assertTrue(nd_equals(da_full.values, da.values))   
 
     def test_darray_dtype(self):
         
-        self.assertEqual(Darray.read_list([1, 'two'], dtype='object').to_list(),
+        self.assertEqual(Darray.read_json([1, 'two'], dtype='object').to_json(),
                          [1, 'two'])
         
     def test_darray_nested(self):
@@ -178,9 +178,10 @@ class Test_Xndarray(unittest.TestCase):
 
     def test_xndarray_simple(self):    
         
-        example =[{'var1': [['int32[kg]', [2, 2], [1, 2, 3, 4]], ['x', 'y']]},
+        example =[{'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]},
                   {'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
                             ['x', 'y']]},
+                  {'ranking': [['int32', [2, 2], [1, 2, 3, 4]], ['var1']]},
                   {'x': [['string', ['x1', 'x2']], {'test': 21}]},
                   {'y': [['string', ['y1', 'y2']]]},
                   {'z': [['string', ['z1', 'z2']], ['x']]},
@@ -192,16 +193,17 @@ class Test_Xndarray(unittest.TestCase):
                 ]
         
         for ex in example:
-            self.assertEqual(ex, Xndarray.read_dict(ex).to_dict()) 
-            xa = Xndarray.read_dict(ex)
+            self.assertEqual(ex, Xndarray.read_json(ex).to_json()) 
+            xa = Xndarray.read_json(ex)
             for format in ['full', 'complete']:
-                #print(xa.to_dict(format=format))
-                #print(Xndarray.read_dict(xa.to_dict(format=format)))
-                self.assertEqual(xa, Xndarray.read_dict(xa.to_dict(format=format)))      
+                #print(xa.to_json(format=format))
+                #print(Xndarray.read_json(xa.to_json(format=format)))
+                self.assertEqual(xa, Xndarray.read_json(xa.to_json(format=format)))      
 
-        example2 =[{'var1': [['int32[kg]', [2, 2], [1, 2, 3, 4]], ['x', 'y']]},
+        example2 =[{'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]},
                    {'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
                             ['x', 'y']]},
+                   {'ranking': [[[2, 2], [1, 2, 3, 4]], ['var1']]},
                    {'x': [[['x1', 'x2']], {'test': 21}]},
                    {'y': [[['y1', 'y2']]]},
                    {'z': [[['z1', 'z2']], ['x']]},
@@ -211,7 +213,7 @@ class Test_Xndarray(unittest.TestCase):
                   ]
         for ex, ex2 in zip(example, example2):
             #print(ex, ex2)
-            self.assertEqual(Xndarray.read_dict(ex2).to_dict(), ex)
+            self.assertEqual(Xndarray.read_json(ex2).to_json(), ex)
                                                    
 if __name__ == '__main__':    
     unittest.main(verbosity=2)

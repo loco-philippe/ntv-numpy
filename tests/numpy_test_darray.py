@@ -23,7 +23,7 @@ example =[
 ]
 
 for ex in example:
-    da = Darray.read_list(ex)
+    da = Darray.read_json(ex)
     print(type(da), len(da))
     print(da.data, da.ref, da.coding)
     print(da.values)
