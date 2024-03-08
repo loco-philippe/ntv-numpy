@@ -8,6 +8,7 @@ Created on Thu Mar  7 09:56:11 2024
 import json
 from ntv_numpy.ndarray import Ndarray
 from ntv_numpy.numpy_ntv_connector import NdarrayConnec
+from ntv_numpy.xndarray import Xndarray
 
 class Xdataset:
     ''' Representation of a multidimensional labelled Array'''
@@ -35,7 +36,7 @@ class Xdataset:
         for xnda in other.xnd:
             if not xnda in self:
                 return False
-         return True
+        return True
      
     def __len__(self):
         ''' len of values'''
@@ -56,106 +57,60 @@ class Xdataset:
         return self.__class__(self)      
 
     @property 
-    def dims(self):
+    def coordinates(self):
+        dims = set(self.dimensions)
+        return [xnda.name for xnda in self.xnd if set(xnda.dims) != dims and xnda.name in self.variables]
+
+    @property 
+    def dimensions(self):
         return [xnda.name for xnda in self.xnd if xnda.xtype == 'dimension']
+
+    @property 
+    def variables(self):
+        return [xnda.name for xnda in self.xnd if xnda.xtype == 'variable']
+
+    @property 
+    def metadata(self):
+        return [xnda.name for xnda in self.xnd if xnda.xtype == 'metadata']    
+
+    @property 
+    def additionals(self):
+        return [xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional']    
+
+    @property 
+    def var_group(self, name):
+        return [xnda.full_name for xnda in self.xnd if xnda.name == name]
+
+    @property 
+    def partition(self):
+        dic = {}
+        dic |= {'variables' : self.variables} if self.variables else {}
+        dic |= {'metadata' : self.metadata} if self.metadata else {}
+        dic |= {'dimensions' : self.dimensions} if self.dimensions else {}
+        return dic    
     
     @staticmethod
     def read_json(jso):
         if not isinstance(jso, dict):
             return None
-        jso = jso['xdataset'] if 'xdataset' in list(jso)[0] else jso
-        name = list(jso)[0]
-        uri = meta = dims = str_nda = None        
-        match jso[name]:
-            case str(meta) | dict(meta):...
-            case [str(uri)]:...
-            case [str(uri), list(dims)]:...
-            case [str(uri), dict(meta)] | [str(uri), str(meta)]:...
-            case [str(uri), list(dims), dict(meta)]:...
-            case [str(uri), list(dims), str(meta)]:...
-            case [list(str_nda)]:...
-            case [list(str_nda), list(dims)]:...
-            case [list(str_nda), dict(meta)] | [list(str_nda), str(meta)]:...
-            case [list(str_nda), list(dims), dict(meta)]:...
-            case [list(str_nda), list(dims), str(meta)]:...
-            case _:
-                return None
-        ntv_type = str_nda[0] if str_nda and isinstance(str_nda[0], str) else None
-        nda = NdarrayConnec.to_obj_ntv(str_nda) if str_nda else None
-        return Xndarray(name, ntv_type=ntv_type, uri=uri, dims=dims, meta=meta,
-                        nda=nda)
+        json_name, value = list(jso.items())[0]
+        name = Xndarray.split_json_name(json_name)[0]
+        xnd = [Xndarray.read_json({key: val}) for key, val in value.items()]
+        return Xdataset(name, xnd)
             
     def to_json(self, **kwargs):
-        ''' convert a Xndarray into json-value.
+        ''' convert a Xdataset into json-value.
 
         *Parameters*
 
-        - **notype** : Boolean (default False) - including data type if False
-        - **format** : string (default 'full') - representation format of the ndarray,
-        - **extension** : string (default None) - type extension
+        - **notype** : list of Boolean (default list of None) - including data type if False
+        - **format** : list of string (default list of 'full') - representation format of the ndarray,
         '''            
-        option = {'notype': False, 'extension': None, 'format': 'full', 
-                  'noshape': True} | kwargs
-        if not option['format'] in ['full', 'complete']: 
-            option['noshape'] = False
-        nda_str = NdarrayConnec.to_json_ntv(self.nda, typ=self.ntv_type, **option
-                                            )[0] if not self.nda is None else None
-        lis = [self.uri, nda_str, self.dims, self.meta]
-        lis = [val for val in lis if not val is None]
-        return {self.full_name : lis[0] if lis == [self.meta] else lis}
-
-    @property    
-    def mode(self):
-        match [self.nda, self.uri]:
-            case [None, str()]:
-                return 'relative'
-            case [None, None]:
-                return 'undefined'
-            case [_, None]:
-                return 'absolute'
-            case _:
-                return 'unconsistent'
-
-    @property    
-    def xtype(self):
-        match [self.dims, self.add_name, self.mode]:
-            case [_, _, 'undefined']:
-                return 'metadata'
-            case [None, '', _]:
-                return 'dimension'      
-            case [_, '', _]:
-                return 'variable'
-            case [_, str(), _]:
-                return 'additional'                
-            case _:
-                return 'unconsistent'
-    @property    
-    def full_name(self):
-        add_name = '.' + self.add_name if self.add_name else ''
-        return self.name + add_name
-    
-            
-    def _to_json(self):
-        return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri, 'nda': self.nda, 
-                'meta': self.meta, 'dims': self.dims}
-            
-            
-    @staticmethod
-    def split_json_name(string):
-        '''return a tuple with name, ntv_type from string'''
-        if not string or string == ':':
-            return (None, None)
-        spl = string.rsplit(':', maxsplit=1)
-        if len(spl) == 1:
-            return(string, None)
-        if spl[0] == '':
-            return (None, spl[1])
-        sp0 = spl[0][:-1] if spl[0][-1] == ':' else spl[0]
-        return (None if sp0 == '' else sp0, None if spl[1] == '' else spl[1])
-         
-    @staticmethod
-    def split_name(string):
-        '''return a tuple with name, add_name from string'''
-        spl = string.split('.', maxsplit=1)
-        spl = [spl[0], ''] if len(spl) < 2 else spl
-        return spl
+        notype = kwargs['notype'] if ('notype' in kwargs and 
+                    len(kwargs['notype']) == len(self)) else [False] * len(self)
+        format = kwargs['format'] if ('format' in kwargs and 
+                    len(kwargs['format']) == len(self)) else ['full'] * len(self)
+        dic_xnd = {}
+        for xna, notyp, forma in zip(self.xnd, notype, format):
+            dic_xnd |= xna.to_json(notype=notyp, format=forma)
+        return {self.name : dic_xnd}

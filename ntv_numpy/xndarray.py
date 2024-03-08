@@ -82,10 +82,10 @@ class Xndarray:
     def read_json(jso):
         if not (isinstance(jso, dict) and len(jso) == 1):
             return None
-        jso = jso['xndarray'] if 'xndarray' in list(jso)[0] else jso
-        name = list(jso)[0]
+        json_name, value = list(jso.items())[0]
+        full_name = Xndarray.split_json_name(json_name)[0]
         uri = meta = dims = str_nda = None        
-        match jso[name]:
+        match value:
             case str(meta) | dict(meta):...
             case [str(uri)]:...
             case [str(uri), list(dims)]:...
@@ -101,8 +101,8 @@ class Xndarray:
                 return None
         ntv_type = str_nda[0] if str_nda and isinstance(str_nda[0], str) else None
         nda = NdarrayConnec.to_obj_ntv(str_nda) if str_nda else None
-        return Xndarray(name, ntv_type=ntv_type, uri=uri, dims=dims, meta=meta,
-                        nda=nda)
+        return Xndarray(full_name, ntv_type=ntv_type, uri=uri, dims=dims, 
+                        meta=meta, nda=nda)
             
     def to_json(self, **kwargs):
         ''' convert a Xndarray into json-value.

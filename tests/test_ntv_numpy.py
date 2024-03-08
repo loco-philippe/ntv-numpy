@@ -17,7 +17,7 @@ import ntv_pandas as npd
 from ntv_numpy import read_json, to_json
 from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab
 from ntv_numpy import NdarrayConnec, XndarrayConnec
-from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray, NpUtil
+from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray, NpUtil, Xdataset
 
 from json_ntv import NtvConnector   
 SeriesConnec = NtvConnector.connector()['SeriesConnec']
@@ -217,7 +217,31 @@ class Test_Xndarray(unittest.TestCase):
         for (ex, mode, xtype), ex2 in zip(example, example2):
             #print(ex, ex2)
             self.assertEqual(Xndarray.read_json(ex2).to_json(), ex)
-                                                   
+
+class Test_Xdataset(unittest.TestCase):    
+
+    def test_xdataset_full(self):    
+        
+        example = {'test': {
+            'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+                     ['x', 'y']],
+            'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
+            'ranking': [[[2, 2], [1, 2, 3, 4]], ['var1']],
+            'x': [[['x1', 'x2']], {'test': 21}],
+            'y': [[['y1', 'y2']]],
+            'z': [[['z1', 'z2']], ['x']],
+            'x.mask': [[[True, False]], ['x']],
+            'x.variance': [[[0.1, 0.2]], ['x']],
+            'z.variance': [[[0.1, 0.2]], ['x']],
+            'unit': 'kg',
+            'info': {'example': 'everything'}}}
+        
+        notype = [True, False, True, True, True, True, True, True, True]
+        xds = Xdataset.read_json(example)
+        
+        self.assertEqual(xds.to_json(notype=notype), example)                                          
+        self.assertEqual(xds.dims, ['x', 'y'])
+        
 if __name__ == '__main__':    
     unittest.main(verbosity=2)
                                     
