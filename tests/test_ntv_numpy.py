@@ -194,7 +194,7 @@ class Test_Xndarray(unittest.TestCase):
                 ]
         
         for ex, mode, xtype in example:
-            self.assertEqual(ex, Xndarray.read_json(ex).to_json()) 
+            self.assertEqual(ex, Xndarray.read_json(ex).to_json(header=False)) 
             self.assertEqual(mode, Xndarray.read_json(ex).mode) 
             self.assertEqual(xtype, Xndarray.read_json(ex).xtype) 
             xa = Xndarray.read_json(ex)
@@ -216,7 +216,7 @@ class Test_Xndarray(unittest.TestCase):
                   ]
         for (ex, mode, xtype), ex2 in zip(example, example2):
             #print(ex, ex2)
-            self.assertEqual(Xndarray.read_json(ex2).to_json(), ex)
+            self.assertEqual(Xndarray.read_json(ex2).to_json(header=False), ex)
 
 class Test_Xdataset(unittest.TestCase):    
 
@@ -236,12 +236,19 @@ class Test_Xdataset(unittest.TestCase):
             'unit': 'kg',
             'info': {'example': 'everything'}}}
         
-        notype = [True, False, True, True, True, True, True, True, True]
-        xds = Xdataset.read_json(example)
+        notype = [True, False, True, True, True, True, True, True, True, True, True]
+        xds = Xdataset.read_json(example)        
+        self.assertEqual(xds.to_json(notype=notype, header=False), example)                                          
+        self.assertEqual(xds.dimensions, ('x', 'y'))
+        self.assertEqual(xds.partition, {'coordinates': ['ranking', 'z'],
+         'data_vars': ['var1', 'var2'], 'metadata': ['unit', 'info'],
+         'dimensions': ['x', 'y']})
         
-        self.assertEqual(xds.to_json(notype=notype), example)                                          
-        self.assertEqual(xds.dims, ['x', 'y'])
-        
+        xdim = Xdataset(xds[xds.dimensions])
+        self.assertEqual(xdim.to_json(novalue=True), {':xdataset': {
+                         'x': [['string', ['-']], {'test': 21}],
+                         'y': [['string', ['-']]]}})                                          
+
 if __name__ == '__main__':    
     unittest.main(verbosity=2)
                                     

@@ -51,11 +51,12 @@ class Ndarray:
         - **value** : ndarray value
         - **noshape** : Boolean (default True) - if False, only shape if dim > 1
         - **notype** : Boolean (default False) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
         - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
         '''
         option = {'typ': None, 'notype': False, 'extension': None, 'format': 'full',
-                  'noshape': True} | kwargs
+                  'noshape': True, 'novalue': False} | kwargs
         if value is None:
             return None
         if len(value) == 0:
@@ -71,7 +72,8 @@ class Ndarray:
         dtype = val_flat[0].__class__.__name__ if dtype == 'object' else dtype
         ntv_type = NpUtil.ntv_type(dtype, ntv_type, ext)
 
-        js_val = NpUtil.ntv_val(ntv_type, val_flat, option['format'])
+        js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(ntv_type, val_flat,
+                                                                option['format'])
         lis = [ntv_type if not option['notype'] else None, shape, js_val]
         return [val for val in lis if not val is None]
 
@@ -265,3 +267,17 @@ class NpUtil:
         if type_base in OBJECT:
             return 'object'
         return DTYPE.get(ntv_type, DTYPE.get(type_base, type_base))
+
+    @staticmethod
+    def json_ntv(name, ntv_type, ntv_value, **kwargs):
+        name = name if name else ''
+        option = {'encoded': False, 'header': True} | kwargs
+        if option['header'] or name:
+            typ = ':' + ntv_type if option['header'] else ''
+            jsn = {name + typ : ntv_value}
+        if option['encoded']:
+            return json.dumps(jsn)
+        return jsn
+
+class NdarrayError(Exception):
+    '''Multidimensional exception'''

@@ -27,7 +27,7 @@ It contains :
 
 import json
 import numpy as np
-from ntv_numpy.ndarray import Ndarray
+from ntv_numpy.ndarray import Ndarray, NpUtil
 
 from json_ntv import NtvConnector
 SeriesConnec = NtvConnector.connector().get('SeriesConnec')
@@ -71,6 +71,7 @@ def to_json(ndarray, **kwargs):
     - **header** : Boolean (default True) - including ndarray or xndarray type
     - **notype** : Boolean (default False) - including data type if True
     - **noshape** : Boolean (default True) - if False, only shape if dim > 1
+    - **novalue** : Boolean (default False) - including value if False
     - **name** : string (default None) - name of the ndarray
     - **typ** : string (default None) - type of the NTV object,
     - **format** : string (default 'full') - representation format of the ndarray,
@@ -82,18 +83,20 @@ def to_json(ndarray, **kwargs):
     '''
     option = {'encoded': False, 'format': 'full', 'header': True,
               'name': None, 'typ': None, 'extension':None, 'notype': False,
-              'noshape': True, 'add': None} | kwargs
+              'noshape': True, 'novalue': False, 'add': None} | kwargs
     if ndarray.__class__.__name__ == 'ndarray' and not kwargs.get('add'):
         jsn, nam, typ = NdarrayConnec.to_json_ntv(ndarray, **option)
     else:
         jsn, nam, typ = XndarrayConnec.to_json_ntv(ndarray, **option)
     name = nam if nam else ''
-    if option['header'] or name:
+    return NpUtil.json_ntv(name, typ, jsn, header=option['header'], 
+                           encoded=option['encoded'])
+    """if option['header'] or name:
         typ = ':' + typ if option['header'] else ''
         jsn = {name + typ : jsn}
     if option['encoded']:
         return json.dumps(jsn)
-    return jsn
+    return jsn"""
 
 def to_json_tab(ndarray, add=None, header=True):
     period = ndarray.shape
@@ -164,11 +167,12 @@ class NdarrayConnec(NtvConnector):
         - **value** : ndarray value
         - **noshape** : Boolean (default True) - if False, only shape if dim > 1
         - **notype** : Boolean (default False) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
         - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
         '''
         option = {'notype': False, 'extension': None, 'format': 'full',
-                  'noshape': True} | kwargs
+                  'noshape': True, 'novalue': False} | kwargs
         return (Ndarray.to_json(value, typ=typ, **option), name, 'ndarray')
 
 class XndarrayConnec(NtvConnector):
@@ -223,7 +227,3 @@ class XndarrayConnec(NtvConnector):
                'dims': dims, 'coords': coords, 'attrs': attrs}
         return ({key: val for key, val in dic.items() if not val is None},
                 name, 'xndarray')
-
-
-class NdarrayError(Exception):
-    '''Multidimensional exception'''

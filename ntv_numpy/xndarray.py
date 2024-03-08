@@ -6,7 +6,7 @@ Created on Thu Mar  7 09:56:11 2024
 """
 
 import json
-from ntv_numpy.ndarray import Ndarray
+from ntv_numpy.ndarray import Ndarray, NpUtil
 from ntv_numpy.numpy_ntv_connector import NdarrayConnec
 
 class Xndarray:
@@ -110,20 +110,26 @@ class Xndarray:
 
         *Parameters*
 
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including xndarray type
         - **notype** : Boolean (default False) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
         - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
         '''            
         option = {'notype': False, 'extension': None, 'format': 'full', 
-                  'noshape': True} | kwargs
+                  'noshape': True, 'header': True, 'encoded': False,
+                  'novalue': False} | kwargs
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
         nda_str = NdarrayConnec.to_json_ntv(self.nda, typ=self.ntv_type, **option
                                             )[0] if not self.nda is None else None
         lis = [self.uri, nda_str, self.dims, self.meta]
         lis = [val for val in lis if not val is None]
-        return {self.full_name : lis[0] if lis == [self.meta] else lis}
-
+        #jsn = {self.full_name : lis[0] if lis == [self.meta] else lis}
+        return NpUtil.json_ntv(self.full_name, 'ndarray', 
+                               lis[0] if lis == [self.meta] else lis, 
+                               header=option['header'], encoded=option['encoded'])
     @property    
     def mode(self):
         match [self.nda, self.uri]:

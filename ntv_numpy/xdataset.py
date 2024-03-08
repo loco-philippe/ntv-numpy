@@ -6,19 +6,25 @@ Created on Thu Mar  7 09:56:11 2024
 """
 
 import json
-from ntv_numpy.ndarray import Ndarray
+from ntv_numpy.ndarray import Ndarray, NpUtil
 from ntv_numpy.numpy_ntv_connector import NdarrayConnec
 from ntv_numpy.xndarray import Xndarray
 
 class Xdataset:
     ''' Representation of a multidimensional labelled Array'''
-    def __init__(self, name, xnd=None):    
-        if isinstance(name, Xdataset):
-            self.name = name.name
-            self.xnd = name.xnd
-            return
+    def __init__(self, xnd=None, name=None):    
         self.name = name
-        self.xnd = xnd if xnd else []
+        match xnd:
+            case list():
+                self.xnd = xnd
+            case xdat if isinstance(xdat, Xdataset): 
+                self.name = xdat.name
+                self.xnd  = xdat.xnd
+            case xnda if isinstance(xnda, Xndarray): 
+                self.xnd = [xnda]
+            case _:
+                self.xnd = []
+        return
         
     def __repr__(self):
         '''return classname and number of value'''
@@ -63,12 +69,6 @@ class Xdataset:
             return self[selec[0]][selec[1:]]
         return self.xnd[selec]
 
-    """def __getitem__(self, ind):
-        ''' return value item'''
-        if isinstance(ind, tuple):
-            return [self.xnd[i] for i in ind]
-        return self.xnd[ind]"""
-
     def __copy__(self):
         ''' Copy all the data '''
         return self.__class__(self)      
@@ -79,67 +79,77 @@ class Xdataset:
     
     @property 
     def names(self):
-        return [xnda.full_name for xnda in self.xnd]
+        return tuple(xnda.full_name for xnda in self.xnd)
     
     @property 
     def coordinates(self):
         dims = set(self.dimensions)
         if not dims:
             return []
-        return list(set([xnda.name for xnda in self.xnd 
+        return tuple(set([xnda.name for xnda in self.xnd 
                 if xnda.xtype == 'variable' and set(xnda.dims) != dims]))
 
     @property 
     def data_vars(self):
         dims = set(self.dimensions)
         if not dims:
-            return []
-        return [xnda.name for xnda in self.xnd 
-                if xnda.xtype == 'variable' and set(xnda.dims) == dims]
+            return self.variables
+        return tuple(xnda.name for xnda in self.xnd 
+                if xnda.xtype == 'variable' and set(xnda.dims) == dims)
     
     @property 
     def dimensions(self):
-        return [xnda.name for xnda in self.xnd if xnda.xtype == 'dimension']
+        return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'dimension')
 
     @property 
     def variables(self):
-        return [xnda.name for xnda in self.xnd if xnda.xtype == 'variable']
+        return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'variable')
 
     @property 
     def metadata(self):
-        return [xnda.name for xnda in self.xnd if xnda.xtype == 'metadata']    
+        return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'metadata') 
 
     @property 
     def additionals(self):
-        return [xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional']    
+        return tuple(xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional') 
 
     def var_group(self, name):
-        return [xnda.full_name for xnda in self.xnd if xnda.name == name]
+        return tuple(xnda.full_name for xnda in self.xnd if xnda.name == name)
 
+    def add_group(self, name):
+        return tuple(xnda.full_name for xnda in self.xnd if xnda.add_name == name)
+    
     @property 
     def partition(self):
         dic = {}
-        dic |= {'data_vars' : self.data_vars} if self.data_vars else {}
-        dic |= {'dimensions' : self.dimensions} if self.dimensions else {}
-        dic |= {'coordinates' : self.coordinates} if self.coordinates else {}
-        dic |= {'metadata' : self.metadata} if self.metadata else {}
+        dic |= {'data_vars' : list(self.data_vars)} if self.data_vars else {}
+        dic |= {'dimensions' : list(self.dimensions)} if self.dimensions else {}
+        dic |= {'coordinates' : list(self.coordinates)} if self.coordinates else {}
+        dic |= {'metadata' : list(self.metadata)} if self.metadata else {}
         return dic    
     
     @staticmethod
-    def read_json(jso):
+    def read_json(jso, header=True):
         if not isinstance(jso, dict):
             return None
-        json_name, value = list(jso.items())[0]
-        name = Xndarray.split_json_name(json_name)[0]
+        if header: 
+            json_name, value = list(jso.items())[0]
+            name = Xndarray.split_json_name(json_name)[0]
+        else:
+            value = jso
+            name = None
         xnd = [Xndarray.read_json({key: val}) for key, val in value.items()]
-        return Xdataset(name, xnd)
+        return Xdataset(xnd, name)
             
     def to_json(self, **kwargs):
         ''' convert a Xdataset into json-value.
 
         *Parameters*
 
+        - **encoded** : Boolean (default False) - json value if False else json text
+        - **header** : Boolean (default True) - including 'xdataset' type
         - **notype** : list of Boolean (default list of None) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
         - **format** : list of string (default list of 'full') - representation format of the ndarray,
         '''            
         notype = kwargs['notype'] if ('notype' in kwargs and 
@@ -148,5 +158,9 @@ class Xdataset:
                     len(kwargs['format']) == len(self)) else ['full'] * len(self)
         dic_xnd = {}
         for xna, notyp, forma in zip(self.xnd, notype, format):
-            dic_xnd |= xna.to_json(notype=notyp, format=forma)
-        return {self.name : dic_xnd}
+            dic_xnd |= xna.to_json(notype=notyp, novalue=kwargs.get('novalue', False),
+                                   format=forma, header=False)
+        #return {self.name : dic_xnd}
+        return NpUtil.json_ntv(self.name, 'xdataset', dic_xnd, 
+                               header=kwargs.get('header', True), 
+                               encoded=kwargs.get('encoded', False))
