@@ -8,7 +8,7 @@ Created on Sun Mar  3 11:14:40 2024
 import numpy as np
 from json_ntv import Ntv
 from abc import ABC, abstractmethod
-from copy import copy
+#from copy import copy
 import json
 
 class Darray(ABC):

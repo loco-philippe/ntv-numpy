@@ -9,24 +9,15 @@ import json
 from ntv_numpy.ndarray import Ndarray
 from ntv_numpy.numpy_ntv_connector import NdarrayConnec
 
-class Xndarray:
+class Xdataset:
     ''' Representation of a multidimensional labelled Array'''
-    def __init__(self, full_name, ntv_type=None, nda=None, uri=None, dims=None, meta=None):    
-        if isinstance(full_name, Xndarray):
-            self.name = full_name.name
-            self.add_name = full_name.add_name
-            self.ntv_type = full_name.ntv_type
-            self.nda = full_name.nda
-            self.uri = full_name.uri
-            self.dims = full_name.dims
-            self.meta = full_name.meta
+    def __init__(self, name, xnd=None):    
+        if isinstance(name, Xdataset):
+            self.name = name.name
+            self.xnd = name.xnd
             return
-        self.name, self.add_name = Xndarray.split_name(full_name)
-        self.ntv_type = ntv_type
-        self.nda = nda
-        self.uri = uri
-        self.dims = dims
-        self.meta = meta      
+        self.name = name
+        self.xnd = xnd if xnd else []
         
     def __repr__(self):
         '''return classname and number of value'''
@@ -38,51 +29,41 @@ class Xndarray:
 
     def __eq__(self, other):
         ''' equal if values are equal'''
-        if self.name != other.name:
-            return False
-        if self.ntv_type != other.ntv_type:
-            return False
-        if self.uri != other.uri:
-            return False        
-        if self.dims != other.dims:
-            return False
-        if self.meta != other.meta:
-            return False
-        if self.nda is None and other.nda is None:
-            return True
-        return Ndarray.equals(self.nda, other.nda)
-
+        for xnda in self.xnd:
+            if not xnda in other:
+                return False
+        for xnda in other.xnd:
+            if not xnda in self:
+                return False
+         return True
+     
     def __len__(self):
         ''' len of values'''
-        return len(self.nda) if self.nda is not None else 0
+        return len(self.xnd)
 
     def __contains__(self, item):
         ''' item of values'''
-        return item in self.nda if self.nda is not None else None
+        return item in self.xnd
 
     def __getitem__(self, ind):
         ''' return value item'''
-        if self.nda is None:
-            return None
         if isinstance(ind, tuple):
-            return [self.nda[i] for i in ind]
-            #return [copy(self.values[i]) for i in ind]
-        return self.nda[ind]
-        #return copy(self.values[ind])       
+            return [self.xnd[i] for i in ind]
+        return self.xnd[ind]
 
     def __copy__(self):
         ''' Copy all the data '''
         return self.__class__(self)      
 
     @property 
-    def shape(self):
-        return self.nda.shape if self.nda is not None else None
+    def dims(self):
+        return [xnda.name for xnda in self.xnd if xnda.xtype == 'dimension']
     
     @staticmethod
     def read_json(jso):
-        if not (isinstance(jso, dict) and len(jso) == 1):
+        if not isinstance(jso, dict):
             return None
-        jso = jso['xndarray'] if 'xndarray' in list(jso)[0] else jso
+        jso = jso['xdataset'] if 'xdataset' in list(jso)[0] else jso
         name = list(jso)[0]
         uri = meta = dims = str_nda = None        
         match jso[name]:

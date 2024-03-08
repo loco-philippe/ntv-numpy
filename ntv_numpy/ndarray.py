@@ -17,7 +17,7 @@ from json_ntv import Ntv
 #from abc import ABC, abstractmethod
 from copy import copy
 import json
-from json_ntv.ntv_connector import ShapelyConnec
+from json_ntv import ShapelyConnec
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray
 
 from json_ntv import NtvConnector

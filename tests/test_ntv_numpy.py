@@ -178,31 +178,34 @@ class Test_Xndarray(unittest.TestCase):
 
     def test_xndarray_simple(self):    
         
-        example =[{'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]},
-                  {'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
-                            ['x', 'y']]},
-                  {'ranking': [['int32', [2, 2], [1, 2, 3, 4]], ['var1']]},
-                  {'x': [['string', ['x1', 'x2']], {'test': 21}]},
-                  {'y': [['string', ['y1', 'y2']]]},
-                  {'z': [['string', ['z1', 'z2']], ['x']]},
-                  {'x.mask': [['boolean', [True, False]], ['x']]},
-                  {'x.variance': [['float64', [0.1, 0.2]], ['x']]},
-                  {'z.variance': [['float64', [0.1, 0.2]], ['x']]},
-                  {'unit': 'kg'},
-                  {'info': {'example': 'everything'}},
+        example =[[{'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+                                    ['x', 'y']]}, 'relative', 'variable'],
+                  [{'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]}, 'absolute', 'variable'],
+
+                  [{'ranking': [['int32', [2, 2], [1, 2, 3, 4]], ['var1']]}, 'absolute', 'variable'],
+                  [{'x': [['string', ['x1', 'x2']], {'test': 21}]}, 'absolute', 'dimension'],
+                  [{'y': [['string', ['y1', 'y2']]]}, 'absolute', 'dimension'],
+                  [{'z': [['string', ['z1', 'z2']], ['x']]}, 'absolute', 'variable'],
+                  [{'x.mask': [['boolean', [True, False]], ['x']]}, 'absolute', 'additional'],
+                  [{'x.variance': [['float64', [0.1, 0.2]], ['x']]}, 'absolute', 'additional'],
+                  [{'z.variance': [['float64', [0.1, 0.2]], ['x']]}, 'absolute', 'additional'],
+                  [{'unit': 'kg'}, 'undefined', 'metadata'],
+                  [{'info': {'example': 'everything'}}, 'undefined', 'metadata'],
                 ]
         
-        for ex in example:
+        for ex, mode, xtype in example:
             self.assertEqual(ex, Xndarray.read_json(ex).to_json()) 
+            self.assertEqual(mode, Xndarray.read_json(ex).mode) 
+            self.assertEqual(xtype, Xndarray.read_json(ex).xtype) 
             xa = Xndarray.read_json(ex)
             for format in ['full', 'complete']:
                 #print(xa.to_json(format=format))
                 #print(Xndarray.read_json(xa.to_json(format=format)))
                 self.assertEqual(xa, Xndarray.read_json(xa.to_json(format=format)))      
 
-        example2 =[{'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]},
-                   {'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+        example2 =[{'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
                             ['x', 'y']]},
+                   {'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]},
                    {'ranking': [[[2, 2], [1, 2, 3, 4]], ['var1']]},
                    {'x': [[['x1', 'x2']], {'test': 21}]},
                    {'y': [[['y1', 'y2']]]},
@@ -211,7 +214,7 @@ class Test_Xndarray(unittest.TestCase):
                    {'x.variance': [[[0.1, 0.2]], ['x']]},
                    {'z.variance': [[[0.1, 0.2]], ['x']]},
                   ]
-        for ex, ex2 in zip(example, example2):
+        for (ex, mode, xtype), ex2 in zip(example, example2):
             #print(ex, ex2)
             self.assertEqual(Xndarray.read_json(ex2).to_json(), ex)
                                                    
