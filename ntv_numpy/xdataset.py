@@ -46,19 +46,40 @@ class Xdataset:
         ''' item of values'''
         return item in self.xnd
 
-    def __getitem__(self, ind):
+    def __getitem__(self, selec):
+        ''' return ntv_value item with selec:
+            - string : name of the xndarray,
+            - list : recursive selector
+            - tuple : list of name or index '''
+        if selec is None or selec == '' or selec in ([], ()):
+            return self
+        if isinstance(selec, (list, tuple)) and len(selec) == 1:
+            selec = selec[0]
+        if isinstance(selec, tuple):
+            return [self[i] for i in selec]
+        if isinstance(selec, str):
+            return self.dic_xnd[selec]
+        if isinstance(selec, list):
+            return self[selec[0]][selec[1:]]
+        return self.xnd[selec]
+
+    """def __getitem__(self, ind):
         ''' return value item'''
         if isinstance(ind, tuple):
             return [self.xnd[i] for i in ind]
-        return self.xnd[ind]
+        return self.xnd[ind]"""
 
     def __copy__(self):
         ''' Copy all the data '''
         return self.__class__(self)      
 
     @property 
+    def dic_xnd(self):
+        return {xnda.full_name: xnda for xnda in self.xnd}
+    
+    @property 
     def names(self):
-        return [xnda.name for xnda in self.xnd]
+        return [xnda.full_name for xnda in self.xnd]
     
     @property 
     def coordinates(self):
@@ -98,10 +119,10 @@ class Xdataset:
     @property 
     def partition(self):
         dic = {}
-        dic |= {'coordinates' : self.coordinates} if self.coordinates else {}
         dic |= {'data_vars' : self.data_vars} if self.data_vars else {}
-        dic |= {'metadata' : self.metadata} if self.metadata else {}
         dic |= {'dimensions' : self.dimensions} if self.dimensions else {}
+        dic |= {'coordinates' : self.coordinates} if self.coordinates else {}
+        dic |= {'metadata' : self.metadata} if self.metadata else {}
         return dic    
     
     @staticmethod

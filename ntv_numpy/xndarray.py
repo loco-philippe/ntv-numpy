@@ -30,7 +30,8 @@ class Xndarray:
         
     def __repr__(self):
         '''return classname and number of value'''
-        return self.__class__.__name__ + '[' + str(len(self)) + ']'
+        #return self.__class__.__name__ + '[' + str(len(self)) + ']'
+        return self.__class__.__name__ + '[' + self.full_name + ']'
     
     def __str__(self):
         '''return json string format'''
