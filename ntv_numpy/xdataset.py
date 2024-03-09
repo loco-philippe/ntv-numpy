@@ -11,8 +11,20 @@ from ntv_numpy.numpy_ntv_connector import NdarrayConnec
 from ntv_numpy.xndarray import Xndarray
 
 class Xdataset:
-    ''' Representation of a multidimensional labelled Array'''
+    ''' Representation of a multidimensional Dataset
+
+    *Attributes :*
+    - **name** :  String - name of the Xdataset
+    - **xnd**:   list of Xndarray
+    '''
     def __init__(self, xnd=None, name=None):    
+        '''Xdataset constructor
+    
+            *Parameters*
+    
+            - **xnd** : Xdataset/Xndarray/list of Xndarray (default None),
+            - **name** : String (default None) - name of the Xdataset
+        '''
         self.name = name
         match xnd:
             case list():
@@ -35,7 +47,7 @@ class Xdataset:
         return json.dumps(self.to_json())
 
     def __eq__(self, other):
-        ''' equal if values are equal'''
+        '''equal if xnd are equal'''
         for xnda in self.xnd:
             if not xnda in other:
                 return False
@@ -45,18 +57,19 @@ class Xdataset:
         return True
      
     def __len__(self):
-        ''' len of values'''
+        '''number of Xndarray'''
         return len(self.xnd)
 
     def __contains__(self, item):
-        ''' item of values'''
+        ''' item of xnd'''
         return item in self.xnd
 
     def __getitem__(self, selec):
-        ''' return ntv_value item with selec:
-            - string : name of the xndarray,
-            - list : recursive selector
-            - tuple : list of name or index '''
+        ''' return Xndarray or tuple of Xndarray with selec:
+            - string : name of a xndarray,
+            - integer : index of a xndarray,
+            - index selector : index interval
+            - tuple : names or index '''
         if selec is None or selec == '' or selec in ([], ()):
             return self
         if isinstance(selec, (list, tuple)) and len(selec) == 1:
@@ -75,14 +88,17 @@ class Xdataset:
 
     @property 
     def dic_xnd(self):
+        '''dict of Xndarray'''
         return {xnda.full_name: xnda for xnda in self.xnd}
     
     @property 
     def names(self):
+        '''tuple of Xndarray names'''
         return tuple(xnda.full_name for xnda in self.xnd)
     
     @property 
     def coordinates(self):
+        '''tuple of coordinates Xndarray name'''
         dims = set(self.dimensions)
         if not dims:
             return []
@@ -91,6 +107,7 @@ class Xdataset:
 
     @property 
     def data_vars(self):
+        '''tuple of data_vars Xndarray name'''
         dims = set(self.dimensions)
         if not dims:
             return self.variables
@@ -99,18 +116,22 @@ class Xdataset:
     
     @property 
     def dimensions(self):
+        '''tuple of dimensions Xndarray name'''
         return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'dimension')
 
     @property 
     def variables(self):
+        '''tuple of variables Xndarray name'''
         return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'variable')
 
     @property 
     def metadata(self):
+        '''tuple of metadata name'''
         return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'metadata') 
 
     @property 
     def additionals(self):
+        '''tuple of additionals Xndarray name'''
         return tuple(xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional') 
 
     def var_group(self, name):
