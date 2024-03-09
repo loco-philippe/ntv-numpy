@@ -11,7 +11,7 @@ from decimal import Decimal
 import numpy as np
 from datetime import date, time
 import pandas as pd
-from shapely.geometry import Point, LinearRing
+from shapely.geometry import Point, LineString
 
 import ntv_pandas as npd
 from ntv_numpy import read_json, to_json
@@ -92,7 +92,8 @@ class Test_Ndarray(unittest.TestCase):
                   [[None, None], 'object'],
                   [[Decimal('10.5'), Decimal('20.5')], 'object'],
                   [[Point([1,2]), Point([3,4])], 'object'],
-                  #[[LinearRing([[0, 0], [0, 1], [1, 1]]), LinearRing([[0, 0], [0, 10], [10, 10]])], 'object'],
+                  [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
+                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'object'],
                   []]       
         for ex in example:
             if len(ex) == 0:
@@ -106,6 +107,55 @@ class Test_Ndarray(unittest.TestCase):
                     self.assertTrue(nd_equals(ex_rt, arr))            
                     #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
 
+    def test_ndarray_reverse_json(self):    
+        
+        example =[[[1,2], 'int64'],
+                  [[[1,2], [3,4]], 'int64'],
+                  [[True, False], 'bool'],
+                  [['1+2j', 1], 'complex'],
+                  [['test1', 'test2'], 'str_'], 
+                  [['2022-01-01T10:05:21.0002', '2023-01-01T10:05:21.0002'], 'datetime64'],
+                  [['2022-01-01', '2023-01-01'], 'datetime64[D]'],
+                  [['2022-01', '2023-01'], 'datetime64[M]'],
+                  [['2022', '2023'], 'datetime64[Y]'],
+                  #[[1,2], 'timedelta64[D]'],
+                  [[b'abc\x09', b'abc'], 'bytes'],
+                  [[time(10, 2, 3), time(20, 2, 3)], 'object'],
+                  [[{'one':1}, {'two':2}], 'object'],
+                  [[None, None], 'object'],
+                  [[Decimal('10.5'), Decimal('20.5')], 'object'],
+                  [[Point([1,2]), Point([3,4])], 'object'],
+                  [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
+                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'object']
+                  ]       
+        for ex in example:
+            arr = np.array(ex[0], dtype=ex[1])
+            for format in ['full', 'complete']:
+                js = to_json(arr, format=format)
+                #print(js)
+                ex_rt = read_json(js, header=False)
+                self.assertEqual(js, to_json(ex_rt, format=format))         
+                #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+
+    def test_ndarray_not_convert(self):    
+        
+        example =[[[time(10, 2, 3), time(20, 2, 3)], 'object'],
+                  [[{'one':1}, {'two':2}], 'object'],
+                  [[None, None], 'object'],
+                  [[Decimal('10.5'), Decimal('20.5')], 'object'],
+                  [[Point([1,2]), Point([3,4])], 'object'],
+                  [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
+                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'object']
+                  ]       
+        for ex in example:
+            arr = np.array(ex[0], dtype=ex[1])
+            for format in ['full', 'complete']:
+                js = to_json(arr, format=format)
+                ex_rt = read_json(js, header=False, convert=False)
+                #print(js, to_json(ex_rt, format=format))
+                self.assertEqual(js[':ndarray'][1], to_json(ex_rt, format=format)[':ndarray'][1])         
+                #print(js, to_json(ex_rt, format=format))
+                
     def test_ndarray_shape(self):    
         
         example =[[[1,2], 'int64'],
@@ -123,7 +173,8 @@ class Test_Ndarray(unittest.TestCase):
                   [[None, None], 'object'],
                   [[Decimal('10.5'), Decimal('20.5')], 'object'],
                   [[Point([1,2]), Point([3,4])], 'object'],
-                  #[[LinearRing([[0, 0], [0, 1], [1, 1]]), LinearRing([[0, 0], [0, 10], [10, 10]])], 'object']
+                  [[LineString([[0, 0], [0, 1], [1, 1]]), 
+                    LineString([[0, 0], [0, 10], [10, 10]])], 'object']
                   ]        
         for ex in example:
             arr = np.array(ex[0], dtype=ex[1]).reshape([2,1])
@@ -240,14 +291,15 @@ class Test_Xdataset(unittest.TestCase):
         xds = Xdataset.read_json(example)        
         self.assertEqual(xds.to_json(notype=notype, header=False), example)                                          
         self.assertEqual(xds.dimensions, ('x', 'y'))
-        self.assertEqual(xds.partition, {'coordinates': ['ranking', 'z'],
+        self.assertEqual(xds.partition, {'coordinates': ['z', 'ranking'],
          'data_vars': ['var1', 'var2'], 'metadata': ['unit', 'info'],
          'dimensions': ['x', 'y']})
         
         xdim = Xdataset(xds[xds.dimensions])
         self.assertEqual(xdim.to_json(novalue=True), {':xdataset': {
                          'x': [['string', ['-']], {'test': 21}],
-                         'y': [['string', ['-']]]}})                                          
+                         'y': [['string', ['-']]]}})        
+                                  
 
 if __name__ == '__main__':    
     unittest.main(verbosity=2)

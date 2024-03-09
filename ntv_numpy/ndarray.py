@@ -29,7 +29,15 @@ class Ndarray:
 
     @staticmethod
     def read_json(ntv_value, **kwargs):
-        ''' convert json ntv_value into a ndarray.'''
+        ''' convert json ntv_value into a ndarray.
+        
+        
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with 
+        non Numpy ntv_type into data with python type
+        '''
+        option = {'convert': True} | kwargs
         ntv_type = None
         shape = None
         match ntv_value[:-1]:
@@ -38,7 +46,8 @@ class Ndarray:
             case [str(ntv_type)]: ...
             case [list(shape)]: ...
         darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
-        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False)
+        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False, 
+                                     convert=option['convert'])
         return darray.values.reshape(shape)
 
     @staticmethod
@@ -143,7 +152,7 @@ class NpUtil:
     DT_OTHER = {val: key for key, val in OTHER_DT.items()}
 
     LOCATION_DT = {'point': 'Point',
-                   'line': 'LinearRing', 'polygon': 'Polygon'}
+                   'line': 'LineString', 'polygon': 'Polygon'}
     DT_LOCATION = {val: key for key, val in LOCATION_DT.items()}
 
     NUMBER_DT = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
@@ -157,7 +166,7 @@ class NpUtil:
     FORMAT_CLS = {'full': Dfull, 'complete': Dcomplete}
 
     @staticmethod
-    def convert(ntv_type, nda, tojson=True):
+    def convert(ntv_type, nda, tojson=True, convert=True):
         ''' convert ndarray with external NTVtype.
 
         *Parameters*
@@ -165,6 +174,8 @@ class NpUtil:
         - **ntv_type** : string - NTVtype deduced from the ndarray name_type and dtype,
         - **nda** : ndarray to be converted.
         - **tojson** : boolean (default True) - apply to json function
+        - **convert** : boolean (default True) - If True, convert json data with 
+        non Numpy ntv_type into data with python type
         '''
         if tojson:
             match ntv_type:
@@ -181,6 +192,31 @@ class NpUtil:
                 case _:
                     return nda
         else:
+            match [ntv_type, convert]:
+                case [None, _]:
+                    return nda
+                case [dat, _] if dat in NpUtil.DATATION_DT:
+                    return nda.astype(NpUtil.DATATION_DT[dat])
+                case [std, _] if std in NpUtil.OTHER_DT:
+                    return nda.astype(NpUtil.OTHER_DT[std])
+                case ['time', True]:
+                    return np.frompyfunc(datetime.time.fromisoformat, 1, 1)(nda)
+                case ['decimal64', True]:
+                    return np.frompyfunc(Decimal, 1, 1)(nda)
+                case ['ndarray', True]:
+                    return np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
+                case [python, _] if python in NpUtil.PYTHON_DT:
+                    return nda.astype('object')
+                case [connec, True] if connec in NpUtil.CONNECTOR_DT:
+                    return np.fromiter([NtvConnector.uncast(nd, None, connec)[0]
+                                        for nd in nda], dtype='object')
+                case [('point' | 'line' | 'polygon' | 'geometry'), True]:
+                    return np.frompyfunc(ShapelyConnec.to_geometry, 1, 1)(nda)
+                case [_, False]:
+                    return nda
+                case _:
+                    return nda.astype(NpUtil.dtype(ntv_type))
+        """else:
             match ntv_type:
                 case None:
                     return nda
@@ -202,8 +238,7 @@ class NpUtil:
                 case 'point' | 'line' | 'polygon' | 'geometry':
                     return np.frompyfunc(ShapelyConnec.to_geometry, 1, 1)(nda)
                 case _:
-                    return nda.astype(NpUtil.dtype(ntv_type))
-
+                    return nda.astype(NpUtil.dtype(ntv_type))"""
     @staticmethod
     def ntv_val(ntv_type, nda, form):
         ''' convert a simple ndarray into NTV json-value.
