@@ -11,7 +11,7 @@ from ntv_numpy.numpy_ntv_connector import NdarrayConnec
 
 class Xndarray:
     ''' Representation of a multidimensional labelled Array'''
-    def __init__(self, full_name, ntv_type=None, nda=None, uri=None, dims=None, meta=None):    
+    def __init__(self, full_name=None, ntv_type=None, nda=None, uri=None, dims=None, meta=None):    
         if isinstance(full_name, Xndarray):
             self.name = full_name.name
             self.add_name = full_name.add_name
@@ -81,9 +81,13 @@ class Xndarray:
     
     @staticmethod
     def read_json(jso):
-        if not (isinstance(jso, dict) and len(jso) == 1):
+        if not ((isinstance(jso, dict) and len(jso) == 1) or isinstance(jso, list)):
             return None
-        json_name, value = list(jso.items())[0]
+        if isinstance(jso, list):
+            json_name = None
+            value = jso
+        else:
+            json_name, value = list(jso.items())[0]
         full_name = Xndarray.split_json_name(json_name)[0]
         uri = meta = dims = str_nda = None        
         match value:
@@ -127,7 +131,7 @@ class Xndarray:
         lis = [self.uri, nda_str, self.dims, self.meta]
         lis = [val for val in lis if not val is None]
         #jsn = {self.full_name : lis[0] if lis == [self.meta] else lis}
-        return NpUtil.json_ntv(self.full_name, 'ndarray', 
+        return NpUtil.json_ntv(self.full_name, 'xndarray', 
                                lis[0] if lis == [self.meta] else lis, 
                                header=option['header'], encoded=option['encoded'])
     @property    
@@ -181,7 +185,9 @@ class Xndarray:
          
     @staticmethod
     def split_name(string):
-        '''return a tuple with name, add_name from string'''
+        '''return a list with name, add_name from string'''
+        if not string or string == '.':
+            return ['','']
         spl = string.split('.', maxsplit=1)
         spl = [spl[0], ''] if len(spl) < 2 else spl
         return spl

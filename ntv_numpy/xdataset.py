@@ -151,6 +151,8 @@ class Xdataset:
     
     @staticmethod
     def read_json(jso, header=True):
+        if isinstance(jso, list):
+            return Xdataset([Xndarray.read_json(jso[0])])
         if not isinstance(jso, dict):
             return None
         if header: 

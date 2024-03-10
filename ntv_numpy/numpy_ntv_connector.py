@@ -173,7 +173,7 @@ class NdarrayConnec(NtvConnector):
         '''
         option = {'notype': False, 'extension': None, 'format': 'full',
                   'noshape': True, 'novalue': False} | kwargs
-        return (Ndarray.to_json(value, typ=typ, **option), name, 'ndarray')
+        return (Ndarray.to_json(value, ntv_type=typ, **option), name, 'ndarray')
 
 class XndarrayConnec(NtvConnector):
 
