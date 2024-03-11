@@ -217,6 +217,7 @@ class Test_Ndarray(unittest.TestCase):
                    ['duration', ['P3Y6M4DT12H30M5S', 'P3Y6M4DT12H30M']],
                    ['uri', ['geo:13.4125,103.86673', 'geo:13.41,103.86']],
                    ['email', ['John Doe <jdoe@mac.example>', 'Anna Doe <adoe@mac.example>']],
+                   #['$org.propertyID', ['NO2', 'NH3']]
                    ['ipv4', ['192.168.1.1', '192.168.2.5']]
                    ]
         for ex in example:
@@ -238,9 +239,28 @@ class Test_Xndarray(unittest.TestCase):
 
     def test_xndarray_simple(self):    
         
+        example =[
+                  {'y': [['string', ['y1', 'y2']]]},
+                  
+                ]
+        for ex in example:
+            self.assertEqual(ex, Xndarray.read_json(ex).to_json(header=False))         
+            
+        example =[
+                  {':xndarray': [['int64[kg]', [10, 20]]]},
+                  {':xndarray': [['month', [1, 2]]]},
+                  
+                ]
+        for ex in example:
+            self.assertEqual(ex, Xndarray.read_json(ex).to_json())    
+            xnd = Xndarray.read_json(ex)
+            self.assertEqual(xnd, Xndarray.read_json(xnd.to_json()))    
+            
+    def test_xndarray_dataset(self):    
+        
         example =[[{'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
                                     ['x', 'y']]}, 'relative', 'variable'],
-                  [{'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]}, 'absolute', 'variable'],
+                  [{'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]}, 'absolute', 'variable'],
 
                   [{'ranking': [['int32', [2, 2], [1, 2, 3, 4]], ['var1']]}, 'absolute', 'variable'],
                   [{'x': [['string', ['x1', 'x2']], {'test': 21}]}, 'absolute', 'dimension'],
