@@ -118,6 +118,7 @@ class Xndarray:
         - **header** : Boolean (default True) - including xndarray type
         - **notype** : Boolean (default False) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
         '''            

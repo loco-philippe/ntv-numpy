@@ -173,16 +173,18 @@ class Xdataset:
         - **header** : Boolean (default True) - including 'xdataset' type
         - **notype** : list of Boolean (default list of None) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
+        - **noshape** : Boolean (default False) - if True, without shape if dim < 1
         - **format** : list of string (default list of 'full') - representation format of the ndarray,
         '''            
         notype = kwargs['notype'] if ('notype' in kwargs and 
                     len(kwargs['notype']) == len(self)) else [False] * len(self)
         format = kwargs['format'] if ('format' in kwargs and 
                     len(kwargs['format']) == len(self)) else ['full'] * len(self)
+        noshape = kwargs.get('noshape', False)
         dic_xnd = {}
         for xna, notyp, forma in zip(self.xnd, notype, format):
             dic_xnd |= xna.to_json(notype=notyp, novalue=kwargs.get('novalue', False),
-                                   format=forma, header=False)
+                                   noshape=noshape, format=forma, header=False)
         #return {self.name : dic_xnd}
         return NpUtil.json_ntv(self.name, 'xdataset', dic_xnd, 
                                header=kwargs.get('header', True), 

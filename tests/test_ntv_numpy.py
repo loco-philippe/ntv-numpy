@@ -265,7 +265,7 @@ class Test_Xndarray(unittest.TestCase):
 
         example2 =[{'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
                             ['x', 'y']]},
-                   {'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]},
+                   {'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]},
                    {'ranking': [[[2, 2], [1, 2, 3, 4]], ['var1']]},
                    {'x': [[['x1', 'x2']], {'test': 21}]},
                    {'y': [[['y1', 'y2']]]},
@@ -298,14 +298,14 @@ class Test_Xdataset(unittest.TestCase):
         
         notype = [True, False, True, True, True, True, True, True, True, True, True]
         xds = Xdataset.read_json(example)        
-        self.assertEqual(xds.to_json(notype=notype, header=False), example)                                          
+        self.assertEqual(xds.to_json(notype=notype, noshape=True, header=False), example)                                          
         self.assertEqual(xds.dimensions, ('x', 'y'))
         self.assertEqual(xds.partition, {'coordinates': ['z', 'ranking'],
          'data_vars': ['var1', 'var2'], 'metadata': ['unit', 'info'],
          'dimensions': ['x', 'y']})
         
         xdim = Xdataset(xds[xds.dimensions])
-        self.assertEqual(xdim.to_json(novalue=True), {':xdataset': {
+        self.assertEqual(xdim.to_json(novalue=True, noshape=True), {':xdataset': {
                          'x': [['string', ['-']], {'test': 21}],
                          'y': [['string', ['-']]]}})        
                                   

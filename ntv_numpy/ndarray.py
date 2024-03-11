@@ -58,7 +58,7 @@ class Ndarray:
 
         - **ntv_type** : string (default None) - ntv_type of the ndarray object,
         - **value** : ndarray value
-        - **noshape** : Boolean (default True) - if False, only shape if dim > 1
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **notype** : Boolean (default False) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
         - **format** : string (default 'full') - representation format of the ndarray,
