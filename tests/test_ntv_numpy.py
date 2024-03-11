@@ -6,6 +6,7 @@ The `test_ntv_numpy` module contains the unit tests (class unittest) for the
 `Darray`, `Ndarray` and `Xndarray` classes.
 """
 import unittest
+import requests
 
 from decimal import Decimal
 import numpy as np
@@ -51,6 +52,7 @@ class Test_Darray(unittest.TestCase):
                     self.assertIsNone(da.ref)
                     self.assertFalse(nd_equals(np.array(None), da.coding))
                     self.assertTrue(nd_equals(da_full.values, da.values))   
+        
 
     def test_darray_dtype(self):
         
@@ -224,7 +226,13 @@ class Test_Ndarray(unittest.TestCase):
                 #print(js)
                 ex_rt = read_json(js, header=False)
                 #print(ex_rt)
-                self.assertTrue(nd_equals(ex_rt, arr))            
+                self.assertTrue(nd_equals(ex_rt, arr))    
+        
+    def test_ndarray_uri(self):    
+        file = 'https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example/ex_ndarray.ntv'
+        jsn = requests.get(file, allow_redirects=True).content.decode()
+        nda = read_json(jsn)
+        self.assertEqual(to_json(nda), {':ndarray': ['int64', [2, 2], [1, 2, 3, 4]]})
 
 class Test_Xndarray(unittest.TestCase):    
 
