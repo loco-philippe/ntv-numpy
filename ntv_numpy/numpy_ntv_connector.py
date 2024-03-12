@@ -28,6 +28,7 @@ It contains :
 import json
 import numpy as np
 from ntv_numpy.ndarray import Ndarray, NpUtil
+from ntv_numpy.xndarray import Xndarray
 
 from json_ntv import NtvConnector
 SeriesConnec = NtvConnector.connector().get('SeriesConnec')
@@ -141,19 +142,19 @@ def read_json_tab(js):
 
 class NdarrayConnec(NtvConnector):
 
-    '''NTV connector for pandas DataFrame.
-
-    One static methods is included:
-
-    - to_listidx: convert a DataFrame in categorical data
-    '''
+    '''NTV connector for Numpy ndarray.'''
 
     clas_obj = 'ndarray'
     clas_typ = 'ndarray'
 
     @staticmethod
     def to_obj_ntv(ntv_value, **kwargs):
-        ''' convert json ntv_value into a ndarray.'''
+        ''' convert json ntv_value into a ndarray.
+        
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with 
+        non Numpy ntv_type into data with python type'''
         return Ndarray.read_json(ntv_value, **kwargs)
 
     @staticmethod
@@ -168,23 +169,20 @@ class NdarrayConnec(NtvConnector):
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **notype** : Boolean (default False) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
+        - **noname** : Boolean (default False) - including data type and name if False
         - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
         '''
         option = {'notype': False, 'extension': None, 'format': 'full',
-                  'noshape': True, 'novalue': False} | kwargs
+                  'noshape': True, 'novalue': False, 'noname': False} | kwargs
+        option['noname'] = True
         return (Ndarray.to_json(value, ntv_type=typ, **option), name, 'ndarray')
 
 class XndarrayConnec(NtvConnector):
 
-    '''NTV connector for xndarray.
+    '''NTV connector for xndarray.'''
 
-    One static methods is included:
-
-    - to_listidx: convert a DataFrame in categorical data
-    '''
-
-    clas_obj = 'xndarray'
+    clas_obj = 'Xndarray'
     clas_typ = 'xndarray'
 
     @staticmethod
@@ -197,10 +195,12 @@ class XndarrayConnec(NtvConnector):
         - **alias** : boolean (default False) - if True, alias dtype else default dtype
         - **annotated** : boolean (default False) - if True, NTV names are not included.
         '''
-        np_data = NdarrayConnec.to_obj_ntv(ntv_value['data'])
+        return Xndarray.read_json(ntv_value, **kwargs)
+
+        """np_data = NdarrayConnec.to_obj_ntv(ntv_value['data'])
         add = {key: val for key, val in ntv_value.items()
                 if key in ('attrs', 'dims', 'coords')}
-        return (np_data, add) if add and not kwargs['noadd'] else np_data
+        return (np_data, add) if add and not kwargs['noadd'] else np_data"""
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
@@ -211,19 +211,29 @@ class XndarrayConnec(NtvConnector):
         - **typ** : string (default None) - type of the NTV object,
         - **name** : string (default None) - name of the NTV object
         - **value** : ndarray values
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including xndarray type
         - **notype** : Boolean (default False) - including data type if False
-        - **name** : string (default None) - name of the ndarray
+        - **novalue** : Boolean (default False) - including value if False
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
+        - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
-        - **add** : dict (default None) - additional data :
-            - **attrs** : dict (default none) - metadata
-            - **dims** : array (default none) - name of axis
-            - **coords** : dict (default none) - dict of 'xndarray'
-        '''
-        add = kwargs.get('add')
+        '''            
+        option = {'notype': False, 'extension': None, 'format': 'full', 
+                  'noshape': True, 'header': True, 'encoded': False,
+                  'novalue': False} | kwargs
+        if not option['format'] in ['full', 'complete']: 
+            option['noshape'] = False
+        option['noname'] = True
+        #option['header'] = False
+        #return (Xndarray.to_json(value, ntv_type=typ, **option), name, 'xndarray')
+        return (Xndarray.to_json(value, **option), value.full_name, 'xndarray')
+
+        """add = kwargs.get('add')
         dims = add.get('dims') if add else None
         attrs = add.get('attrs') if add else None
         coords = add.get('coords') if add else None
         dic = {'data': NdarrayConnec.to_json_ntv(value, kwargs=kwargs)[0],
                'dims': dims, 'coords': coords, 'attrs': attrs}
         return ({key: val for key, val in dic.items() if not val is None},
-                name, 'xndarray')
+                name, 'xndarray')"""

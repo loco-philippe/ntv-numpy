@@ -7,7 +7,7 @@ Created on Thu Mar  7 09:56:11 2024
 
 import json
 from ntv_numpy.ndarray import Ndarray, NpUtil
-from ntv_numpy.numpy_ntv_connector import NdarrayConnec
+#from ntv_numpy.numpy_ntv_connector import NdarrayConnec
 
 class Xndarray:
     ''' Representation of a multidimensional labelled Array'''
@@ -80,7 +80,16 @@ class Xndarray:
         return self.nda.shape if self.nda is not None else None
     
     @staticmethod
-    def read_json(jso):
+    def read_json(jso, **kwargs):
+        ''' convert json data into a Xndarray.
+        
+        
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with 
+        non Numpy ntv_type into data with python type
+        '''
+        option = {'convert': True} | kwargs
         if not ((isinstance(jso, dict) and len(jso) == 1) or isinstance(jso, list)):
             return None
         if isinstance(jso, list):
@@ -105,7 +114,8 @@ class Xndarray:
             case _:
                 return None
         ntv_type = str_nda[0] if str_nda and isinstance(str_nda[0], str) else None
-        nda = NdarrayConnec.to_obj_ntv(str_nda) if str_nda else None
+        nda = Ndarray.read_json(str_nda, **option) if str_nda else None
+        #nda = NdarrayConnec.to_obj_ntv(str_nda, ) if str_nda else None
         return Xndarray(full_name, ntv_type=ntv_type, uri=uri, dims=dims, 
                         meta=meta, nda=nda)
             
@@ -116,6 +126,7 @@ class Xndarray:
 
         - **encoded** : Boolean (default False) - json-value if False else json-text
         - **header** : Boolean (default True) - including xndarray type
+        - **noname** : Boolean (default False) - including data type and name if False
         - **notype** : Boolean (default False) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
@@ -124,15 +135,20 @@ class Xndarray:
         '''            
         option = {'notype': False, 'extension': None, 'format': 'full', 
                   'noshape': True, 'header': True, 'encoded': False,
-                  'novalue': False} | kwargs
+                  'novalue': False, 'noname': False} | kwargs
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
-        nda_str = NdarrayConnec.to_json_ntv(self.nda, typ=self.ntv_type, **option
-                                            )[0] if not self.nda is None else None
+        nda_str = Ndarray.to_json(self.nda, ntv_type=self.ntv_type, 
+                                  **option) if not self.nda is None else None
+        #nda_str = NdarrayConnec.to_json_ntv(self.nda, typ=self.ntv_type, **option
+        #                                    )[0] if not self.nda is None else None
         lis = [self.uri, nda_str, self.dims, self.meta]
         lis = [val for val in lis if not val is None]
         #jsn = {self.full_name : lis[0] if lis == [self.meta] else lis}
-        return NpUtil.json_ntv(self.full_name, 'xndarray', 
+        #name = None if option['noname'] else self.full_name
+        #typ = None if option['noname'] else 'xndarray'
+        return NpUtil.json_ntv(None if option['noname'] else self.full_name,
+                               None if option['noname'] else 'xndarray', 
                                lis[0] if lis == [self.meta] else lis, 
                                header=option['header'], encoded=option['encoded'])
     @property    

@@ -291,8 +291,8 @@ class NpUtil:
         name = name if name else ''
         option = {'encoded': False, 'header': True} | kwargs
         if option['header'] or name:
-            typ = ':' + ntv_type if option['header'] else ''
-            jsn = {name + typ : ntv_value}
+            typ = ':' + ntv_type if option['header'] and ntv_type else ''
+            jsn = {name + typ : ntv_value} if name + typ else ntv_value
         else:
             jsn = ntv_value
         if option['encoded']:

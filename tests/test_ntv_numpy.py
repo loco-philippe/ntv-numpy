@@ -249,7 +249,11 @@ class Test_Xndarray(unittest.TestCase):
         example =[
                   {':xndarray': [['int64[kg]', [10, 20]]]},
                   {':xndarray': [['month', [1, 2]]]},
-                  
+                  {':xndarray': [['ipv4', ['192.168.1.1', '192.168.2.5']]]},
+                  {':xndarray': [['json', [1, 'two', {'three': 3}]]]},
+                  {':xndarray': [['base16', ['1F23', '236A5E']]]},
+                  {':xndarray': [['uri', ['geo:13.4125,103.86673', 'geo:13.41,103.86']]]},
+                  {':xndarray': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv']}   
                 ]
         for ex in example:
             self.assertEqual(ex, Xndarray.read_json(ex).to_json())    
