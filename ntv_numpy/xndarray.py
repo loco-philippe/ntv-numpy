@@ -22,6 +22,7 @@ class Xndarray:
             self.meta = full_name.meta
             return
         self.name, self.add_name = Xndarray.split_name(full_name)
+        ntv_type = NpUtil.nda_ntv_type(nda) if not (ntv_type or nda is None) else ntv_type
         self.ntv_type = ntv_type
         self.nda = nda
         self.uri = uri

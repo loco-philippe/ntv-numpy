@@ -273,6 +273,13 @@ class NpUtil:
             case _:
                 return Ndarray.add_ext(dtype, ext)
 
+    @staticmethod 
+    def nda_ntv_type(nda, ntv_type=None, ext=None):
+        '''return ntv_type from an ndarray'''
+        dtype = nda.dtype.name
+        dtype = nda.flat[0].__class__.__name__ if dtype == 'object' else dtype
+        return NpUtil.ntv_type(dtype, ntv_type, ext)
+
     @staticmethod
     def dtype(ntv_type, convert=True):
         ''' return dtype from ntv_type'''
