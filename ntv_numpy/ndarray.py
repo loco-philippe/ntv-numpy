@@ -19,10 +19,8 @@ from copy import copy
 import json
 from json_ntv import ShapelyConnec, Datatype
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray
-
+import ntv_pandas
 from json_ntv import NtvConnector
-SeriesConnec = NtvConnector.connector().get('SeriesConnec')
-DataFrameConnec = NtvConnector.connector().get('DataFrameConnec')
 
 
 class Ndarray:
@@ -100,6 +98,8 @@ class Ndarray:
         if len(npself) != len(npother):
             return False
         if isinstance(npself[0], (np.ndarray, pd.Series, pd.DataFrame)):
+            SeriesConnec = NtvConnector.connector().get('SeriesConnec')
+            DataFrameConnec = NtvConnector.connector().get('DataFrameConnec')
             equal = {np.ndarray: Ndarray.equals,
                      pd.Series: SeriesConnec.equals,
                      pd.DataFrame: DataFrameConnec.equals}
