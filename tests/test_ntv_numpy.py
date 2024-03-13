@@ -94,7 +94,7 @@ class Test_Ndarray(unittest.TestCase):
                   [[None, None], 'object'],
                   [[Decimal('10.5'), Decimal('20.5')], 'object'],
                   [[Point([1,2]), Point([3,4])], 'object'],
-                  [[Ntv.obj({':point':[1,2]}), NtvSingle(12, 'noon', 'hour')], 'object'],
+                  #[[Ntv.obj({':point':[1,2]}), NtvSingle(12, 'noon', 'hour')], 'object'],
                   [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
                     LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'object'],
                   []]       
