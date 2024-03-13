@@ -94,7 +94,7 @@ class Xdataset:
     @property 
     def names(self):
         '''tuple of Xndarray names'''
-        return tuple(xnda.full_name for xnda in self.xnd)
+        return tuple(sorted(xnda.full_name for xnda in self.xnd))
     
     @property 
     def coordinates(self):
@@ -102,8 +102,8 @@ class Xdataset:
         dims = set(self.dimensions)
         if not dims:
             return []
-        return tuple(set([xnda.name for xnda in self.xnd 
-                if xnda.xtype == 'variable' and set(xnda.dims) != dims]))
+        return tuple(sorted(set([xnda.name for xnda in self.xnd 
+                if xnda.xtype == 'variable' and set(xnda.dims) != dims])))
 
     @property 
     def data_vars(self):
@@ -111,34 +111,34 @@ class Xdataset:
         dims = set(self.dimensions)
         if not dims:
             return self.variables
-        return tuple(xnda.name for xnda in self.xnd 
-                if xnda.xtype == 'variable' and set(xnda.dims) == dims)
+        return tuple(sorted(xnda.name for xnda in self.xnd 
+                if xnda.xtype == 'variable' and set(xnda.dims) == dims))
     
     @property 
     def dimensions(self):
         '''tuple of dimensions Xndarray name'''
-        return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'dimension')
+        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'dimension'))
 
     @property 
     def variables(self):
         '''tuple of variables Xndarray name'''
-        return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'variable')
+        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'variable'))
 
     @property 
     def metadata(self):
         '''tuple of metadata name'''
-        return tuple(xnda.name for xnda in self.xnd if xnda.xtype == 'metadata') 
+        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'metadata'))
 
     @property 
     def additionals(self):
         '''tuple of additionals Xndarray name'''
-        return tuple(xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional') 
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional'))
 
     def var_group(self, name):
-        return tuple(xnda.full_name for xnda in self.xnd if xnda.name == name)
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.name == name))
 
     def add_group(self, name):
-        return tuple(xnda.full_name for xnda in self.xnd if xnda.add_name == name)
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.add_name == name))
     
     @property 
     def partition(self):

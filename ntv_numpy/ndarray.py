@@ -22,7 +22,6 @@ from ntv_numpy.data_array import Dfull, Dcomplete, Darray
 import ntv_pandas
 from json_ntv import NtvConnector
 
-
 class Ndarray:
 
     @staticmethod
@@ -75,9 +74,7 @@ class Ndarray:
 
         ntv_type, ext = Ndarray.split_typ(option['ntv_type'])
         ext = ext if ext else option['extension']
-        dtype = val_flat.dtype.name
-        dtype = val_flat[0].__class__.__name__ if dtype == 'object' else dtype
-        ntv_type = NpUtil.ntv_type(dtype, ntv_type, ext)
+        ntv_type = NpUtil.nda_ntv_type(val_flat, ntv_type, ext)
 
         js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(ntv_type, val_flat,
                                                                 option['format'])

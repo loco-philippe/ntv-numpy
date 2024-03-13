@@ -26,7 +26,7 @@ class Xndarray:
         self.ntv_type = ntv_type
         self.nda = nda
         self.uri = uri
-        self.dims = dims
+        self.dims = sorted(dims) if dims else dims
         self.meta = meta      
         
     def __repr__(self):

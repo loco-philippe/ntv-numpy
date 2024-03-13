@@ -20,7 +20,7 @@ from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab
 from ntv_numpy import NdarrayConnec, XndarrayConnec
 from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray, NpUtil, Xdataset
 
-from json_ntv import NtvConnector   
+from json_ntv import NtvConnector, Ntv, NtvSingle, NtvList
 SeriesConnec = NtvConnector.connector()['SeriesConnec']
 DataFrameConnec = NtvConnector.connector()['DataFrameConnec']
 nd_equals = Ndarray.equals
@@ -94,6 +94,7 @@ class Test_Ndarray(unittest.TestCase):
                   [[None, None], 'object'],
                   [[Decimal('10.5'), Decimal('20.5')], 'object'],
                   [[Point([1,2]), Point([3,4])], 'object'],
+                  [[Ntv.obj({':point':[1,2]}), NtvSingle(12, 'noon', 'hour')], 'object'],
                   [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
                     LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'object'],
                   []]       
@@ -324,8 +325,8 @@ class Test_Xdataset(unittest.TestCase):
         xds = Xdataset.read_json(example)        
         self.assertEqual(xds.to_json(notype=notype, noshape=True, header=False), example)                                          
         self.assertEqual(xds.dimensions, ('x', 'y'))
-        self.assertEqual(xds.partition, {'coordinates': ['z', 'ranking'],
-         'data_vars': ['var1', 'var2'], 'metadata': ['unit', 'info'],
+        self.assertEqual(xds.partition, {'coordinates': ['ranking', 'z'],
+         'data_vars': ['var1', 'var2'], 'metadata': ['info', 'unit'],
          'dimensions': ['x', 'y']})
         
         xdim = Xdataset(xds[xds.dimensions])
