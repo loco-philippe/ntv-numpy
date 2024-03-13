@@ -82,8 +82,7 @@ class Xndarray:
     
     @staticmethod
     def read_json(jso, **kwargs):
-        ''' convert json data into a Xndarray.
-        
+        ''' convert json data into a Xndarray. 
         
         *Parameters*
 
