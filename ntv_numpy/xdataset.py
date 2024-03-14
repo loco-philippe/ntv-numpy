@@ -85,10 +85,25 @@ class Xdataset:
         ''' Copy all the data '''
         return self.__class__(self)      
 
+    def dims(self, var):
+        if not var in self.variables: 
+            return None
+        list_dims = []
+        for link in self[var].links:
+            list_dims += self.dims(link) if self.dims(link) else [link]
+        return list_dims
+
+    def validity(self):
+        # 'undefined' if not mode 'absolute' for each
+        # 'inconsistent' if undef_links or undef_vars
+        # 'valid' else
+        return 'valid'
+    
     @property 
     def xtype(self):
         '''Xdataset type'''
-        if self.metadata and not (self.additionals or self.variables or self.dimensions):
+        if self.metadata and not (self.additionals or self.variables or 
+                                  self.namedarrays):
             return 'meta'        
         match len(self.data_vars):
             case 0:
@@ -118,7 +133,8 @@ class Xdataset:
         '''tuple of dimensions Xndarray names'''
         dimable = []
         for var in self.variables:
-            dimable += self[var].dims
+            #dimable += self[var].links
+            dimable += self.dims(var)
         return tuple(sorted(set([nda for nda in dimable if nda in self.namedarrays])))
     
     @property 
@@ -128,7 +144,8 @@ class Xdataset:
         if not dims:
             return []
         return tuple(sorted(set([xnda.name for xnda in self.xnd 
-                if xnda.xtype == 'variable' and set(xnda.dims) != dims])))
+                if xnda.xtype == 'variable' and set(xnda.links) != dims])))
+                #if xnda.xtype == 'variable' and set(self.dims(xnda.name)) != dims])))
 
     @property 
     def data_vars(self):
@@ -137,7 +154,7 @@ class Xdataset:
         if not dims:
             return self.variables
         return tuple(sorted(xnda.name for xnda in self.xnd 
-                if xnda.xtype == 'variable' and set(xnda.dims) == dims))
+                if xnda.xtype == 'variable' and set(xnda.links) == dims))
     
     @property 
     def namedarrays(self):
@@ -148,6 +165,18 @@ class Xdataset:
     def variables(self):
         '''tuple of variables Xndarray name'''
         return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'variable'))
+
+    @property 
+    def undef_vars(self):
+        '''tuple of variables Xndarray name with inconsistent shape'''
+        return tuple(sorted([var for var in self.variables if self[var].shape != 
+                             [len(self[dim]) for dim in self.dims(var)]]))
+                             #[len(self[dim]) for dim in self[var].links]]))   
+    @property 
+    def undef_links(self):
+        '''tuple of variables Xndarray name with inconsistent links'''
+        return tuple(sorted([link for var in self.variables for link in self[var].links 
+                             if not link in self.names]))
 
     @property 
     def metadata(self):

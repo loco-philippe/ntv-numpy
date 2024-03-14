@@ -11,7 +11,7 @@ from ntv_numpy.ndarray import Ndarray, NpUtil
 
 class Xndarray:
     ''' Representation of a multidimensional labelled Array'''
-    def __init__(self, full_name=None, nda=None, ntv_type=None, dims=None, 
+    def __init__(self, full_name=None, nda=None, ntv_type=None, links=None, 
                  uri=None, meta=None):    
         if isinstance(full_name, Xndarray):
             self.name = full_name.name
@@ -19,7 +19,7 @@ class Xndarray:
             self.ntv_type = full_name.ntv_type
             self.nda = full_name.nda
             self.uri = full_name.uri
-            self.dims = full_name.dims
+            self.links = full_name.links
             self.meta = full_name.meta
             return
         self.name, self.add_name = Xndarray.split_name(full_name)
@@ -27,7 +27,7 @@ class Xndarray:
         self.ntv_type = ntv_type
         self.nda = nda
         self.uri = uri
-        self.dims = sorted(dims) if dims else dims
+        self.links = sorted(links) if links else links
         self.meta = meta      
         
     def __repr__(self):
@@ -47,7 +47,7 @@ class Xndarray:
             return False
         if self.uri != other.uri:
             return False        
-        if self.dims != other.dims:
+        if self.links != other.links:
             return False
         if self.meta != other.meta:
             return False
@@ -99,25 +99,25 @@ class Xndarray:
         else:
             json_name, value = list(jso.items())[0]
         full_name = Xndarray.split_json_name(json_name)[0]
-        uri = meta = dims = str_nda = None        
+        uri = meta = links = str_nda = None        
         match value:
             case str(meta) | dict(meta):...
             case [str(uri)]:...
-            case [str(uri), list(dims)]:...
+            case [str(uri), list(links)]:...
             case [str(uri), dict(meta)] | [str(uri), str(meta)]:...
-            case [str(uri), list(dims), dict(meta)]:...
-            case [str(uri), list(dims), str(meta)]:...
+            case [str(uri), list(links), dict(meta)]:...
+            case [str(uri), list(links), str(meta)]:...
             case [list(str_nda)]:...
-            case [list(str_nda), list(dims)]:...
+            case [list(str_nda), list(links)]:...
             case [list(str_nda), dict(meta)] | [list(str_nda), str(meta)]:...
-            case [list(str_nda), list(dims), dict(meta)]:...
-            case [list(str_nda), list(dims), str(meta)]:...
+            case [list(str_nda), list(links), dict(meta)]:...
+            case [list(str_nda), list(links), str(meta)]:...
             case _:
                 return None
         ntv_type = str_nda[0] if str_nda and isinstance(str_nda[0], str) else None
         nda = Ndarray.read_json(str_nda, **option) if str_nda else None
         #nda = NdarrayConnec.to_obj_ntv(str_nda, ) if str_nda else None
-        return Xndarray(full_name, ntv_type=ntv_type, uri=uri, dims=dims, 
+        return Xndarray(full_name, ntv_type=ntv_type, uri=uri, links=links, 
                         meta=meta, nda=nda)
             
     def to_json(self, **kwargs):
@@ -143,7 +143,7 @@ class Xndarray:
                                   **option) if not self.nda is None else None
         #nda_str = NdarrayConnec.to_json_ntv(self.nda, typ=self.ntv_type, **option
         #                                    )[0] if not self.nda is None else None
-        lis = [self.uri, nda_str, self.dims, self.meta]
+        lis = [self.uri, nda_str, self.links, self.meta]
         lis = [val for val in lis if not val is None]
         #jsn = {self.full_name : lis[0] if lis == [self.meta] else lis}
         #name = None if option['noname'] else self.full_name
@@ -160,7 +160,7 @@ class Xndarray:
         inf['mode'] = self.mode
         inf['xtype'] = self.xtype
         inf['ntvtype'] = self.ntv_type
-        inf['dims'] = self.dims
+        inf['links'] = self.links
         inf['shape'] = self.shape
         return {key: val for key, val in inf.items() if val}        
         
@@ -178,7 +178,7 @@ class Xndarray:
 
     @property    
     def xtype(self):
-        match [self.dims, self.add_name, self.mode]:
+        match [self.links, self.add_name, self.mode]:
             case [_, _, 'undefined']:
                 return 'metadata'
             case [None, '', _]:
@@ -197,7 +197,7 @@ class Xndarray:
             
     def _to_json(self):
         return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri, 'nda': self.nda, 
-                'meta': self.meta, 'dims': self.dims}
+                'meta': self.meta, 'links': self.links}
             
             
     @staticmethod
