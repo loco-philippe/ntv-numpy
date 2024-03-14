@@ -78,7 +78,7 @@ class Xndarray:
 
     @property 
     def shape(self):
-        return self.nda.shape if self.nda is not None else None
+        return list(self.nda.shape) if self.nda is not None else None
     
     @staticmethod
     def read_json(jso, **kwargs):
@@ -151,6 +151,18 @@ class Xndarray:
                                None if option['noname'] else 'xndarray', 
                                lis[0] if lis == [self.meta] else lis, 
                                header=option['header'], encoded=option['encoded'])
+    @property    
+    def info(self):
+        ''' infos of the Xndarray'''
+        inf = {'name': self.full_name}
+        inf['length'] = len(self)
+        inf['mode'] = self.mode
+        inf['xtype'] = self.xtype
+        inf['ntvtype'] = self.ntv_type
+        inf['dims'] = self.dims
+        inf['shape'] = self.shape
+        return {key: val for key, val in inf.items() if val}        
+        
     @property    
     def mode(self):
         match [self.nda, self.uri]:

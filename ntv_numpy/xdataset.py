@@ -86,6 +86,19 @@ class Xdataset:
         return self.__class__(self)      
 
     @property 
+    def xtype(self):
+        '''Xdataset type'''
+        TYPES = {0: 'group', 1: }
+        if self.metadata and not (self.additionals or self.variables or self.dimensions):
+            return 'meta'
+        
+        match len(self.data_vars):
+            case 0:
+                return 'group'
+            case 1
+        return 'multi' if len(self.data_vars) else 'group'
+
+    @property 
     def dic_xnd(self):
         '''dict of Xndarray'''
         return {xnda.full_name: xnda for xnda in self.xnd}
@@ -147,7 +160,14 @@ class Xdataset:
         dic |= {'coordinates' : list(self.coordinates)} if self.coordinates else {}
         dic |= {'metadata' : list(self.metadata)} if self.metadata else {}
         return dic    
-    
+
+    @property 
+    def info(self):
+        inf = {'name': self.name, 'xtype': self.xtype} | self.partition
+        inf['length'] = len(self[self.data_vars[0]]) if self.data_vars else 0
+        inf['width'] = len(self)
+        return {key: val for key, val in inf.items() if val}        
+        
     @staticmethod
     def read_json(jso, **kwargs):
         ''' convert json data into a Xdataset.
