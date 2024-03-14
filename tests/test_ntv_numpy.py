@@ -327,7 +327,7 @@ class Test_Xdataset(unittest.TestCase):
         self.assertEqual(xds.dimensions, ('x', 'y'))
         self.assertEqual(xds.partition, {'coordinates': ['ranking', 'z'],
          'data_vars': ['var1', 'var2'], 'data_arrays': [], 'metadata': ['info', 'unit'],
-         'dimensions': ['x', 'y']})
+         'additionals': ['x.mask', 'x.variance', 'z.variance'], 'dimensions': ['x', 'y']})
         
         xdim = Xdataset(xds[xds.dimensions])
         self.assertEqual(xdim.to_json(novalue=True, noshape=True), {':xdataset': {
@@ -337,7 +337,8 @@ class Test_Xdataset(unittest.TestCase):
     def test_xdataset_info(self):    
         
         xd = Xdataset([Xndarray('example', np.array(['x1', 'x2']))], 'test')
-        self.assertEqual(xd.info, {'name': 'test', 'xtype': 'group', 'data_arrays': ['example'], 'width': 1})
+        self.assertEqual(xd.info, {'name': 'test', 'xtype': 'group', 'validity': 'valid',
+                                   'data_arrays': ['example'], 'width': 1})
 
         example = {'test': {
             'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
@@ -353,12 +354,13 @@ class Test_Xdataset(unittest.TestCase):
             'unit': 'kg',
             'info': {'example': 'everything'}}}
         xd = Xdataset.read_json(example)
-        self.assertEqual(xd.info, {'name': 'test', 'xtype': 'multi',
-                                   'data_vars': ['var1', 'var2'],
-                                   'dimensions': ['x', 'y'],
-                                   'coordinates': ['ranking', 'z'],
-                                   'metadata': ['info', 'unit'],
-                                   'width': 11})
+        self.assertEqual(xd.info, { 'name': 'test', 'xtype': 'multi',
+                                    'data_vars': ['var1', 'var2'],
+                                    'dimensions': ['x', 'y'],
+                                    'coordinates': ['ranking', 'z'],
+                                    'additionals': ['x.mask', 'x.variance', 'z.variance'],
+                                    'metadata': ['info', 'unit'],
+                                    'validity': 'undefined', 'width': 11})
 
 if __name__ == '__main__':    
     unittest.main(verbosity=2)

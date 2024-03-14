@@ -174,7 +174,7 @@ class Xndarray:
             case [_, None]:
                 return 'absolute'
             case _:
-                return 'unconsistent'
+                return 'inconsistent'
 
     @property    
     def xtype(self):
@@ -188,7 +188,7 @@ class Xndarray:
             case [_, str(), _]:
                 return 'additional'                
             case _:
-                return 'unconsistent'
+                return 'inconsistent'
     @property    
     def full_name(self):
         add_name = '.' + self.add_name if self.add_name else ''

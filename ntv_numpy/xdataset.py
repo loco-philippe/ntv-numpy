@@ -93,10 +93,13 @@ class Xdataset:
             list_dims += self.dims(link) if self.dims(link) else [link]
         return list_dims
 
+    @property 
     def validity(self):
-        # 'undefined' if not mode 'absolute' for each
-        # 'inconsistent' if undef_links or undef_vars
-        # 'valid' else
+        for xn in self:
+            if xn.mode in ['relative', 'inconsistent']:
+                return 'undefined'
+        if self.undef_links or self.undef_vars:
+            return 'inconsistent'
         return 'valid'
     
     @property 
@@ -201,12 +204,14 @@ class Xdataset:
         dic |= {'data_arrays' : list(self.data_arrays)} if self.data_arrays else {}
         dic |= {'dimensions' : list(self.dimensions)} if self.dimensions else {}
         dic |= {'coordinates' : list(self.coordinates)} if self.coordinates else {}
+        dic |= {'additionals' : list(self.additionals)} if self.additionals else {}
         dic |= {'metadata' : list(self.metadata)} if self.metadata else {}
         return dic    
 
     @property 
     def info(self):
         inf = {'name': self.name, 'xtype': self.xtype} | self.partition
+        inf['validity'] = self.validity
         inf['length'] = len(self[self.data_vars[0]]) if self.data_vars else 0
         inf['width'] = len(self)
         return {key: val for key, val in inf.items() if val}        
