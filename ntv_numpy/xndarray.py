@@ -11,7 +11,8 @@ from ntv_numpy.ndarray import Ndarray, NpUtil
 
 class Xndarray:
     ''' Representation of a multidimensional labelled Array'''
-    def __init__(self, full_name=None, ntv_type=None, nda=None, uri=None, dims=None, meta=None):    
+    def __init__(self, full_name=None, nda=None, ntv_type=None, dims=None, 
+                 uri=None, meta=None):    
         if isinstance(full_name, Xndarray):
             self.name = full_name.name
             self.add_name = full_name.add_name
@@ -181,7 +182,7 @@ class Xndarray:
             case [_, _, 'undefined']:
                 return 'metadata'
             case [None, '', _]:
-                return 'dimension'      
+                return 'namedarray'      
             case [_, '', _]:
                 return 'variable'
             case [_, str(), _]:

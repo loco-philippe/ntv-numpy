@@ -88,16 +88,16 @@ class Xdataset:
     @property 
     def xtype(self):
         '''Xdataset type'''
-        TYPES = {0: 'group', 1: }
         if self.metadata and not (self.additionals or self.variables or self.dimensions):
-            return 'meta'
-        
+            return 'meta'        
         match len(self.data_vars):
             case 0:
                 return 'group'
-            case 1
-        return 'multi' if len(self.data_vars) else 'group'
-
+            case 1:
+                return 'mono'
+            case _:
+                return 'multi'
+            
     @property 
     def dic_xnd(self):
         '''dict of Xndarray'''
@@ -107,6 +107,19 @@ class Xdataset:
     def names(self):
         '''tuple of Xndarray names'''
         return tuple(sorted(xnda.full_name for xnda in self.xnd))
+    
+    @property 
+    def data_arrays(self):
+        '''tuple of data_arrays Xndarray names'''
+        return (nda for nda in self.namedarrays if not nda in self.dimensions)
+
+    @property 
+    def dimensions(self):
+        '''tuple of dimensions Xndarray names'''
+        dimable = []
+        for var in self.variables:
+            dimable += self[var].dims
+        return tuple(sorted(set([nda for nda in dimable if nda in self.namedarrays])))
     
     @property 
     def coordinates(self):
@@ -127,9 +140,9 @@ class Xdataset:
                 if xnda.xtype == 'variable' and set(xnda.dims) == dims))
     
     @property 
-    def dimensions(self):
-        '''tuple of dimensions Xndarray name'''
-        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'dimension'))
+    def namedarrays(self):
+        '''tuple of namedarray Xndarray name'''
+        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'namedarray'))
 
     @property 
     def variables(self):
@@ -156,6 +169,7 @@ class Xdataset:
     def partition(self):
         dic = {}
         dic |= {'data_vars' : list(self.data_vars)} if self.data_vars else {}
+        dic |= {'data_arrays' : list(self.data_arrays)} if self.data_arrays else {}
         dic |= {'dimensions' : list(self.dimensions)} if self.dimensions else {}
         dic |= {'coordinates' : list(self.coordinates)} if self.coordinates else {}
         dic |= {'metadata' : list(self.metadata)} if self.metadata else {}

@@ -268,8 +268,8 @@ class Test_Xndarray(unittest.TestCase):
                   [{'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]}, 'absolute', 'variable'],
 
                   [{'ranking': [['int32', [2, 2], [1, 2, 3, 4]], ['var1']]}, 'absolute', 'variable'],
-                  [{'x': [['string', ['x1', 'x2']], {'test': 21}]}, 'absolute', 'dimension'],
-                  [{'y': [['string', ['y1', 'y2']]]}, 'absolute', 'dimension'],
+                  [{'x': [['string', ['x1', 'x2']], {'test': 21}]}, 'absolute', 'namedarray'],
+                  [{'y': [['string', ['y1', 'y2']]]}, 'absolute', 'namedarray'],
                   [{'z': [['string', ['z1', 'z2']], ['x']]}, 'absolute', 'variable'],
                   [{'x.mask': [['boolean', [True, False]], ['x']]}, 'absolute', 'additional'],
                   [{'x.variance': [['float64', [0.1, 0.2]], ['x']]}, 'absolute', 'additional'],
@@ -326,7 +326,7 @@ class Test_Xdataset(unittest.TestCase):
         self.assertEqual(xds.to_json(notype=notype, noshape=True, header=False), example)                                          
         self.assertEqual(xds.dimensions, ('x', 'y'))
         self.assertEqual(xds.partition, {'coordinates': ['ranking', 'z'],
-         'data_vars': ['var1', 'var2'], 'metadata': ['info', 'unit'],
+         'data_vars': ['var1', 'var2'], 'data_arrays': [], 'metadata': ['info', 'unit'],
          'dimensions': ['x', 'y']})
         
         xdim = Xdataset(xds[xds.dimensions])
@@ -334,6 +334,31 @@ class Test_Xdataset(unittest.TestCase):
                          'x': [['string', ['-']], {'test': 21}],
                          'y': [['string', ['-']]]}})        
                                   
+    def test_xdataset_info(self):    
+        
+        xd = Xdataset([Xndarray('example', np.array(['x1', 'x2']))], 'test')
+        self.assertEqual(xd.info, {'name': 'test', 'xtype': 'group', 'data_arrays': ['example'], 'width': 1})
+
+        example = {'test': {
+            'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+                     ['x', 'y']],
+            'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
+            'ranking': [[[2, 2], [1, 2, 3, 4]], ['var1']],
+            'x': [[['x1', 'x2']], {'test': 21}],
+            'y': [[['y1', 'y2']]],
+            'z': [[['z1', 'z2']], ['x']],
+            'x.mask': [[[True, False]], ['x']],
+            'x.variance': [[[0.1, 0.2]], ['x']],
+            'z.variance': [[[0.1, 0.2]], ['x']],
+            'unit': 'kg',
+            'info': {'example': 'everything'}}}
+        xd = Xdataset.read_json(example)
+        self.assertEqual(xd.info, {'name': 'test', 'xtype': 'multi',
+                                   'data_vars': ['var1', 'var2'],
+                                   'dimensions': ['x', 'y'],
+                                   'coordinates': ['ranking', 'z'],
+                                   'metadata': ['info', 'unit'],
+                                   'width': 11})
 
 if __name__ == '__main__':    
     unittest.main(verbosity=2)
