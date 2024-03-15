@@ -81,6 +81,17 @@ class Xdataset:
             return self[selec[0]][selec[1:]]
         return self.xnd[selec]
 
+    def __delitem__(self, ind):
+        '''remove a Xndarray (ind is index, name or tuple of names).'''
+        if isinstance(ind, int):
+            del(self.xnd[ind])
+        elif isinstance(ind, str):
+            del(self.xnd[self.names.index(ind)])
+        elif isinstance(ind, tuple):
+            ind_n = [self.names[i] if isinstance(i, int) else i for i in ind]
+            for i in ind_n:
+                del self[i]
+        
     def __copy__(self):
         ''' Copy all the data '''
         return self.__class__(self)      
@@ -108,6 +119,8 @@ class Xdataset:
         if self.metadata and not (self.additionals or self.variables or 
                                   self.namedarrays):
             return 'meta'        
+        if self.validity != 'valid':
+            return 'group'
         match len(self.data_vars):
             case 0:
                 return 'group'
@@ -124,7 +137,7 @@ class Xdataset:
     @property 
     def names(self):
         '''tuple of Xndarray names'''
-        return tuple(sorted(xnda.full_name for xnda in self.xnd))
+        return tuple(xnda.full_name for xnda in self.xnd)
     
     @property 
     def data_arrays(self):
@@ -261,3 +274,21 @@ class Xdataset:
         return NpUtil.json_ntv(self.name, 'xdataset', dic_xnd, 
                                header=kwargs.get('header', True), 
                                encoded=kwargs.get('encoded', False))
+
+    def to_xarray(self, **kwargs):
+        
+       """
+       tst = xr.DataArray(data=xd['var2'].nda, 
+                          coords = Xutil.to_xr_coord(xd, 'x') | 
+                                   Xutil.to_xr_coord(xd, 'y') | 
+                                   Xutil.to_xr_coord(xd, 'z'), 
+                          dims=['x', 'y'], 
+                          attrs={'unit':'kg', 'info':{'example': 'everything'}})
+       """
+        
+class Xutil:
+    
+    def to_xr_coord(xd, name):
+        meta = xd[name].meta if xd[name].meta else {}
+        dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].full_name)
+        return {name:(dims, xd[name].nda, {'ntv_type': xd[name].ntv_type} | meta)}
