@@ -27,7 +27,8 @@ class Xndarray:
         self.ntv_type = ntv_type
         self.nda = nda
         self.uri = uri
-        self.links = sorted(links) if links else links
+        #self.links = sorted(links) if links else links
+        self.links = sorted(links) if links and not self.add_name else None
         self.meta = meta      
         
     def __repr__(self):

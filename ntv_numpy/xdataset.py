@@ -98,6 +98,8 @@ class Xdataset:
         return self.__class__(self)      
 
     def dims(self, var):
+        if self[var].add_name:
+            return self.dims(self[var].name)
         if not var in self.variables: 
             return None
         list_dims = []
@@ -296,11 +298,16 @@ class Xdataset:
            print('xdataarray')
            return
        coords = {}
-       keys = 
-       for xnd_name in self.dimensions + self.coordinates:
+       grps = [self.var_group(name) for name in self.dimensions + self.coordinates]
+       coord_names = [name for grp in grps for name in grp]
+       #for xnd_name in self.dimensions + self.coordinates:
+       for xnd_name in coord_names:
            coords |= Xutil.to_xr_coord(self, xnd_name)
        data_vars = {}
-       for xnd_name in self.data_vars:
+       grps = [self.var_group(name) for name in self.data_vars]
+       vars_names = [name for grp in grps for name in grp]
+       #for xnd_name in self.data_vars:
+       for xnd_name in vars_names:
            data_vars |= Xutil.to_xr_coord(self, xnd_name)
        attrs = {meta: self[meta] for meta in self.metadata}
        return xr.Dataset(data_vars, coords=coords, attrs=attrs)
@@ -309,5 +316,5 @@ class Xutil:
     
     def to_xr_coord(xd, name):
         meta = xd[name].meta if xd[name].meta else {}
-        dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].full_name)
+        dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
         return {name:(dims, xd[name].nda, {'ntv_type': xd[name].ntv_type} | meta)}
