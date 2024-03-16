@@ -8,6 +8,7 @@ Created on Thu Mar  7 09:56:11 2024
 import json
 from ntv_numpy.ndarray import NpUtil
 from ntv_numpy.xndarray import Xndarray
+import xarray as xr
 
 class Xdataset:
     ''' Representation of a multidimensional Dataset
@@ -284,8 +285,26 @@ class Xdataset:
                                    Xutil.to_xr_coord(xd, 'z'), 
                           dims=['x', 'y'], 
                           attrs={'unit':'kg', 'info':{'example': 'everything'}})
+       tst = xr.Dataset(Xutil.to_xr_coord(xd, 'var2'), 
+                          coords = Xutil.to_xr_coord(xd, 'x') | 
+                                   Xutil.to_xr_coord(xd, 'y') | 
+                                   Xutil.to_xr_coord(xd, 'z'), 
+                          attrs={'unit':'kg', 'info':{'example': 'everything'}})
        """
-        
+       option = {'dataset': True} | kwargs 
+       if len(self.data_vars) == 1 and not option['dataset']:
+           print('xdataarray')
+           return
+       coords = {}
+       keys = 
+       for xnd_name in self.dimensions + self.coordinates:
+           coords |= Xutil.to_xr_coord(self, xnd_name)
+       data_vars = {}
+       for xnd_name in self.data_vars:
+           data_vars |= Xutil.to_xr_coord(self, xnd_name)
+       attrs = {meta: self[meta] for meta in self.metadata}
+       return xr.Dataset(data_vars, coords=coords, attrs=attrs)
+   
 class Xutil:
     
     def to_xr_coord(xd, name):
