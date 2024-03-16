@@ -281,35 +281,17 @@ class Xdataset:
     def to_xarray(self, **kwargs):
         
        """
-       tst = xr.DataArray(data=xd['var2'].nda, 
-                          coords = Xutil.to_xr_coord(xd, 'x') | 
-                                   Xutil.to_xr_coord(xd, 'y') | 
-                                   Xutil.to_xr_coord(xd, 'z'), 
-                          dims=['x', 'y'], 
-                          attrs={'unit':'kg', 'info':{'example': 'everything'}})
-       tst = xr.Dataset(Xutil.to_xr_coord(xd, 'var2'), 
-                          coords = Xutil.to_xr_coord(xd, 'x') | 
-                                   Xutil.to_xr_coord(xd, 'y') | 
-                                   Xutil.to_xr_coord(xd, 'z'), 
-                          attrs={'unit':'kg', 'info':{'example': 'everything'}})
        """
        option = {'dataset': True} | kwargs 
+       coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
+       attrs = {meta: self[meta].meta for meta in self.metadata}
        if len(self.data_vars) == 1 and not option['dataset']:
-           print('xdataarray')
-           return
-       coords = {}
-       grps = [self.var_group(name) for name in self.dimensions + self.coordinates]
-       coord_names = [name for grp in grps for name in grp]
-       #for xnd_name in self.dimensions + self.coordinates:
-       for xnd_name in coord_names:
-           coords |= Xutil.to_xr_coord(self, xnd_name)
-       data_vars = {}
-       grps = [self.var_group(name) for name in self.data_vars]
-       vars_names = [name for grp in grps for name in grp]
-       #for xnd_name in self.data_vars:
-       for xnd_name in vars_names:
-           data_vars |= Xutil.to_xr_coord(self, xnd_name)
-       attrs = {meta: self[meta] for meta in self.metadata}
+           var_name = self.data_vars[0]
+           data = self[var_name].nda
+           dims = self.dims(var_name)
+           attrs |= {'ntv_type': self[var_name].ntv_type}
+           return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs)
+       data_vars = Xutil.to_xr_vars(self, self.data_vars)
        return xr.Dataset(data_vars, coords=coords, attrs=attrs)
    
 class Xutil:
@@ -318,3 +300,11 @@ class Xutil:
         meta = xd[name].meta if xd[name].meta else {}
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
         return {name:(dims, xd[name].nda, {'ntv_type': xd[name].ntv_type} | meta)}
+    
+    def to_xr_vars(xd, list_names):
+        arg_vars = {}
+        grps = [xd.var_group(name) for name in list_names]
+        vars_names = [name for grp in grps for name in grp]
+        for xnd_name in vars_names:
+            arg_vars |= Xutil.to_xr_coord(xd, xnd_name)
+        return arg_vars
