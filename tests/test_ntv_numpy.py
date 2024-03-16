@@ -271,9 +271,9 @@ class Test_Xndarray(unittest.TestCase):
                   [{'x': [['string', ['x1', 'x2']], {'test': 21}]}, 'absolute', 'namedarray'],
                   [{'y': [['string', ['y1', 'y2']]]}, 'absolute', 'namedarray'],
                   [{'z': [['string', ['z1', 'z2']], ['x']]}, 'absolute', 'variable'],
-                  [{'x.mask': [['boolean', [True, False]], ['x']]}, 'absolute', 'additional'],
-                  [{'x.variance': [['float64', [0.1, 0.2]], ['x']]}, 'absolute', 'additional'],
-                  [{'z.variance': [['float64', [0.1, 0.2]], ['x']]}, 'absolute', 'additional'],
+                  [{'x.mask': [['boolean', [True, False]]]}, 'absolute', 'additional'],
+                  [{'x.variance': [['float64', [0.1, 0.2]]]}, 'absolute', 'additional'],
+                  [{'z.variance': [['float64', [0.1, 0.2]]]}, 'absolute', 'additional'],
                   [{'unit': 'kg'}, 'undefined', 'metadata'],
                   [{'info': {'example': 'everything'}}, 'undefined', 'metadata'],
                 ]
@@ -315,9 +315,9 @@ class Test_Xdataset(unittest.TestCase):
             'x': [[['x1', 'x2']], {'test': 21}],
             'y': [[['y1', 'y2']]],
             'z': [[['z1', 'z2']], ['x']],
-            'x.mask': [[[True, False]], ['x']],
-            'x.variance': [[[0.1, 0.2]], ['x']],
-            'z.variance': [[[0.1, 0.2]], ['x']],
+            'x.mask': [[[True, False]]],
+            'x.variance': [[[0.1, 0.2]]],
+            'z.variance': [[[0.1, 0.2]]],
             'unit': 'kg',
             'info': {'example': 'everything'}}}
         
@@ -373,6 +373,26 @@ class Test_Xdataset(unittest.TestCase):
                                     'additionals': ['x.mask', 'x.variance', 'z.variance'],
                                     'metadata': ['info', 'unit'],
                                     'validity': 'valid', 'width': 10})        
+
+    def test_xdataset_DataArray(self):    
+        
+        example = {'test': {
+            'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y'], {'unit': 'kg', 'info': {'example': 'everything'}}],
+            'ranking': [[[2, 2], [1, 2, 3, 4]], ['var2']],
+            'x': [[['x1', 'x2']], {'test': 21}],
+            'y': [[['y1', 'y2']]],
+            'z': [[['z1', 'z2']], ['x']],
+            #'z_bis': [[['z1_bis', 'z2_bis']]],
+            'x.mask': [[[True, False]]],
+            'x.variance': [[[0.1, 0.2]], ['x']],
+            'z.variance': [[[0.1, 0.2]]]
+            }}
+        xd = Xdataset.read_json(example) 
+        xar = xd.to_xarray(dataset=False)
+        xd2 = Xdataset.from_xarray(xar)
+        self.assertEqual(xd, xd2)
+        
+                
 if __name__ == '__main__':    
     unittest.main(verbosity=2)
                                     

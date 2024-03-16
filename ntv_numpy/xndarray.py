@@ -29,7 +29,7 @@ class Xndarray:
         self.uri = uri
         #self.links = sorted(links) if links else links
         self.links = sorted(links) if links and not self.add_name else None
-        self.meta = meta      
+        self.meta = meta if meta else None     
         
     def __repr__(self):
         '''return classname and number of value'''

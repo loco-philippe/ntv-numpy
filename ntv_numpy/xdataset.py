@@ -279,29 +279,64 @@ class Xdataset:
                                encoded=kwargs.get('encoded', False))
 
     def to_xarray(self, **kwargs):
+        '''return a DataArray or a Dataset from a Xdataset
+       
+        *Parameters*
+
+        - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
+        '''
+        option = {'dataset': True} | kwargs 
+        coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
+        attrs = {meta: self[meta].meta for meta in self.metadata}
+        if len(self.data_vars) == 1 and not option['dataset']:
+            var_name = self.data_vars[0]
+            data = self[var_name].nda
+            dims = self.dims(var_name)
+            attrs |= {'ntv_type': self[var_name].ntv_type}
+            attrs |= {'name': self.name} if self.name else {}
+            attrs |= self[var_name].meta
+            return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs, name=var_name)
+        data_vars = Xutil.to_xr_vars(self, self.data_vars)
+        return xr.Dataset(data_vars, coords=coords, attrs=attrs, name=self.name)
+
+    @staticmethod 
+    def from_xarray(xar, **kwargs):
+        '''return a Xdataset for a DataArray or a Dataset
+       
+        *Parameters*
+
+        - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
+        '''
+        xnd = []
+        if isinstance(xar, xr.DataArray):
+            xnd += [Xutil.to_xndarray(xar)]
+            for coord in xar.coords:
+                xnd += [Xutil.to_xndarray(xar.coords[coord])]
+            xd = Xdataset(xnd, xar.attrs.get('name'))
+            for var in xd.data_vars:
+                if var != xar.name:
+                    xd[var].links = [xar.name]
+            return xd
+        pass
+                
         
-       """
-       """
-       option = {'dataset': True} | kwargs 
-       coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
-       attrs = {meta: self[meta].meta for meta in self.metadata}
-       if len(self.data_vars) == 1 and not option['dataset']:
-           var_name = self.data_vars[0]
-           data = self[var_name].nda
-           dims = self.dims(var_name)
-           attrs |= {'ntv_type': self[var_name].ntv_type}
-           return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs)
-       data_vars = Xutil.to_xr_vars(self, self.data_vars)
-       return xr.Dataset(data_vars, coords=coords, attrs=attrs)
-   
 class Xutil:
     
+    def to_xndarray(xar):
+        '''return a Xndarray from a Xarray variable'''
+        name, add_name = Xndarray.split_name(xar.name)
+        dims = None if add_name or xar.dims == (name,) else list(xar.dims)
+        return Xndarray(xar.name, xar.values, xar.attrs['ntv_type'], dims, None,
+                        {k: v for k, v in xar.attrs.items() if not k in ['ntv_type', 'name']})
+
     def to_xr_coord(xd, name):
+        '''return a dict with Xarray attributes from a Xndarray defined by his name'''
         meta = xd[name].meta if xd[name].meta else {}
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
         return {name:(dims, xd[name].nda, {'ntv_type': xd[name].ntv_type} | meta)}
     
     def to_xr_vars(xd, list_names):
+        '''return a dict with Xarray attributes from a list of Xndarray names'''
         arg_vars = {}
         grps = [xd.var_group(name) for name in list_names]
         vars_names = [name for grp in grps for name in grp]
