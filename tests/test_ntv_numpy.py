@@ -380,7 +380,7 @@ class Test_Xdataset(unittest.TestCase):
             'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y'], {'unit': 'kg', 'info': {'example': 'everything'}}],
             'ranking': [[[2, 2], [1, 2, 3, 4]], ['var2']],
             'x': [[['x1', 'x2']], {'test': 21}],
-            'y': [[['y1', 'y2']]],
+            'y': [['date', ['2021-01-01', '2022-02-02']]],
             'z': [[['z1', 'z2']], ['x']],
             #'z_bis': [[['z1_bis', 'z2_bis']]],
             'x.mask': [[[True, False]]],
@@ -388,10 +388,10 @@ class Test_Xdataset(unittest.TestCase):
             'z.variance': [[[0.1, 0.2]]]
             }}
         xd = Xdataset.read_json(example) 
-        xar = xd.to_xarray(dataset=False)
-        xd2 = Xdataset.from_xarray(xar)
+        xd2 = Xdataset.from_xarray(xd.to_xarray(dataset=False))
         self.assertEqual(xd, xd2)
-        
+        xd2 = Xdataset.from_xarray(xd.to_xarray())
+        self.assertEqual(xd, xd2)        
                 
 if __name__ == '__main__':    
     unittest.main(verbosity=2)

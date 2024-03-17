@@ -262,14 +262,14 @@ class Xdataset:
         - **header** : Boolean (default True) - including 'xdataset' type
         - **notype** : list of Boolean (default list of None) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
-        - **noshape** : Boolean (default False) - if True, without shape if dim < 1
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **format** : list of string (default list of 'full') - representation format of the ndarray,
         '''            
         notype = kwargs['notype'] if ('notype' in kwargs and isinstance(kwargs['notype'], list) and
                     len(kwargs['notype']) == len(self)) else [False] * len(self)
         format = kwargs['format'] if ('format' in kwargs and isinstance(kwargs['format'], list) and
                     len(kwargs['format']) == len(self)) else ['full'] * len(self)
-        noshape = kwargs.get('noshape', False)
+        noshape = kwargs.get('noshape', True)
         dic_xnd = {}
         for xna, notyp, forma in zip(self.xnd, notype, format):
             dic_xnd |= xna.to_json(notype=notyp, novalue=kwargs.get('novalue', False),
@@ -288,16 +288,17 @@ class Xdataset:
         option = {'dataset': True} | kwargs 
         coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
         attrs = {meta: self[meta].meta for meta in self.metadata}
+        attrs |= {'name': self.name} if self.name else {}
         if len(self.data_vars) == 1 and not option['dataset']:
             var_name = self.data_vars[0]
             data = self[var_name].nda
             dims = self.dims(var_name)
             attrs |= {'ntv_type': self[var_name].ntv_type}
-            attrs |= {'name': self.name} if self.name else {}
+            #attrs |= {'name': self.name} if self.name else {}
             attrs |= self[var_name].meta
             return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs, name=var_name)
         data_vars = Xutil.to_xr_vars(self, self.data_vars)
-        return xr.Dataset(data_vars, coords=coords, attrs=attrs, name=self.name)
+        return xr.Dataset(data_vars, coords=coords, attrs=attrs)
 
     @staticmethod 
     def from_xarray(xar, **kwargs):
@@ -317,7 +318,17 @@ class Xdataset:
                 if var != xar.name:
                     xd[var].links = [xar.name]
             return xd
-        pass
+        for coord in xar.coords:
+            xnd += [Xutil.to_xndarray(xar.coords[coord])]
+            if list(xar.coords[coord].dims) == list(xar.dims):
+                xnd[-1].links = [list(xar.data_vars)[0]]                
+        for var in xar.data_vars:
+            xnd += [Xutil.to_xndarray(xar.data_vars[var])]
+        if xar.attrs:
+            attrs = {k: v for k, v in xar.attrs.items() if not k == 'name'}
+            for name, meta in attrs.items():
+                xnd += [Xndarray(name, meta=meta)]
+        return Xdataset(xnd, xar.attrs.get('name'))
                 
         
 class Xutil:
@@ -326,8 +337,12 @@ class Xutil:
         '''return a Xndarray from a Xarray variable'''
         name, add_name = Xndarray.split_name(xar.name)
         dims = None if add_name or xar.dims == (name,) else list(xar.dims)
-        return Xndarray(xar.name, xar.values, xar.attrs['ntv_type'], dims, None,
-                        {k: v for k, v in xar.attrs.items() if not k in ['ntv_type', 'name']})
+        ntv_type = xar.attrs.get('ntv_type')
+        nda = xar.values
+        if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
+            nda = NpUtil.convert(ntv_type, nda, tojson=False)
+        attrs = {k: v for k, v in xar.attrs.items() if not k in ['ntv_type', 'name']}
+        return Xndarray(xar.name, nda, ntv_type, dims, None, attrs)
 
     def to_xr_coord(xd, name):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
