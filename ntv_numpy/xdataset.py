@@ -98,6 +98,8 @@ class Xdataset:
         return self.__class__(self)      
 
     def dims(self, var):
+        if not var in self.names: 
+            return None
         if self[var].add_name:
             return self.dims(self[var].name)
         if not var in self.variables: 
@@ -161,7 +163,7 @@ class Xdataset:
         '''tuple of coordinates Xndarray name'''
         dims = set(self.dimensions)
         if not dims:
-            return []
+            return ()
         return tuple(sorted(set([xnda.name for xnda in self.xnd 
                 if xnda.xtype == 'variable' and set(xnda.links) != dims])))
                 #if xnda.xtype == 'variable' and set(self.dims(xnda.name)) != dims])))
@@ -294,9 +296,12 @@ class Xdataset:
             data = self[var_name].nda
             dims = self.dims(var_name)
             attrs |= {'ntv_type': self[var_name].ntv_type}
-            #attrs |= {'name': self.name} if self.name else {}
-            attrs |= self[var_name].meta
-            return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs, name=var_name)
+            #if NpUtil.ntv_type(data.dtype.name) != self[var_name].ntv_type:            
+            #    attrs |= {'ntv_type': self[var_name].ntv_type}
+            attrs |= self[var_name].meta if self[var_name].meta else {}
+            name = var_name if var_name != 'no_name' else None
+            return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
+                                name=name)
         data_vars = Xutil.to_xr_vars(self, self.data_vars)
         return xr.Dataset(data_vars, coords=coords, attrs=attrs)
 
@@ -310,12 +315,12 @@ class Xdataset:
         '''
         xnd = []
         if isinstance(xar, xr.DataArray):
-            xnd += [Xutil.to_xndarray(xar)]
+            xnd += [Xutil.to_xndarray(xar, name='no_name')]
             for coord in xar.coords:
                 xnd += [Xutil.to_xndarray(xar.coords[coord])]
             xd = Xdataset(xnd, xar.attrs.get('name'))
             for var in xd.data_vars:
-                if var != xar.name:
+                if var != xar.name and xar.name:
                     xd[var].links = [xar.name]
             return xd
         for coord in xar.coords:
@@ -332,24 +337,31 @@ class Xdataset:
                 
         
 class Xutil:
-    
-    def to_xndarray(xar):
+
+    @staticmethod 
+    def to_xndarray(xar, name=None):
         '''return a Xndarray from a Xarray variable'''
-        name, add_name = Xndarray.split_name(xar.name)
+        full_name = xar.name if xar.name else name
+        name, add_name = Xndarray.split_name(full_name)
         dims = None if add_name or xar.dims == (name,) else list(xar.dims)
         ntv_type = xar.attrs.get('ntv_type')
         nda = xar.values
         if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
         attrs = {k: v for k, v in xar.attrs.items() if not k in ['ntv_type', 'name']}
-        return Xndarray(xar.name, nda, ntv_type, dims, None, attrs)
+        return Xndarray(full_name, nda, ntv_type, dims, None, attrs)
 
+    @staticmethod 
     def to_xr_coord(xd, name):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
-        meta = xd[name].meta if xd[name].meta else {}
+        data = xd[name].nda
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
-        return {name:(dims, xd[name].nda, {'ntv_type': xd[name].ntv_type} | meta)}
+        meta = {'ntv_type': xd[name].ntv_type} | (xd[name].meta if xd[name].meta else {})
+        #if NpUtil.ntv_type(data.dtype.name) != xd[name].ntv_type:            
+        #    meta |= {'ntv_type': xd[name].ntv_type}
+        return {name:(dims, data, meta)}
     
+    @staticmethod 
     def to_xr_vars(xd, list_names):
         '''return a dict with Xarray attributes from a list of Xndarray names'''
         arg_vars = {}
@@ -358,3 +370,15 @@ class Xutil:
         for xnd_name in vars_names:
             arg_vars |= Xutil.to_xr_coord(xd, xnd_name)
         return arg_vars
+    
+    @staticmethod 
+    def xr_add_type(xar):
+        if isinstance(xar, xr.DataArray) and not 'ntv_type' in xar.attrs:
+            xar.attrs |= {'ntv_type': NpUtil.ntv_type(xar.data.dtype.name)} 
+            return
+        for coord in xar.coords:
+            Xutil.xr_add_type(coord)                
+        for var in xar.data_vars:
+            Xutil.xr_add_type(var)
+        return              
+       

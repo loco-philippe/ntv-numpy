@@ -13,6 +13,7 @@ import numpy as np
 from datetime import date, time
 import pandas as pd
 from shapely.geometry import Point, LineString
+import xarray as xr
 
 import ntv_pandas as npd
 from ntv_numpy import read_json, to_json
@@ -392,7 +393,28 @@ class Test_Xdataset(unittest.TestCase):
         self.assertEqual(xd, xd2)
         xd2 = Xdataset.from_xarray(xd.to_xarray())
         self.assertEqual(xd, xd2)        
-                
+
+        examples = [xr.DataArray(np.array([1,2,3,4]).reshape([2,2])),
+                    xr.Dataset({'var': (['date', 'y'], np.array([1,2,3,4]).reshape([2,2]))},
+                               coords={'date': np.array(['2021-02-04','2022-02-04'], dtype='datetime64[D]'),
+                                       'y': np.array([10, 20])}),
+                    xr.Dataset({'var': (['date', 'y'], np.array([1,2,3,4]).reshape([2,2]))},
+                               coords={'date': (['date'], np.array(['2021-02-04','2022-02-04'], dtype='datetime64[D]'), {'ntv_type': 'date'}),
+                                       'y': np.array([10, 20])}),
+                    xr.Dataset({'var': (['date', 'y'], np.array([1,2,3,4]).reshape([2,2]))},
+                               coords={'date': (['date'], np.array(['2021-02-04','2022-02-04'], dtype='datetime64[D]'), {'ntv_type': 'date'}),
+                                       'y': np.array([Point([1,2]), Point([3,4])])})]
+
+        for xar in examples:
+            xd = Xdataset.from_xarray(xar)
+            #print(xd.to_json())
+            for dts in [False, True]:
+                xar2 = xd.to_xarray(dataset=dts)
+                xd2 = Xdataset.from_xarray(xar2)
+                #print(xd2.to_json())
+                self.assertEqual(xd, xd2)
+                self.assertEqual(xd.to_json(), xd2.to_json())
+            
 if __name__ == '__main__':    
     unittest.main(verbosity=2)
                                     

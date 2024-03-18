@@ -247,7 +247,7 @@ class NpUtil:
         return Format(data, ref=ref, coding=coding).to_json()
 
     @staticmethod
-    def ntv_type(dtype, ntv_type, ext):
+    def ntv_type(dtype, ntv_type=None, ext=None):
         ''' return NTVtype from dtype, additional type and extension.
 
         *Parameters*

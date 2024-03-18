@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Feb 15 10:49:49 2024
-
 @author: Philippe@loco-labs.io
 
 The `numpy_ntv_connector` module is part of the `ntv-numpy.ntv_numpy` package
