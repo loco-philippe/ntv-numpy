@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: a lab in the Air
+@author: Philippe@loco-labs.io
 
 The `data_array` module is part of the `ntv-numpy.ntv_numpy` package ([specification document](
 https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
