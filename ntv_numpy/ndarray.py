@@ -91,27 +91,27 @@ class Ndarray:
         return [val for val in lis if not val is None]
 
     @staticmethod
-    def equals(npself, npother):
+    def equals(nself, nother):
         '''return True if all elements are equals and dtype are equal'''
-        if not (isinstance(npself, np.ndarray) and isinstance(npother, np.ndarray)):
+        if not (isinstance(nself, np.ndarray) and isinstance(nother, np.ndarray)):
             return False
-        if npself.dtype != npother.dtype or npself.shape != npother.shape or len(npself) != len(npother):
+        if nself.dtype != nother.dtype or nself.shape != nother.shape or len(nself) != len(nother):
             return False
-        if len(npself.shape) == 0:
+        if len(nself.shape) == 0:
             return True
-        if len(npself) != len(npother):
+        if len(nself) != len(nother):
             return False
-        if isinstance(npself[0], (np.ndarray, pd.Series, pd.DataFrame)):
+        if isinstance(nself[0], (np.ndarray, pd.Series, pd.DataFrame)):
             SeriesConnec = NtvConnector.connector().get('SeriesConnec')
             DataFrameConnec = NtvConnector.connector().get('DataFrameConnec')
             equal = {np.ndarray: Ndarray.equals,
                      pd.Series: SeriesConnec.equals,
                      pd.DataFrame: DataFrameConnec.equals}
-            for nps, npo in zip(npself, npother):
-                if not equal[type(npself[0])](nps, npo):
+            for nps, npo in zip(nself, nother):
+                if not equal[type(nself[0])](nps, npo):
                     return False
             return True
-        return np.array_equal(npself, npother)
+        return np.array_equal(nself, nother)
 
 
 class NpUtil:
