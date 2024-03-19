@@ -294,6 +294,8 @@ class Xdataset:
         if len(self.data_vars) == 1 and not option['dataset']:
             var_name = self.data_vars[0]
             data = self[var_name].nda
+            if data.dtype.name[:8] == 'datetime':
+                data = data.astype('datetime64[ns]')
             dims = self.dims(var_name)
             attrs |= {'ntv_type': self[var_name].ntv_type}
             #if NpUtil.ntv_type(data.dtype.name) != self[var_name].ntv_type:            
@@ -356,6 +358,8 @@ class Xutil:
     def to_xr_coord(xd, name):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
         data = xd[name].nda
+        if data.dtype.name[:8] == 'datetime':
+            data = data.astype('datetime64[ns]')
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
         meta = {'ntv_type': xd[name].ntv_type} | (xd[name].meta if xd[name].meta else {})
         #if NpUtil.ntv_type(data.dtype.name) != xd[name].ntv_type:            

@@ -134,7 +134,15 @@ class Darray(ABC):
     def _len_val(self):
         '''return the length of the entity'''
 
-
+    @staticmethod 
+    def list_json(nda):
+        '''return a JSON representation of a unidimensional np.ndarray'''
+        if len(nda) == 0:
+            return []
+        if isinstance(nda[0], np.ndarray):
+            return [Darray.list_json(arr) for arr in nda]
+        return nda.tolist()
+    
 class Dfull(Darray):
     ''' Representation of a one dimensional Array with full representation
 
@@ -160,7 +168,8 @@ class Dfull(Darray):
 
     def to_json(self):
         ''' return a JsonValue of the Dfull entity.'''
-        return self.data.tolist()
+        #return self.data.tolist()
+        return Darray.list_json(self.data)
 
     @property
     def values(self):
@@ -170,7 +179,7 @@ class Dfull(Darray):
     @property
     def _len_val(self):
         '''return the length of the Dfull entity'''
-        return len(self.data)
+        return len(self.data) if self.data.ndim > 0 else 0
 
 
 class Dcomplete(Darray):
@@ -205,7 +214,8 @@ class Dcomplete(Darray):
 
     def to_json(self):
         ''' return a JsonValue of the Dcomplete entity.'''
-        return [self.data.tolist(), self.coding.tolist()]
+        #return [self.data.tolist(), self.coding.tolist()]
+        return [Darray.list_json(self.data), self.coding.tolist()]
 
     @property
     def values(self):
@@ -215,4 +225,5 @@ class Dcomplete(Darray):
     @property
     def _len_val(self):
         '''return the length of the Dcomplete entity'''
-        return len(self.coding)
+        return len(self.coding) if self.coding.ndim > 0 else 0
+

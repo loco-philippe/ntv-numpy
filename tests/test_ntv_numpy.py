@@ -70,6 +70,7 @@ class Test_Darray(unittest.TestCase):
 
         for ex in example:
             da = Dfull(ex)
+            #print(da)
             self.assertEqual(len(da), len(ex))            
             self.assertIsNone(da.ref)
             self.assertTrue(nd_equals(np.array(None), da.coding))
@@ -316,7 +317,7 @@ class Test_Xdataset(unittest.TestCase):
             'x': [[['x1', 'x2']], {'test': 21}],
             'y': [[['y1', 'y2']]],
             'z': [[['z1', 'z2']], ['x']],
-            'x.mask': [[[True, False]]],
+            'x.mask1': [[[True, False]]],
             'x.variance': [[[0.1, 0.2]]],
             'z.variance': [[[0.1, 0.2]]],
             'unit': 'kg',
@@ -328,7 +329,7 @@ class Test_Xdataset(unittest.TestCase):
         self.assertEqual(xds.dimensions, ('x', 'y'))
         self.assertEqual(xds.partition, {'coordinates': ['ranking', 'z'],
          'data_vars': ['var1', 'var2'], 'data_arrays': [], 'metadata': ['info', 'unit'],
-         'additionals': ['x.mask', 'x.variance', 'z.variance'], 'dimensions': ['x', 'y']})
+         'additionals': ['x.mask1', 'x.variance', 'z.variance'], 'dimensions': ['x', 'y']})
         
         xdim = Xdataset(xds[xds.dimensions])
         self.assertEqual(xdim.to_json(novalue=True, noshape=True), {':xdataset': {
@@ -350,7 +351,7 @@ class Test_Xdataset(unittest.TestCase):
             'y': [[['y1', 'y2']]],
             'z': [[['z1', 'z2']], ['x']],
             'z_bis': [[['z1_bis', 'z2_bis']]],
-            'x.mask': [[[True, False]], ['x']],
+            'x.mask1': [[[True, False]], ['x']],
             'x.variance': [[[0.1, 0.2]], ['x']],
             'z.variance': [[[0.1, 0.2]], ['x']],
             'unit': 'kg',
@@ -361,7 +362,7 @@ class Test_Xdataset(unittest.TestCase):
                                     'data_arrays': ['z_bis'],
                                     'dimensions': ['x', 'y'],
                                     'coordinates': ['ranking', 'z'],
-                                    'additionals': ['x.mask', 'x.variance', 'z.variance'],
+                                    'additionals': ['x.mask1', 'x.variance', 'z.variance'],
                                     'metadata': ['info', 'unit'],
                                     'validity': 'undefined', 'width': 12})
 
@@ -371,7 +372,7 @@ class Test_Xdataset(unittest.TestCase):
                                     'dimensions': ['x', 'y'],
                                     'length' : 2,
                                     'coordinates': ['ranking', 'z'],
-                                    'additionals': ['x.mask', 'x.variance', 'z.variance'],
+                                    'additionals': ['x.mask1', 'x.variance', 'z.variance'],
                                     'metadata': ['info', 'unit'],
                                     'validity': 'valid', 'width': 10})        
 
@@ -384,7 +385,7 @@ class Test_Xdataset(unittest.TestCase):
             'y': [['date', ['2021-01-01', '2022-02-02']]],
             'z': [[['z1', 'z2']], ['x']],
             #'z_bis': [[['z1_bis', 'z2_bis']]],
-            'x.mask': [[[True, False]]],
+            'x.mask1': [[[True, False]]],
             'x.variance': [[[0.1, 0.2]], ['x']],
             'z.variance': [[[0.1, 0.2]]]
             }}
@@ -396,13 +397,13 @@ class Test_Xdataset(unittest.TestCase):
 
         examples = [xr.DataArray(np.array([1,2,3,4]).reshape([2,2])),
                     xr.Dataset({'var': (['date', 'y'], np.array([1,2,3,4]).reshape([2,2]))},
-                               coords={'date': np.array(['2021-02-04','2022-02-04'], dtype='datetime64[D]'),
+                               coords={'date': np.array(['2021-02-04','2022-02-04'], dtype='datetime64[ns]'),
                                        'y': np.array([10, 20])}),
                     xr.Dataset({'var': (['date', 'y'], np.array([1,2,3,4]).reshape([2,2]))},
-                               coords={'date': (['date'], np.array(['2021-02-04','2022-02-04'], dtype='datetime64[D]'), {'ntv_type': 'date'}),
+                               coords={'date': (['date'], np.array(['2021-02-04','2022-02-04'], dtype='datetime64[ns]'), {'ntv_type': 'date'}),
                                        'y': np.array([10, 20])}),
                     xr.Dataset({'var': (['date', 'y'], np.array([1,2,3,4]).reshape([2,2]))},
-                               coords={'date': (['date'], np.array(['2021-02-04','2022-02-04'], dtype='datetime64[D]'), {'ntv_type': 'date'}),
+                               coords={'date': (['date'], np.array(['2021-02-04','2022-02-04'], dtype='datetime64[ns]'), {'ntv_type': 'date'}),
                                        'y': np.array([Point([1,2]), Point([3,4])])})]
 
         for xar in examples:

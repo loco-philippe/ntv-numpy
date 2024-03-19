@@ -55,15 +55,15 @@ class Xndarray:
             self.meta = full_name.meta
             return
         self.name, self.add_name = Xndarray.split_name(full_name)
-        ntv_type = NpUtil.nda_ntv_type(nda) if not (
-            ntv_type or nda is None) else ntv_type
-        self.ntv_type = ntv_type
         if isinstance(nda, str): 
             self.nda = None
             self.uri = nda
         else:
             self.nda = nda
             self.uri = None
+        ntv_type = NpUtil.nda_ntv_type(self.nda) if not (
+            ntv_type or self.nda is None) else ntv_type
+        self.ntv_type = ntv_type
         self.links = sorted(links) if links and not self.add_name else None
         self.meta = meta if meta else None
 

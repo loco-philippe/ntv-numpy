@@ -95,7 +95,7 @@ class Ndarray:
         '''return True if all elements are equals and dtype are equal'''
         if not (isinstance(nself, np.ndarray) and isinstance(nother, np.ndarray)):
             return False
-        if nself.dtype != nother.dtype or nself.shape != nother.shape or len(nself) != len(nother):
+        if nself.dtype != nother.dtype or nself.shape != nother.shape:
             return False
         if len(nself.shape) == 0:
             return True
