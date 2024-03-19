@@ -349,7 +349,8 @@ class Xutil:
         if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
         attrs = {k: v for k, v in xar.attrs.items() if not k in ['ntv_type', 'name']}
-        return Xndarray(full_name, nda, ntv_type, dims, None, attrs)
+        #return Xndarray(full_name, nda, ntv_type, dims, None, attrs)
+        return Xndarray(full_name, nda, ntv_type, dims, attrs)
 
     @staticmethod 
     def to_xr_coord(xd, name):
