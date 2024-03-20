@@ -9,6 +9,7 @@ import json
 from ntv_numpy.ndarray import NpUtil
 from ntv_numpy.xndarray import Xndarray
 import xarray as xr
+import scipp as sc
 
 class Xdataset:
     ''' Representation of a multidimensional Dataset
@@ -145,9 +146,14 @@ class Xdataset:
         return tuple(xnda.full_name for xnda in self.xnd)
     
     @property 
+    def global_vars(self):
+        '''tuple of namedarrays or variable Xndarray names'''
+        return tuple(sorted(nda for nda in self.namedarrays + self.variables))
+
+    @property 
     def data_arrays(self):
         '''tuple of data_arrays Xndarray names'''
-        return (nda for nda in self.namedarrays if not nda in self.dimensions)
+        return tuple(sorted(nda for nda in self.namedarrays if not nda in self.dimensions))
 
     @property 
     def dimensions(self):
@@ -309,11 +315,7 @@ class Xdataset:
 
     @staticmethod 
     def from_xarray(xar, **kwargs):
-        '''return a Xdataset for a DataArray or a Dataset
-       
-        *Parameters*
-
-        - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
+        '''return a Xdataset from a DataArray or a Dataset
         '''
         xnd = []
         if isinstance(xar, xr.DataArray):
@@ -337,9 +339,45 @@ class Xdataset:
                 xnd += [Xndarray(name, meta=meta)]
         return Xdataset(xnd, xar.attrs.get('name'))
                 
+    def to_scipp(self, **kwargs):
+        '''return a DataArray or a Dataset from a Xdataset
+       
+        *Parameters*
+
+        - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
+        '''
+        option = {'dataset': True} | kwargs 
+        coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
+        if len(self.data_vars) == 1 and not option['dataset']:
+            var_name = self.data_vars[0]
+            data = self[var_name].nda
+            if data.dtype.name[:8] == 'datetime':
+                data = data.astype('datetime64[ns]')
+            dims = self.dims(var_name)
+            attrs |= {'ntv_type': self[var_name].ntv_type}
+            #if NpUtil.ntv_type(data.dtype.name) != self[var_name].ntv_type:            
+            #    attrs |= {'ntv_type': self[var_name].ntv_type}
+            attrs |= self[var_name].meta if self[var_name].meta else {}
+            name = var_name if var_name != 'no_name' else None
+            return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
+                                name=name)
+        data_vars = Xutil.to_xr_vars(self, self.data_vars)
+        return xr.Dataset(data_vars, coords=coords, attrs=attrs)
         
 class Xutil:
 
+    @staticmethod 
+    def to_scipp_var(xd, name):
+        '''return a scipp.Variable from a Xdataset.global_var defined by his name'''
+        values = xd[name].nda
+        variances = xd[name + '.variance'].nda if name + '.variance' in xd.names else None
+        if not variances is None:
+            variances = variances.reshape(xd[xd[name].name].shape)
+        dims = xd.dims(name) if xd.dims(name) else [xd[name].name]
+        #unit = xd[name].meta.get('unit') if xd[name].meta else None
+        unit = NpUtil.split_type(xd[name].ntv_type)[1]
+        return sc.array(dims=dims, values=values, variances=variances, unit=unit)
+    
     @staticmethod 
     def to_xndarray(xar, name=None):
         '''return a Xndarray from a Xarray variable'''
@@ -360,6 +398,8 @@ class Xutil:
         data = xd[name].nda
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
+        if name in xd.additionals:
+            data = data.reshape(xd[xd[name].name].shape)
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
         meta = {'ntv_type': xd[name].ntv_type} | (xd[name].meta if xd[name].meta else {})
         #if NpUtil.ntv_type(data.dtype.name) != xd[name].ntv_type:            
