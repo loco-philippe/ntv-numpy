@@ -363,7 +363,7 @@ class Xdataset:
         - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
         '''
         option = {'dataset': True} | kwargs 
-        coords = {name: Xutil.to_scipp_var(self, name) for name in self.coordinates}
+        coords = {name: Xutil.to_scipp_var(self, name) for name in self.coordinates + self.dimensions}
         if len(self.data_vars) == 1 and not option['dataset']:
             var_name = self.data_vars[0]
             data = Xutil.to_scipp_var(self, var_name)
@@ -388,7 +388,10 @@ class Xutil:
             variances = variances.reshape(xd.shape_dims(vari_name))
         dims = xd.dims(name) if xd.dims(name) else [xd[name].name]
         unit = NpUtil.split_type(xd[name].ntv_type)[1]
-        return sc.array(dims=dims, values=values, variances=variances, unit=unit)
+        if unit:
+            return sc.array(dims=dims, values=values, variances=variances, unit=unit)
+        return sc.array(dims=dims, values=values, variances=variances)
+
     
     @staticmethod 
     def to_xndarray(xar, name=None):
