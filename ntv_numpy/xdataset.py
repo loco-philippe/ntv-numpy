@@ -320,8 +320,6 @@ class Xdataset:
                 data = data.astype('datetime64[ns]')
             dims = self.dims(var_name)
             attrs |= {'ntv_type': self[var_name].ntv_type}
-            #if NpUtil.ntv_type(data.dtype.name) != self[var_name].ntv_type:            
-            #    attrs |= {'ntv_type': self[var_name].ntv_type}
             attrs |= self[var_name].meta if self[var_name].meta else {}
             name = var_name if var_name != 'no_name' else None
             return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
@@ -361,21 +359,35 @@ class Xdataset:
         *Parameters*
 
         - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
+        - **allmasks** : Boolean (default False) - if False and DataArray, only linked masks
+        - **ntv_type** : Boolean (default True) - if True add ntv-type to the name
         '''
-        option = {'dataset': True} | kwargs 
-        coords = {name: Xutil.to_scipp_var(self, name) for name in self.coordinates + self.dimensions}
+        option = {'dataset': True, 'allmasks': False, 'ntv_type':True} | kwargs 
+        coords = dict([Xutil.to_scipp_var(self, name, **option) 
+                  for name in self.coordinates + self.dimensions])
         if len(self.data_vars) == 1 and not option['dataset']:
-            var_name = self.data_vars[0]
-            data = Xutil.to_scipp_var(self, var_name)
-            masks = {name: Xutil.to_scipp_var(self, name) for name in self.masks}
-            return sc.DataArray(data, coords=coords, masks=masks)
-        #data_vars = Xutil.to_xr_vars(self, self.data_vars)
-        #return xr.Dataset(data_vars, coords=coords, attrs=attrs)
+            return Xutil.to_scipp_dataarray(self, self.data_vars[0], coords, **option)[1]
+        opt_dataset = option | {'allmasks': False}
+        return sc.Dataset(dict([Xutil.to_scipp_dataarray(self, name, coords, **opt_dataset)
+                           for name in self.data_vars]))
         
 class Xutil:
 
     @staticmethod 
-    def to_scipp_var(xd, name):
+    def to_scipp_dataarray(xd, name, coords, **option):
+        '''return a scipp.DataArray from a Xdataset.global_var defined by his name'''       
+        data = Xutil.to_scipp_var(xd, name, **option)[1]
+        opt_mask = option | {'ntv_type': False}
+        if option['allmasks']:
+            masks = dict([Xutil.to_scipp_var(xd, name, **opt_mask) for name in xd.masks])
+        else:
+            masks = dict([Xutil.to_scipp_var(xd, name, **opt_mask) 
+                     for name in set(xd.var_group(name)) & set(xd.masks)])
+        scipp_name = name + (':' + xd[name].ntv_type if option['ntv_type'] else '')
+        return (scipp_name, sc.DataArray(data, coords=coords, masks=masks))
+       
+    @staticmethod 
+    def to_scipp_var(xd, name, **option):
         '''return a scipp.Variable from a Xdataset.global_var defined by his name'''
         values = xd[name].nda
         values = values.reshape(xd.shape_dims(name))
@@ -384,13 +396,14 @@ class Xutil:
         vari_name = name + '.variance'
         variances = xd[vari_name].nda if vari_name in xd.names else None
         if not variances is None:
-            #variances = variances.reshape(xd[xd[name].name].shape)
             variances = variances.reshape(xd.shape_dims(vari_name))
         dims = xd.dims(name) if xd.dims(name) else [xd[name].name]
         unit = NpUtil.split_type(xd[name].ntv_type)[1]
+        scipp_name = name + (':' + xd[name].ntv_type if option['ntv_type'] else '')
         if unit:
-            return sc.array(dims=dims, values=values, variances=variances, unit=unit)
-        return sc.array(dims=dims, values=values, variances=variances)
+            return (scipp_name, sc.array(dims=dims, values=values, 
+                                         variances=variances, unit=unit))
+        return (scipp_name, sc.array(dims=dims, values=values, variances=variances))
 
     
     @staticmethod 
@@ -404,7 +417,6 @@ class Xutil:
         if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
         attrs = {k: v for k, v in xar.attrs.items() if not k in ['ntv_type', 'name']}
-        #return Xndarray(full_name, nda, ntv_type, dims, None, attrs)
         return Xndarray(full_name, nda, ntv_type, dims, attrs)
 
     @staticmethod 
@@ -417,8 +429,6 @@ class Xutil:
             data = data.reshape(xd[xd[name].name].shape)
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
         meta = {'ntv_type': xd[name].ntv_type} | (xd[name].meta if xd[name].meta else {})
-        #if NpUtil.ntv_type(data.dtype.name) != xd[name].ntv_type:            
-        #    meta |= {'ntv_type': xd[name].ntv_type}
         return {name:(dims, data, meta)}
     
     @staticmethod 
