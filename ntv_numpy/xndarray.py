@@ -64,7 +64,8 @@ class Xndarray:
         ntv_type = NpUtil.nda_ntv_type(self.nda) if not (
             ntv_type or self.nda is None) else ntv_type
         self.ntv_type = ntv_type
-        self.links = sorted(links) if links and not self.add_name else None
+        #self.links = sorted(links) if links and not self.add_name else None
+        self.links = sorted(links) if links else None
         self.meta = meta if meta else None
 
     def __repr__(self):

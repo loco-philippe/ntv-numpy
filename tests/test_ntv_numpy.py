@@ -297,9 +297,9 @@ class Test_Xndarray(unittest.TestCase):
                    {'x': [[['x1', 'x2']], {'test': 21}]},
                    {'y': [[['y1', 'y2']]]},
                    {'z': [[['z1', 'z2']], ['x']]},
-                   {'x.mask': [[[True, False]], ['x']]},
-                   {'x.variance': [[[0.1, 0.2]], ['x']]},
-                   {'z.variance': [[[0.1, 0.2]], ['x']]},
+                   {'x.mask': [[[True, False]]]},
+                   {'x.variance': [[[0.1, 0.2]]]},
+                   {'z.variance': [[[0.1, 0.2]]]},
                   ]
         for (ex, mode, xtype), ex2 in zip(example, example2):
             #print(ex, ex2)
@@ -328,7 +328,7 @@ class Test_Xdataset(unittest.TestCase):
         self.assertEqual(xds.to_json(notype=notype, noshape=True, header=False), example)                                          
         self.assertEqual(xds.dimensions, ('x', 'y'))
         self.assertEqual(xds.partition, {'coordinates': ['ranking', 'z'],
-         'data_vars': ['var1', 'var2'], 'data_arrays': [], 'metadata': ['info', 'unit'],
+         'data_vars': ['var1', 'var2'], 'metadata': ['info', 'unit'],
          'additionals': ['x.mask1', 'x.variance', 'z.variance'], 'dimensions': ['x', 'y']})
         
         xdim = Xdataset(xds[xds.dimensions])
@@ -386,7 +386,7 @@ class Test_Xdataset(unittest.TestCase):
             'z': [[['z1', 'z2']], ['x']],
             #'z_bis': [[['z1_bis', 'z2_bis']]],
             'x.mask1': [[[True, False]]],
-            'x.variance': [[[0.1, 0.2]], ['x']],
+            'x.variance': [[[0.1, 0.2]]],
             'z.variance': [[[0.1, 0.2]]]
             }}
         xd = Xdataset.read_json(example) 

@@ -101,9 +101,13 @@ class Xdataset:
     def dims(self, var):
         if not var in self.names: 
             return None
-        if self[var].add_name:
+        #if self[var].add_name:
+        if self[var].add_name and not self[var].links:
             return self.dims(self[var].name)
-        if not var in self.variables: 
+        if var in self.namedarrays:
+            return [var]
+        #if not var in self.variables: 
+        if not var in self.variables + self.additionals: 
             return None
         list_dims = []
         for link in self[var].links:
@@ -198,13 +202,24 @@ class Xdataset:
         '''tuple of variables Xndarray name with inconsistent shape'''
         return tuple(sorted([var for var in self.variables if self[var].shape != 
                              [len(self[dim]) for dim in self.dims(var)]]))
-                             #[len(self[dim]) for dim in self[var].links]]))   
     @property 
     def undef_links(self):
         '''tuple of variables Xndarray name with inconsistent links'''
         return tuple(sorted([link for var in self.variables for link in self[var].links 
                              if not link in self.names]))
 
+    @property 
+    def masks(self):
+        '''tuple of additional Xndarray name with boolean ntv_type'''
+        return tuple(sorted([xnda.full_name for xnda in self.xnd 
+                             if xnda.xtype == 'additional' and xnda.ntv_type == 'boolean']))
+
+    @property 
+    def data_add(self):
+        '''tuple of additional Xndarray name with not boolean ntv_type'''
+        return tuple(sorted([xnda.full_name for xnda in self.xnd 
+                             if xnda.xtype == 'additional' and xnda.ntv_type != 'boolean']))
+    
     @property 
     def metadata(self):
         '''tuple of metadata name'''
@@ -347,7 +362,7 @@ class Xdataset:
         - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
         '''
         option = {'dataset': True} | kwargs 
-        coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
+        coords = {name: Xutil.to_scipp_var(self, name) for name in self.coordinates}
         if len(self.data_vars) == 1 and not option['dataset']:
             var_name = self.data_vars[0]
             data = self[var_name].nda
@@ -374,7 +389,6 @@ class Xutil:
         if not variances is None:
             variances = variances.reshape(xd[xd[name].name].shape)
         dims = xd.dims(name) if xd.dims(name) else [xd[name].name]
-        #unit = xd[name].meta.get('unit') if xd[name].meta else None
         unit = NpUtil.split_type(xd[name].ntv_type)[1]
         return sc.array(dims=dims, values=values, variances=variances, unit=unit)
     
@@ -398,7 +412,7 @@ class Xutil:
         data = xd[name].nda
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
-        if name in xd.additionals:
+        if name in xd.additionals and not xd[name].links:
             data = data.reshape(xd[xd[name].name].shape)
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
         meta = {'ntv_type': xd[name].ntv_type} | (xd[name].meta if xd[name].meta else {})
