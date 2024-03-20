@@ -101,12 +101,10 @@ class Xdataset:
     def dims(self, var):
         if not var in self.names: 
             return None
-        #if self[var].add_name:
         if self[var].add_name and not self[var].links:
             return self.dims(self[var].name)
         if var in self.namedarrays:
             return [var]
-        #if not var in self.variables: 
         if not var in self.variables + self.additionals: 
             return None
         list_dims = []
@@ -114,6 +112,9 @@ class Xdataset:
             list_dims += self.dims(link) if self.dims(link) else [link]
         return list_dims
 
+    def shape_dims(self, var):
+        return [len(self[dim]) for dim in self.dims(var)]
+    
     @property 
     def validity(self):
         for xn in self:
@@ -365,19 +366,11 @@ class Xdataset:
         coords = {name: Xutil.to_scipp_var(self, name) for name in self.coordinates}
         if len(self.data_vars) == 1 and not option['dataset']:
             var_name = self.data_vars[0]
-            data = self[var_name].nda
-            if data.dtype.name[:8] == 'datetime':
-                data = data.astype('datetime64[ns]')
-            dims = self.dims(var_name)
-            attrs |= {'ntv_type': self[var_name].ntv_type}
-            #if NpUtil.ntv_type(data.dtype.name) != self[var_name].ntv_type:            
-            #    attrs |= {'ntv_type': self[var_name].ntv_type}
-            attrs |= self[var_name].meta if self[var_name].meta else {}
-            name = var_name if var_name != 'no_name' else None
-            return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
-                                name=name)
-        data_vars = Xutil.to_xr_vars(self, self.data_vars)
-        return xr.Dataset(data_vars, coords=coords, attrs=attrs)
+            data = Xutil.to_scipp_var(self, var_name)
+            masks = {name: Xutil.to_scipp_var(self, name) for name in self.masks}
+            return sc.DataArray(data, coords=coords, masks=masks)
+        #data_vars = Xutil.to_xr_vars(self, self.data_vars)
+        #return xr.Dataset(data_vars, coords=coords, attrs=attrs)
         
 class Xutil:
 
@@ -385,9 +378,14 @@ class Xutil:
     def to_scipp_var(xd, name):
         '''return a scipp.Variable from a Xdataset.global_var defined by his name'''
         values = xd[name].nda
-        variances = xd[name + '.variance'].nda if name + '.variance' in xd.names else None
+        values = values.reshape(xd.shape_dims(name))
+        if values.dtype.name[:8] == 'datetime':
+            values = values.astype('datetime64[ns]')
+        vari_name = name + '.variance'
+        variances = xd[vari_name].nda if vari_name in xd.names else None
         if not variances is None:
-            variances = variances.reshape(xd[xd[name].name].shape)
+            #variances = variances.reshape(xd[xd[name].name].shape)
+            variances = variances.reshape(xd.shape_dims(vari_name))
         dims = xd.dims(name) if xd.dims(name) else [xd[name].name]
         unit = NpUtil.split_type(xd[name].ntv_type)[1]
         return sc.array(dims=dims, values=values, variances=variances, unit=unit)
