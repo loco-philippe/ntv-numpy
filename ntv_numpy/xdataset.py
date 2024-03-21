@@ -309,8 +309,11 @@ class Xdataset:
 
         - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
         '''
-        option = {'dataset': True} | kwargs 
-        coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
+        option = {'dataset': True, 'ntv_type': True} | kwargs 
+        #coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates, **option)
+        coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates, **option)
+        opt_add = option | {'ntv_type': False}
+        coords |= Xutil.to_xr_vars(self, self.additionals, **opt_add)
         attrs = {meta: self[meta].meta for meta in self.metadata}
         attrs |= {'name': self.name} if self.name else {}
         if len(self.data_vars) == 1 and not option['dataset']:
@@ -319,18 +322,18 @@ class Xdataset:
             if data.dtype.name[:8] == 'datetime':
                 data = data.astype('datetime64[ns]')
             dims = self.dims(var_name)
-            attrs |= {'ntv_type': self[var_name].ntv_type}
+            #attrs |= {'ntv_type': self[var_name].ntv_type}
             attrs |= self[var_name].meta if self[var_name].meta else {}
             name = var_name if var_name != 'no_name' else None
+            x_name = name + (':' + self[var_name].ntv_type if option['ntv_type'] else '')
             return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
-                                name=name)
-        data_vars = Xutil.to_xr_vars(self, self.data_vars)
+                                name=x_name)
+        data_vars = Xutil.to_xr_vars(self, self.data_vars, **option)
         return xr.Dataset(data_vars, coords=coords, attrs=attrs)
 
     @staticmethod 
     def from_xarray(xar, **kwargs):
-        '''return a Xdataset from a DataArray or a Dataset
-        '''
+        '''return a Xdataset from a DataArray or a Dataset'''
         xnd = []
         if isinstance(xar, xr.DataArray):
             xnd += [Xutil.to_xndarray(xar, name='no_name')]
@@ -409,10 +412,11 @@ class Xutil:
     @staticmethod 
     def to_xndarray(xar, name=None):
         '''return a Xndarray from a Xarray variable'''
-        full_name = xar.name if xar.name else name
+        x_name, ntv_type = Xndarray.split_json_name(xar.name)
+        full_name = x_name if x_name else name
         name, add_name = Xndarray.split_name(full_name)
         dims = None if add_name or xar.dims == (name,) else list(xar.dims)
-        ntv_type = xar.attrs.get('ntv_type')
+        ntv_type = ntv_type if ntv_type else xar.attrs.get('ntv_type')
         nda = xar.values
         if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
@@ -420,7 +424,7 @@ class Xutil:
         return Xndarray(full_name, nda, ntv_type, dims, attrs)
 
     @staticmethod 
-    def to_xr_coord(xd, name):
+    def to_xr_coord(xd, name, **option):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
         data = xd[name].nda
         if data.dtype.name[:8] == 'datetime':
@@ -428,17 +432,20 @@ class Xutil:
         if name in xd.additionals and not xd[name].links:
             data = data.reshape(xd[xd[name].name].shape)
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
-        meta = {'ntv_type': xd[name].ntv_type} | (xd[name].meta if xd[name].meta else {})
-        return {name:(dims, data, meta)}
+        #meta = {'ntv_type': xd[name].ntv_type} | (xd[name].meta if xd[name].meta else {})
+        meta = xd[name].meta if xd[name].meta else {}
+        x_name = name + (':' + xd[name].ntv_type if option['ntv_type'] else '')
+        return {x_name:(dims, data, meta)}
     
     @staticmethod 
-    def to_xr_vars(xd, list_names):
+    def to_xr_vars(xd, list_names, **option):
         '''return a dict with Xarray attributes from a list of Xndarray names'''
         arg_vars = {}
-        grps = [xd.var_group(name) for name in list_names]
+        """grps = [xd.var_group(name) for name in list_names]
         vars_names = [name for grp in grps for name in grp]
-        for xnd_name in vars_names:
-            arg_vars |= Xutil.to_xr_coord(xd, xnd_name)
+        for xnd_name in vars_names:"""
+        for xnd_name in list_names:
+            arg_vars |= Xutil.to_xr_coord(xd, xnd_name, **option)
         return arg_vars
     
     @staticmethod 
