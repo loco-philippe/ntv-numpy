@@ -277,6 +277,14 @@ class Xdataset:
         xnd = [Xndarray.read_json({key: val}, **option) for key, val in value.items()]
         return Xdataset(xnd, name)
             
+    def to_canonical(self):
+        '''remove optional dims'''
+        for add in self.additionals:
+            if self[add].links in [self[self[add].name].links,
+                                   [self[add].name]]:
+                self[add].links = None
+        return self
+     
     def to_json(self, **kwargs):
         ''' convert a Xdataset into json-value.
 
@@ -339,22 +347,24 @@ class Xdataset:
             xnd += [Xutil.to_xndarray(xar, name='no_name')]
             for coord in xar.coords:
                 xnd += [Xutil.to_xndarray(xar.coords[coord])]
+                #if list(xar.coords[coord].dims) == list(xar.dims):
+                #    xnd[-1].links = [Xndarray.split_json_name(list(xar.data_vars)[0])[0]]                
             xd = Xdataset(xnd, xar.attrs.get('name'))
             for var in xd.data_vars:
                 if var != xar.name and xar.name:
                     xd[var].links = [xar.name]
-            return xd
+            return xd.to_canonical()
         for coord in xar.coords:
             xnd += [Xutil.to_xndarray(xar.coords[coord])]
             if list(xar.coords[coord].dims) == list(xar.dims):
-                xnd[-1].links = [list(xar.data_vars)[0]]                
+                xnd[-1].links = [Xndarray.split_json_name(list(xar.data_vars)[0])[0]]                
         for var in xar.data_vars:
             xnd += [Xutil.to_xndarray(xar.data_vars[var])]
         if xar.attrs:
             attrs = {k: v for k, v in xar.attrs.items() if not k == 'name'}
             for name, meta in attrs.items():
                 xnd += [Xndarray(name, meta=meta)]
-        return Xdataset(xnd, xar.attrs.get('name'))
+        return Xdataset(xnd, xar.attrs.get('name')).to_canonical()
                 
     def to_scipp(self, **kwargs):
         '''return a DataArray or a Dataset from a Xdataset
@@ -415,7 +425,8 @@ class Xutil:
         x_name, ntv_type = Xndarray.split_json_name(xar.name)
         full_name = x_name if x_name else name
         name, add_name = Xndarray.split_name(full_name)
-        dims = None if add_name or list(xar.dims) == [name] else list(xar.dims)
+        #dims = None if add_name or list(xar.dims) == [name] else list(xar.dims)
+        dims = None if list(xar.dims) == [name] else list(xar.dims)
         ntv_type = ntv_type if ntv_type else xar.attrs.get('ntv_type')
         nda = xar.values
         if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
