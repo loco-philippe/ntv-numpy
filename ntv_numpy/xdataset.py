@@ -276,7 +276,15 @@ class Xdataset:
             name = None
         xnd = [Xndarray.read_json({key: val}, **option) for key, val in value.items()]
         return Xdataset(xnd, name)
-            
+
+    def to_canonical(self):
+        '''remove optional dims'''
+        for add in self.additionals:
+            if self[add].links in [self[self[add].name].links,
+                                   [self[add].name]]:
+                self[add].links = None
+        return self            
+    
     def to_json(self, **kwargs):
         ''' convert a Xdataset into json-value.
 
@@ -332,26 +340,30 @@ class Xdataset:
     def from_xarray(xar, **kwargs):
         '''return a Xdataset from a DataArray or a Dataset'''
         xnd = []
+        if xar.attrs:
+            attrs = {k: v for k, v in xar.attrs.items() if not k in ['name', 'ntv_type']}
+            for name, meta in attrs.items():
+                xnd += [Xndarray(name, meta=meta)]
         if isinstance(xar, xr.DataArray):
-            xnd += [Xutil.to_xndarray(xar, name='no_name')]
+            xnd += [Xutil.to_xndarray(xar, name='no_name', add_attrs=False)]
             for coord in xar.coords:
                 xnd += [Xutil.to_xndarray(xar.coords[coord])]
             xd = Xdataset(xnd, xar.attrs.get('name'))
             for var in xd.data_vars:
                 if var != xar.name and xar.name:
                     xd[var].links = [xar.name]
-            return xd
+            return xd.to_canonical()
         for coord in xar.coords:
             xnd += [Xutil.to_xndarray(xar.coords[coord])]
             if list(xar.coords[coord].dims) == list(xar.dims):
                 xnd[-1].links = [list(xar.data_vars)[0]]                
         for var in xar.data_vars:
             xnd += [Xutil.to_xndarray(xar.data_vars[var])]
-        if xar.attrs:
+        '''if xar.attrs:
             attrs = {k: v for k, v in xar.attrs.items() if not k == 'name'}
             for name, meta in attrs.items():
-                xnd += [Xndarray(name, meta=meta)]
-        return Xdataset(xnd, xar.attrs.get('name'))
+                xnd += [Xndarray(name, meta=meta)]'''
+        return Xdataset(xnd, xar.attrs.get('name')).to_canonical()
                 
     def to_scipp(self, **kwargs):
         '''return a DataArray or a Dataset from a Xdataset
@@ -407,16 +419,17 @@ class Xutil:
 
     
     @staticmethod 
-    def to_xndarray(xar, name=None):
+    def to_xndarray(xar, name=None, add_attrs=True):
         '''return a Xndarray from a Xarray variable'''
         full_name = xar.name if xar.name else name
         name, add_name = Xndarray.split_name(full_name)
-        dims = None if add_name or xar.dims == (name,) else list(xar.dims)
+        dims = None if xar.dims == (name,) else list(xar.dims)
         ntv_type = xar.attrs.get('ntv_type')
         nda = xar.values
         if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
-        attrs = {k: v for k, v in xar.attrs.items() if not k in ['ntv_type', 'name']}
+        attrs = {k: v for k, v in xar.attrs.items() 
+                 if not k in ['ntv_type', 'name']} if add_attrs else {}
         return Xndarray(full_name, nda, ntv_type, dims, attrs)
 
     @staticmethod 
