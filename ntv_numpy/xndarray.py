@@ -167,6 +167,12 @@ class Xndarray:
         add_name = '.' + self.add_name if self.add_name else ''
         return self.name + add_name
 
+    @property
+    def json_name(self):
+        '''concatenation of full_name and ntv_type'''
+        add_ntv_type = ':' + self.ntv_type if self.ntv_type else ''
+        return self.full_name + add_ntv_type
+
     @staticmethod
     def read_json(jso, **kwargs):
         ''' convert json data into a Xndarray.

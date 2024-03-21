@@ -98,18 +98,18 @@ class Xdataset:
         ''' Copy all the data '''
         return self.__class__(self)      
 
-    def dims(self, var):
+    def dims(self, var, json_name=False):
         if not var in self.names: 
             return None
         if self[var].add_name and not self[var].links:
-            return self.dims(self[var].name)
+            return self.dims(self[var].name, json_name)
         if var in self.namedarrays:
-            return [var]
+            return [self[var].json_name if json_name else var]
         if not var in self.variables + self.additionals: 
             return None
         list_dims = []
         for link in self[var].links:
-            list_dims += self.dims(link) if self.dims(link) else [link]
+            list_dims += self.dims(link, json_name) if self.dims(link, json_name) else [link]
         return list_dims
 
     def shape_dims(self, var):
@@ -311,6 +311,7 @@ class Xdataset:
         '''
         option = {'dataset': True} | kwargs 
         coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
+        coords |= Xutil.to_xr_vars(self, self.additionals)
         attrs = {meta: self[meta].meta for meta in self.metadata}
         attrs |= {'name': self.name} if self.name else {}
         if len(self.data_vars) == 1 and not option['dataset']:
@@ -329,8 +330,7 @@ class Xdataset:
 
     @staticmethod 
     def from_xarray(xar, **kwargs):
-        '''return a Xdataset from a DataArray or a Dataset
-        '''
+        '''return a Xdataset from a DataArray or a Dataset'''
         xnd = []
         if isinstance(xar, xr.DataArray):
             xnd += [Xutil.to_xndarray(xar, name='no_name')]
@@ -377,11 +377,10 @@ class Xutil:
     def to_scipp_dataarray(xd, name, coords, **option):
         '''return a scipp.DataArray from a Xdataset.global_var defined by his name'''       
         data = Xutil.to_scipp_var(xd, name, **option)[1]
-        opt_mask = option | {'ntv_type': False}
         if option['allmasks']:
-            masks = dict([Xutil.to_scipp_var(xd, name, **opt_mask) for name in xd.masks])
+            masks = dict([Xutil.to_scipp_var(xd, name, **option) for name in xd.masks])
         else:
-            masks = dict([Xutil.to_scipp_var(xd, name, **opt_mask) 
+            masks = dict([Xutil.to_scipp_var(xd, name, **option) 
                      for name in set(xd.var_group(name)) & set(xd.masks)])
         scipp_name = name + (':' + xd[name].ntv_type if option['ntv_type'] else '')
         return (scipp_name, sc.DataArray(data, coords=coords, masks=masks))
@@ -389,6 +388,7 @@ class Xutil:
     @staticmethod 
     def to_scipp_var(xd, name, **option):
         '''return a scipp.Variable from a Xdataset.global_var defined by his name'''
+        opt_n = option['ntv_type']
         values = xd[name].nda
         values = values.reshape(xd.shape_dims(name))
         if values.dtype.name[:8] == 'datetime':
@@ -397,7 +397,7 @@ class Xutil:
         variances = xd[vari_name].nda if vari_name in xd.names else None
         if not variances is None:
             variances = variances.reshape(xd.shape_dims(vari_name))
-        dims = xd.dims(name) if xd.dims(name) else [xd[name].name]
+        dims = xd.dims(name, opt_n) if xd.dims(name, opt_n) else [xd[name].name]
         unit = NpUtil.split_type(xd[name].ntv_type)[1]
         scipp_name = name + (':' + xd[name].ntv_type if option['ntv_type'] else '')
         if unit:
@@ -435,9 +435,10 @@ class Xutil:
     def to_xr_vars(xd, list_names):
         '''return a dict with Xarray attributes from a list of Xndarray names'''
         arg_vars = {}
-        grps = [xd.var_group(name) for name in list_names]
+        """grps = [xd.var_group(name) for name in list_names]
         vars_names = [name for grp in grps for name in grp]
-        for xnd_name in vars_names:
+        for xnd_name in vars_names:"""
+        for xnd_name in list_names:
             arg_vars |= Xutil.to_xr_coord(xd, xnd_name)
         return arg_vars
     
