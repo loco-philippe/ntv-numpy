@@ -415,7 +415,7 @@ class Xutil:
         x_name, ntv_type = Xndarray.split_json_name(xar.name)
         full_name = x_name if x_name else name
         name, add_name = Xndarray.split_name(full_name)
-        dims = None if add_name or xar.dims == (name,) else list(xar.dims)
+        dims = None if add_name or list(xar.dims) == [name] else list(xar.dims)
         ntv_type = ntv_type if ntv_type else xar.attrs.get('ntv_type')
         nda = xar.values
         if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
