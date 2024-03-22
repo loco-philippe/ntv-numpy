@@ -344,25 +344,19 @@ class Xdataset:
             attrs = {k: v for k, v in xar.attrs.items() if not k in ['name', 'ntv_type']}
             for name, meta in attrs.items():
                 xnd += [Xndarray(name, meta=meta)]
+        for coord in xar.coords:
+            xnd += [Xutil.var_xr_to_xnd(xar.coords[coord])]
+            if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
+                xnd[-1].links = [list(xar.data_vars)[0]]                
         if isinstance(xar, xr.DataArray):
-            xnd += [Xutil.to_xndarray(xar, name='no_name', add_attrs=False)]
-            for coord in xar.coords:
-                xnd += [Xutil.to_xndarray(xar.coords[coord])]
+            xnd += [Xutil.var_xr_to_xnd(xar, name='no_name', add_attrs=False)]
             xd = Xdataset(xnd, xar.attrs.get('name'))
             for var in xd.data_vars:
                 if var != xar.name and xar.name:
                     xd[var].links = [xar.name]
             return xd.to_canonical()
-        for coord in xar.coords:
-            xnd += [Xutil.to_xndarray(xar.coords[coord])]
-            if list(xar.coords[coord].dims) == list(xar.dims):
-                xnd[-1].links = [list(xar.data_vars)[0]]                
         for var in xar.data_vars:
-            xnd += [Xutil.to_xndarray(xar.data_vars[var])]
-        '''if xar.attrs:
-            attrs = {k: v for k, v in xar.attrs.items() if not k == 'name'}
-            for name, meta in attrs.items():
-                xnd += [Xndarray(name, meta=meta)]'''
+            xnd += [Xutil.var_xr_to_xnd(xar.data_vars[var])]
         return Xdataset(xnd, xar.attrs.get('name')).to_canonical()
                 
     def to_scipp(self, **kwargs):
@@ -378,23 +372,57 @@ class Xdataset:
         coords = dict([Xutil.to_scipp_var(self, name, **option) 
                   for name in self.coordinates + self.dimensions])
         if len(self.data_vars) == 1 and not option['dataset']:
-            return Xutil.to_scipp_dataarray(self, self.data_vars[0], coords, **option)[1]
+            return Xutil.to_sc_dataarray(self, self.data_vars[0], coords, **option)[1]
         opt_dataset = option | {'allmasks': False}
-        return sc.Dataset(dict([Xutil.to_scipp_dataarray(self, name, coords, **opt_dataset)
+        return sc.Dataset(dict([Xutil.to_sc_dataarray(self, name, coords, **opt_dataset)
                            for name in self.data_vars]))
-        
+
+    @staticmethod 
+    def from_scipp(scd, **kwargs):
+        '''return a Xdataset from a scipp.DataArray or a scipp.Dataset'''
+        xnd = []
+        for coord in scd.coords:
+            xnd += Xutil.var_sc_to_xnd(scd.coords[coord], coord)   
+        if isinstance(scd, sc.DataArray):
+            xnd += Xutil.var_sc_to_xnd(scd.data, 'no_name')
+            return
+            #return Xdataset(xnd, 'no_name').to_canonical()          
+        for var in scd:
+            xnd += Xutil.var_sc_to_xnd(scd[var].data, var)
+        return
+        #return Xdataset(xnd, 'no_name').to_canonical()
+                        
 class Xutil:
 
     @staticmethod 
-    def to_scipp_dataarray(xd, name, coords, **option):
+    def var_sc_to_xnd(scv, sc_name):
+        '''return a list of Xndarray from a scipp variable'''
+        l_xnda = []
+        unit = scv.unit.name if scv.unit and scv.unit != 'dimensionless' else ''
+        json_name = sc_name + '[' + unit + ']' if unit else sc_name
+        full_name, ntv_type = Xndarray.split_json_name(json_name)
+        links = [Xndarray.split_json_name(jsn)[0] for jsn in scv.dims]
+        #links = None if links == [full_name] else list(xar.dims)
+        if not scv.variances is None:
+            l_xnda.append(Xndarray(full_name, scv.variances, ntv_type, links))
+            print('var :', full_name, ntv_type, links, scv.variances)
+        nda = scv.values        
+        if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
+            nda = NpUtil.convert(ntv_type, nda, tojson=False)
+        l_xnda.append(Xndarray(full_name, nda, ntv_type, links))
+        print('var :', full_name, ntv_type, links, nda)
+        return l_xnda
+
+        
+    @staticmethod 
+    def to_sc_dataarray(xd, name, coords, **option):
         '''return a scipp.DataArray from a Xdataset.global_var defined by his name'''       
-        data = Xutil.to_scipp_var(xd, name, **option)[1]
+        scipp_name, data = Xutil.to_scipp_var(xd, name, **option)
         if option['allmasks']:
             masks = dict([Xutil.to_scipp_var(xd, name, **option) for name in xd.masks])
         else:
             masks = dict([Xutil.to_scipp_var(xd, name, **option) 
                      for name in set(xd.var_group(name)) & set(xd.masks)])
-        scipp_name = name + (':' + xd[name].ntv_type if option['ntv_type'] else '')
         return (scipp_name, sc.DataArray(data, coords=coords, masks=masks))
        
     @staticmethod 
@@ -410,16 +438,15 @@ class Xutil:
         if not variances is None:
             variances = variances.reshape(xd.shape_dims(vari_name))
         dims = xd.dims(name, opt_n) if xd.dims(name, opt_n) else [xd[name].name]
-        unit = NpUtil.split_type(xd[name].ntv_type)[1]
-        scipp_name = name + (':' + xd[name].ntv_type if option['ntv_type'] else '')
-        if unit:
-            return (scipp_name, sc.array(dims=dims, values=values, 
-                                         variances=variances, unit=unit))
-        return (scipp_name, sc.array(dims=dims, values=values, variances=variances))
+        simple_type, unit = NpUtil.split_type(xd[name].ntv_type)
+        scipp_name = name + (':' + simple_type if opt_n else '')
+        unit = unit if unit else ''
+        return (scipp_name, sc.array(dims=dims, values=values, 
+                                     variances=variances, unit=unit))
 
     
     @staticmethod 
-    def to_xndarray(xar, name=None, add_attrs=True):
+    def var_xr_to_xnd(xar, name=None, add_attrs=True):
         '''return a Xndarray from a Xarray variable'''
         full_name = xar.name if xar.name else name
         name, add_name = Xndarray.split_name(full_name)
