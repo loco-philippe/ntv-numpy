@@ -439,6 +439,38 @@ class Test_Xdataset(unittest.TestCase):
                 self.assertEqual(xd, xd2)
                 self.assertEqual(xd.to_json(), xd2.to_json())
 
+    def test_xdataset_scipp(self):    
+        
+        examples = [{ #'test': {
+            'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
+            'var2.variance': [[[2, 2], [0.1, 0.2, 0.3, 0.4]]],
+            'var2.mask1': [[[True, False]], ['x']],
+            'var2.mask2': [[[2, 2], [True, False, False, True]]],
+
+            'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']],
+            
+
+            'x': [['base16', ['23F0AE', '578B98']]], #, {'test': 21}],
+            #'x.mask1': [[[True, False]]],
+
+            'y': [['date', ['2021-01-01', '2022-02-02']]],
+
+            'z': [['float', [10, 20]], ['x']],
+            #'z_bis': [[['z1_bis', 'z2_bis']]],
+            'z.variance': [[[0.1, 0.2]]],
+
+            #'unit': 'kg',
+            #'info': {'example': 'everything'}
+            } #}
+            ]
+        for example in examples:
+            xd = Xdataset.read_json(example) 
+            xd2 = Xdataset.from_scipp(xd.to_scipp(dataset=False))
+            self.assertEqual(xd, xd2)
+            xd2 = Xdataset.from_scipp(xd.to_scipp())
+            self.assertEqual(xd, xd2)        
+
+
 """example = {'test': {
     'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
     'var2.variance': [[[0.1, 0.2, 0.3, 0.4]]],
