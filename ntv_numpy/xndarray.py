@@ -14,7 +14,6 @@ For more information, see the
 
 import json
 from ntv_numpy.ndarray import Ndarray, NpUtil
-#from ntv_numpy.numpy_ntv_connector import NdarrayConnec
 
 
 class Xndarray:
@@ -35,6 +34,7 @@ class Xndarray:
     - `mode`
     - `xtype`
     - `full_name`
+    - `json_name`
 
     *methods*
     - `to_json`
@@ -45,6 +45,16 @@ class Xndarray:
 
     def __init__(self, full_name=None, nda=None, ntv_type=None, links=None,
                  meta=None):
+        '''Xndarray constructor.
+
+        *Parameters*
+
+        - **full_name**: string (default None) - name with additional name
+        - **nda** : np.ndarray or string (default None) - data (Numpy or URI)
+        - **links**: List of string (default None) - dims or other names of associated Xndarray
+        - **ntv_type**: string (default None) - ntv_type to apply to data
+        - **meta**: dict (default None) - information
+        '''
         if isinstance(full_name, Xndarray):
             self.name = full_name.name
             self.add_name = full_name.add_name
@@ -55,7 +65,7 @@ class Xndarray:
             self.meta = full_name.meta
             return
         self.name, self.add_name = Xndarray.split_name(full_name)
-        if isinstance(nda, str): 
+        if isinstance(nda, str):
             self.nda = None
             self.uri = nda
         else:
@@ -64,7 +74,6 @@ class Xndarray:
         ntv_type = NpUtil.nda_ntv_type(self.nda) if not (
             ntv_type or self.nda is None) else ntv_type
         self.ntv_type = ntv_type
-        #self.links = sorted(links) if links and not self.add_name else None
         self.links = sorted(links) if links else None
         self.meta = meta if meta else None
 
@@ -77,7 +86,7 @@ class Xndarray:
         return json.dumps(self.to_json())
 
     def __eq__(self, other):
-        ''' equal if values are equal'''
+        ''' equal if attributes are equal'''
         if self.name != other.name:
             return False
         if self.ntv_type != other.ntv_type:
@@ -93,15 +102,15 @@ class Xndarray:
         return Ndarray.equals(self.nda, other.nda)
 
     def __len__(self):
-        ''' len of values'''
+        ''' len of ndarray'''
         return len(self.nda) if self.nda is not None else 0
 
     def __contains__(self, item):
-        ''' item of values'''
+        ''' item of ndarray values'''
         return item in self.nda if self.nda is not None else None
 
     def __getitem__(self, ind):
-        ''' return value item'''
+        ''' return ndarray value item'''
         if self.nda is None:
             return None
         if isinstance(ind, tuple):
@@ -116,7 +125,7 @@ class Xndarray:
 
     @property
     def shape(self):
-        '''return the shape of the nda'''
+        '''return the shape of the ndarray'''
         return list(self.nda.shape) if self.nda is not None else None
 
     @property
@@ -208,7 +217,6 @@ class Xndarray:
                 return None
         ntv_type = str_nda[0] if str_nda and isinstance(
             str_nda[0], str) else None
-        #nda = Ndarray.read_json(str_nda, **option) if str_nda else None
         nda = Ndarray.read_json(str_nda, **option) if str_nda else uri
         return Xndarray(full_name, ntv_type=ntv_type, links=links,
                         meta=meta, nda=nda)
@@ -248,7 +256,7 @@ class Xndarray:
             return (None, None)
         spl = string.rsplit(':', maxsplit=1)
         if len(spl) == 1:
-            return(string, None)
+            return (string, None)
         if spl[0] == '':
             return (None, spl[1])
         sp0 = spl[0][:-1] if spl[0][-1] == ':' else spl[0]
@@ -264,5 +272,5 @@ class Xndarray:
         return spl
 
     def _to_json(self):
-        return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri, 'nda': self.nda,
-                'meta': self.meta, 'links': self.links}
+        return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri,
+                'nda': self.nda, 'meta': self.meta, 'links': self.links}
