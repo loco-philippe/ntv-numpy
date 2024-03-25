@@ -250,17 +250,18 @@ class Xndarray:
                                header=option['header'], encoded=option['encoded'])
 
     @staticmethod
-    def split_json_name(string):
+    def split_json_name(string, notnone=False):
         '''return a tuple with name, ntv_type from string'''
+        null = '' if notnone else None
         if not string or string == ':':
-            return (None, None)
+            return (null, null)
         spl = string.rsplit(':', maxsplit=1)
         if len(spl) == 1:
-            return (string, None)
+            return (string, null)
         if spl[0] == '':
-            return (None, spl[1])
+            return (null, spl[1])
         sp0 = spl[0][:-1] if spl[0][-1] == ':' else spl[0]
-        return (None if sp0 == '' else sp0, None if spl[1] == '' else spl[1])
+        return (null if sp0 == '' else sp0, null if spl[1] == '' else spl[1])
 
     @staticmethod
     def split_name(string):

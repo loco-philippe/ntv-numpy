@@ -412,27 +412,7 @@ class Xdataset:
                     xnd += Xutil.var_sc_to_xnd(scd[var].masks[mask], scd, mask, m_var)   
                 xnd += Xutil.var_sc_to_xnd(scd[var].data, scd, var)
         if isinstance(sc_obj, sc.DataGroup):            
-            dic_xnd = {xar.name: xar for xar in xnd}
-            for obj in sc_obj:
-                name, add_name = Xndarray.split_name(obj)
-                match [name, add_name, sc_obj[obj]]:
-                    case [name, None, list()]:
-                        print(name)
-                        xnd += [Xndarray.read_json({name: sc_obj[obj]})]
-                    case [name, _, sc.Variable()]:
-                        print(name)
-                        xnd += Xutil.var_sc_to_xnd(sc_obj[obj], var=name)
-                    case [name, _, dict() | str() | list()] if name in dic_xnd:
-                        print(name)
-                        if dic_xnd[name].meta:
-                            dic_xnd[name].meta |= sc_obj[obj]
-                        else:
-                            dic_xnd[name].meta = sc_obj[obj]
-                    case [name, _, dict() | str() | list()]:
-                        print(name)
-                        xnd += [Xndarray.read_json({name: sc_obj[obj]})]
-                    case [_, _, _]: ...
-        #print(Xdataset(xnd))
+            xnd = Xutil.grp_sc_to_xnd(sc_obj, xnd)
         return Xdataset(xnd, xnd_name).to_canonical()
                         
 class Xutil:
@@ -440,17 +420,37 @@ class Xutil:
     SCTYPE_DTYPE = {'string': 'str'}
     
     @staticmethod 
-    def grp_sc_to_xnd(scv, scd=None, sc_name='', var=None):
+    def grp_sc_to_xnd(sc_obj, xnd):
         '''return a list of Xndarray from a scipp variable'''
-        
+        dic_xnd = {xar.name: xar for xar in xnd}
+        for obj in sc_obj:
+            name, add_name = Xndarray.split_name(obj)
+            match [name, add_name, sc_obj[obj]]:
+                case [name, None, list()]:
+                    xnd += [Xndarray.read_json({name: sc_obj[obj]})]
+                case [name, add_name, sc.Variable()]:
+                    xnd += Xutil.var_sc_to_xnd(sc_obj[obj], None, add_name, name)
+                case [name, _, dict() | str() | list()] if name in dic_xnd:
+                    if dic_xnd[name].meta:
+                        dic_xnd[name].meta |= sc_obj[obj]
+                    else:
+                        dic_xnd[name].meta = sc_obj[obj]
+                case [name, _, dict() | str() | list()]:
+                    xnd += [Xndarray.read_json({name: sc_obj[obj]})]
+                case [_, _, _]: ...        
+        return xnd
+    
     @staticmethod 
     def var_sc_to_xnd(scv, scd=None, sc_name='', var=None):
-        '''return a list of Xndarray from a scipp variable'''
+        '''return a list of Xndarray from a scipp variable
+        - var : name
+        - sc_name : scipp name'''
         l_xnda = []
         unit = scv.unit.name if scv.unit and not scv.unit in ['dimensionless', 'ns'] else ''
-        var_n = (var + '.') if var else ''
-        json_name = var_n + sc_name + ('[' + unit + ']' if unit else '')
-        full_name, ntv_type = Xndarray.split_json_name(json_name)
+        ext_name, typ1 = Xndarray.split_json_name(sc_name, True)
+        var_name, typ2 = Xndarray.split_json_name(var, True)
+        full_name = var_name + ('.' if var_name and ext_name else '') + ext_name
+        ntv_type = typ1 + typ2 + ('[' + unit + ']' if unit else '')
         links = [Xndarray.split_json_name(jsn)[0] for jsn in scv.dims]
         if not scd is None and sc_name in scd.coords and scv.dims == scd.dims:
             links = [Xndarray.split_json_name(list(scd)[0])[0]]
@@ -494,6 +494,7 @@ class Xutil:
     def to_scipp_var(xd, name, **kwargs):
         '''return a scipp.Variable from a Xndarray defined by his name'''
         option = {'grp_mask': False, 'ntv_type':True} | kwargs
+        #print(name, option['grp_mask'])
         add_name = Xndarray.split_name(name)[1]
         new_n = add_name if name in xd.masks and not option['grp_mask'] else name
         opt_n = option['ntv_type']
@@ -508,6 +509,7 @@ class Xutil:
         simple_type, unit = NpUtil.split_type(xd[name].ntv_type)
         scipp_name = new_n + (':' + simple_type if opt_n else '')
         unit = unit if unit else ''
+        #print(scipp_name)
         return (scipp_name, sc.array(dims=dims, values=values, 
                                      variances=variances, unit=unit))
 
