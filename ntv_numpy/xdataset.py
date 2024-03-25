@@ -99,6 +99,11 @@ class Xdataset:
         ''' Copy all the data '''
         return self.__class__(self)      
 
+    def parent(self, var):
+        if var.name in self.names: 
+            return self[var.name] 
+        return var
+
     def dims(self, var, json_name=False):
         if not var in self.names: 
             return None
@@ -124,7 +129,7 @@ class Xdataset:
         if self.undef_links or self.undef_vars:
             return 'inconsistent'
         return 'valid'
-    
+
     @property 
     def xtype(self):
         '''Xdataset type'''
@@ -388,39 +393,58 @@ class Xdataset:
     def from_scipp(sc_obj, **kwargs):
         '''return a Xdataset from a scipp object DataArray, Dataset or DataGroup'''
         xnd = []
+        scd = sc_obj
+        xnd_name = None
         if isinstance(sc_obj, sc.DataGroup):
            for obj in sc_obj:
-               if type(obj) in (sc.Dataset, sc.DataArray):
+               if isinstance(sc_obj[obj], (sc.Dataset, sc.DataArray)):
                    scd = sc_obj[obj]
+                   xnd_name = obj
                    break 
-        else:
-            scd = sc_obj
         if isinstance(scd, sc.DataArray):
             scd = sc.Dataset({(scd.name if scd.name else 'no_name'): scd})
-        for coord in scd.coords:
-            xnd += Xutil.var_sc_to_xnd(scd, scd.coords[coord], coord)   
-        for var in scd:
-            for mask in scd[var].masks:
-                m_var = Xndarray.split_json_name(var)[0]
-                xnd += Xutil.var_sc_to_xnd(scd, scd[var].masks[mask], mask, m_var)   
-            xnd += Xutil.var_sc_to_xnd(scd, scd[var].data, var)
-        if isinstance(sc_obj, sc.DataGroup):
-           for obj in sc_obj:
-               name, add_name = Xndarray.split_name(obj)
-               match [name, add_name, type(sc_obj[obj])]:
-                   case: 
-        return Xdataset(xnd).to_canonical()
+        if isinstance(scd, sc.Dataset):        
+            for coord in scd.coords:
+                xnd += Xutil.var_sc_to_xnd(scd.coords[coord], scd, coord)   
+            for var in scd:
+                for mask in scd[var].masks:
+                    m_var = Xndarray.split_json_name(var)[0]
+                    xnd += Xutil.var_sc_to_xnd(scd[var].masks[mask], scd, mask, m_var)   
+                xnd += Xutil.var_sc_to_xnd(scd[var].data, scd, var)
+        if isinstance(sc_obj, sc.DataGroup):            
+            dic_xnd = {xar.name: xar for xar in xnd}
+            for obj in sc_obj:
+                name, add_name = Xndarray.split_name(obj)
+                match [name, add_name, sc_obj[obj]]:
+                    case [name, None, list()]:
+                        print(name)
+                        xnd += [Xndarray.read_json({name: sc_obj[obj]})]
+                    case [name, _, sc.Variable()]:
+                        print(name)
+                        xnd += Xutil.var_sc_to_xnd(sc_obj[obj], var=name)
+                    case [name, _, dict() | str() | list()] if name in dic_xnd:
+                        print(name)
+                        if dic_xnd[name].meta:
+                            dic_xnd[name].meta |= sc_obj[obj]
+                        else:
+                            dic_xnd[name].meta = sc_obj[obj]
+                    case [name, _, dict() | str() | list()]:
+                        print(name)
+                        xnd += [Xndarray.read_json({name: sc_obj[obj]})]
+                    case [_, _, _]: ...
+        #print(Xdataset(xnd))
+        return Xdataset(xnd, xnd_name).to_canonical()
                         
 class Xutil:
     
     SCTYPE_DTYPE = {'string': 'str'}
     
     @staticmethod 
-    def grp_sc_to_xnd(scd, scv, sc_name, var=None):
+    def grp_sc_to_xnd(scv, scd=None, sc_name='', var=None):
         '''return a list of Xndarray from a scipp variable'''
         
     @staticmethod 
-    def var_sc_to_xnd(scd, scv, sc_name, var=None):
+    def var_sc_to_xnd(scv, scd=None, sc_name='', var=None):
         '''return a list of Xndarray from a scipp variable'''
         l_xnda = []
         unit = scv.unit.name if scv.unit and not scv.unit in ['dimensionless', 'ns'] else ''
@@ -428,7 +452,7 @@ class Xutil:
         json_name = var_n + sc_name + ('[' + unit + ']' if unit else '')
         full_name, ntv_type = Xndarray.split_json_name(json_name)
         links = [Xndarray.split_json_name(jsn)[0] for jsn in scv.dims]
-        if sc_name in scd.coords and scv.dims == scd.dims:
+        if not scd is None and sc_name in scd.coords and scv.dims == scd.dims:
             links = [Xndarray.split_json_name(list(scd)[0])[0]]
         if not scv.variances is None:
             nda = np.array(scv.variances)
@@ -444,8 +468,8 @@ class Xutil:
     def to_sc_dataarray(xd, name, coords, **option):
         '''return a scipp.DataArray from a Xdataset.global_var defined by his name'''       
         scipp_name, data = Xutil.to_scipp_var(xd, name, **option)
-        masks = dict([Xutil.to_scipp_var(xd, name, **option) 
-                     for name in set(xd.var_group(name)) & set(xd.masks)])
+        masks = dict([Xutil.to_scipp_var(xd, nam, **option) 
+                     for nam in set(xd.var_group(name)) & set(xd.masks)])
         return (scipp_name, sc.DataArray(data, coords=coords, masks=masks))
        
     @staticmethod 
@@ -455,11 +479,14 @@ class Xutil:
         grp |= dict([Xutil.to_scipp_var(xd, name, **option)
                      for name in xd.data_add + xd.data_arrays
                      if xd[name].add_name != 'variance'])
+        grp |= dict([Xutil.to_scipp_var(xd, name, **option)
+                     for name in xd.masks
+                     if xd[name].name in xd.names and not xd[name].name in xd.data_vars])
         grp |= { name + '.meta': xd[name].meta for name in xd.names
                 if xd[name].meta}
         for name in xd.names: 
             if xd[name].mode == 'relative': 
-                grp |= xd[name].to_json()  
+                grp |= xd[name].to_json(header=False)  
         return grp
         
     @staticmethod 
