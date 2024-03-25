@@ -479,7 +479,8 @@ class Xutil:
         grp |= dict([Xutil.to_scipp_var(xd, name, **option)
                      for name in xd.data_add + xd.data_arrays
                      if xd[name].add_name != 'variance'])
-        grp |= dict([Xutil.to_scipp_var(xd, name, **option)
+        opt_mask = option | {'grp_mask': True}
+        grp |= dict([Xutil.to_scipp_var(xd, name, **opt_mask)
                      for name in xd.masks
                      if xd[name].name in xd.names and not xd[name].name in xd.data_vars])
         grp |= { name + '.meta': xd[name].meta for name in xd.names
@@ -490,10 +491,11 @@ class Xutil:
         return grp
         
     @staticmethod 
-    def to_scipp_var(xd, name, **option):
+    def to_scipp_var(xd, name, **kwargs):
         '''return a scipp.Variable from a Xndarray defined by his name'''
+        option = {'grp_mask': False, 'ntv_type':True} | kwargs
         add_name = Xndarray.split_name(name)[1]
-        new_n = add_name if name in xd.masks else name
+        new_n = add_name if name in xd.masks and not option['grp_mask'] else name
         opt_n = option['ntv_type']
         values = xd[name].nda.reshape(xd.shape_dims(name))
         if values.dtype.name[:8] == 'datetime':
