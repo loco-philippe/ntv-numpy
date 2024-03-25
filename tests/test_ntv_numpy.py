@@ -343,8 +343,7 @@ class Test_Xdataset(unittest.TestCase):
                                    'data_arrays': ['example'], 'width': 1})
 
         example = {'test': {
-            'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
-                     ['x', 'y']],
+            'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', ['x', 'y']],
             'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
             'ranking': [[[2, 2], [1, 2, 3, 4]], ['var2']],
             'x': [[['x1', 'x2']], {'test': 21}],

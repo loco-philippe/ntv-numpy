@@ -1,26 +1,20 @@
-## Example
+## Interoperability
 
-The example below is a Json representation of the xdataset named 'example'.
+Example :
 ```json
-{'example:xdataset': {
-    'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
-    'var1.variance': [[[2, 2], [0.1, 0.2, 0.3, 0.4]]],
-    'var1.mask1': [[[True, False]], ['x']],
-    'var1.mask2': [[[2, 2], [True, False, False, True]]],
+{':xdataset': {
+  'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
+  'var1.mask1': [['boolean', [True, False]], ['x']],
+  'var1.mask2': [['boolean', [2, 2], [True, False, False, True]]],
+  'var1.variance': [['float64', [2, 2], [0.1, 0.2, 0.3, 0.4]]],
 
-    'var2': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
-             ['x', 'y']],    
+  'x': [['base16', ['23F0AE', '578B98']]],
+  'y': [['date', ['2021-01-01', '2022-02-02']]],
     
-    'x': [['base16', ['23F0AE', '578B98']]], {'test': 21}],
-    'y': [['date', ['2021-01-01', '2022-02-02']]],
-    
-    'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var1']],
-    'z': [['float', [10, 20]], ['x']],
-    'z.variance': [[[0.1, 0.2]], ['x']],
-    
-    'z_bis': [[['z1_bis', 'z2_bis']]],
+  'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var1']],
 
-    'info': {'example': 'everything'}
+  'z': [['float', [10.0, 20.0]], ['x']],
+  'z.variance': [['float64', [0.1, 0.2]]]
 }}
 ```
 The first ligne is the NTV representation ( {'NTVname:NTVtype': NTVvalue}).
