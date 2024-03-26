@@ -469,6 +469,38 @@ class Test_Xdataset(unittest.TestCase):
             xd2 = Xdataset.from_scipp(xd.to_scipp())
             self.assertEqual(xd, xd2)        
 
+    def test_xdataset_full(self):    
+        
+        examples = [{ 'test': {
+            'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', ['x', 'y']],    
+            'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
+            'var2.variance': [[[2, 2], [0.1, 0.2, 0.3, 0.4]]],
+            'var2.mask1': [[[True, False]], ['x']],
+            'var2.mask2': [[[2, 2], [True, False, False, True]]],
+
+            'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']],
+
+
+            'x': [['base16', ['23F0AE', '578B98']]], #, {'test': 21}],
+            'x.mask1': [[[True, False]]],
+
+            'y': [['date', ['2021-01-01', '2022-02-02']]],
+
+            'z': [['float', [10, 20]], ['x']],
+            'z_bis': [[['z1_bis', 'z2_bis']]],
+            'z.variance': [[[0.1, 0.2]]],
+
+            'info': {'example': 'everything'}
+            } }
+            ]
+        for example in examples:
+            xd = Xdataset.read_json(example) 
+            xd_sc = Xdataset.from_scipp(xd.to_scipp(dataset=False))
+            xd_xr = Xdataset.from_xarray(xd.to_xarray(dataset=False))
+            self.assertTrue(xd == xd_sc == xd_xr)
+            xd_sc = Xdataset.from_scipp(xd.to_scipp())
+            xd_xr = Xdataset.from_xarray(xd.to_xarray())
+            self.assertTrue(xd == xd_sc == xd_xr)
 
 """example = {'test': {
     'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
