@@ -277,3 +277,36 @@ class Xndarray:
     def _to_json(self):
         return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri,
                 'nda': self.nda, 'meta': self.meta, 'links': self.links}
+
+"""
+    def __init__(self, darray, shape=None, ntv_type=None):
+        '''Ndarray constructor.
+
+        *Parameters*
+
+        - **darray**: Darray or np.ndarray - data to represent
+        - **shape** : String or integer (default None) - name or index of another Darray
+        - **ntv_type**: string (default None) - NTVtype to apply
+        '''
+        if isinstance(darray, Ndarray):
+            self.darray = darray.darray
+            self.uri = darray.uri
+            self.shape = darray.shape
+            self.ntvtype = darray.ntvtype
+            return
+        if isinstance(darray, str):
+            self.uri = darray
+            darray = None
+        else:
+            self.uri = None
+            if isinstance(darray, list): 
+                darray = np.array(darray)
+            if isinstance(darray, np.ndarray):
+                shape_array = darray.shape
+            else:
+                shape_array = [len(darray)]
+        self.shape = shape if shape else shape_array
+        self.darray = Darray(darray)
+        ntv_type = NpUtil.nda_ntv_type(self.darray) if not (
+            ntv_type or self.darray is None) else ntv_type
+        self.ntvtype = Datatype(ntv_type)"""

@@ -33,6 +33,118 @@ class Ndarray:
     - `to_json`
     - `equals`
     '''
+    def __init__(self, darray, shape=None, ntv_type=None):
+        '''Ndarray constructor.
+
+        *Parameters*
+
+        - **darray**: Darray or np.ndarray - data to represent
+        - **shape** : String or integer (default None) - name or index of another Darray
+        - **ntv_type**: string (default None) - NTVtype to apply
+        '''
+        if isinstance(darray, Ndarray):
+            self.darray = darray.darray
+            self.uri = darray.uri
+            self.shape = darray.shape
+            self.ntvtype = darray.ntvtype
+            return
+        if isinstance(darray, str):
+            self.uri = darray
+            darray = None
+        else:
+            self.uri = None
+            darray = np.array(darray if isinstance(darray, (np.ndarray)) else [darray])
+        self.shape = shape if shape else list(darray.shape)
+        self.darray = np.array(darray).reshape(-1)
+        ntv_type = NpUtil.nda_ntv_type(self.darray) if not (
+            ntv_type or self.darray is None) else ntv_type
+        self.ntvtype = Datatype(ntv_type)
+
+    def __repr__(self):
+        '''return classname, the shape and the ntv_type'''
+        return self.__class__.__name__ + '(' + self.ntv_type + ', ' + self.shape + ')'
+
+    def __str__(self):
+        '''return json string format'''
+        return json.dumps(self.to_json())
+
+    def __eq__(self, other):
+        ''' equal if attributes are equal'''
+        if self.ntv_type != other.ntv_type:
+            return False
+        if self.uri != other.uri:
+            return False
+        if self.shape != other.shape:
+            return False
+        if self.darray is None and other.darray is None:
+            return True
+        if self.darray is None or other.darray is None:
+            return False
+        return Ndarray.equals(self.darray, other.darray)
+
+    def __len__(self):
+        ''' len of ndarray'''
+        return len(self.darray) if self.darray is not None else Ndarray.len_shape(self.shape)
+
+    def __contains__(self, item):
+        ''' item of darray values'''
+        return item in self.darray if self.darray is not None else None
+
+    def __getitem__(self, ind):
+        ''' return darray value item'''
+        if self.darray is None:
+            return None
+        if isinstance(ind, tuple):
+            return [self.darray[i] for i in ind]
+        return self.darray[ind]
+
+    def __copy__(self):
+        ''' Copy all the data '''
+        return self.__class__(self)
+    
+    @property    
+    def ntv_type(self):
+        ''' string representation of ntvtype'''
+        return str(self.ntvtype)
+
+    @property
+    def mode(self):
+        '''representation mode of the darray/uri data (relative, absolute,
+        undefined, inconsistent)'''
+        match [self.darray, self.uri]:
+            case [None, str()]:
+                return 'relative'
+            case [None, None]:
+                return 'undefined'
+            case [_, None]:
+                return 'absolute'
+            case _:
+                return 'inconsistent'
+
+    @staticmethod
+    def read_json2(ntv_value, **kwargs):
+        ''' convert json ntv_value into a ndarray.
+
+
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with
+        non Numpy ntv_type into data with python type
+        '''
+        option = {'convert': True} | kwargs
+        ntv_type = None
+        shape = None
+        match ntv_value[:-1]:
+            case []: ...
+            case [ntv_type, shape]: ...
+            case [str(ntv_type)]: ...
+            case [list(shape)]: ...
+        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
+        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
+                                     convert=option['convert'])
+        #return darray.values.reshape(shape)
+        return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
+
     @staticmethod
     def read_json(ntv_value, **kwargs):
         ''' convert json ntv_value into a ndarray.
@@ -56,6 +168,44 @@ class Ndarray:
                                      convert=option['convert'])
         return darray.values.reshape(shape)
 
+    def to_json2(self, **kwargs):
+        ''' convert a ndarray into json-value
+
+        *Parameters*
+
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
+        - **notype** : Boolean (default False) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
+        - **format** : string (default 'full') - representation format of the ndarray,
+        - **extension** : string (default None) - type extension
+        '''
+        option = {'notype': False, 'extension': None, 'format': 'full',
+                  'noshape': True, 'novalue': False} | kwargs
+        match [self.darray, self.uri]:
+            case [None, str()]:
+                return 'relative'
+            case [None, None]:
+                return 'undefined'
+            case [_, None]:
+                return 'absolute'
+            case _:
+                return 'inconsistent'
+        if self.mode in ['undefined', 'inconsistent']:
+            return None
+        if self.mode == 'absolute' and len(self.darray) == 0:
+            return [[]]
+
+        shape = None if len(self.shape) < 2 and option['noshape'] else self.shape
+
+        if self.mode == 'relative':
+            js_val = self.uri
+        else:
+            val_flat = self.darray.flatten()
+            js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(self.ntv_type, val_flat,
+                                                                option['format'])
+        lis = [self.ntv_type if not option['notype'] else None, shape, js_val]
+        return [val for val in lis if not val is None]
+    
     @staticmethod
     def to_json(value, **kwargs):
         ''' convert a ndarray into json-value
@@ -113,7 +263,23 @@ class Ndarray:
             return True
         return np.array_equal(nself, nother)
 
-
+    @property
+    def info(self):
+        ''' infos of the Ndarray'''
+        inf = {'shape': self.shape}
+        inf['length'] = len(self)
+        inf['ntvtype'] = self.ntv_type
+        inf['shape'] = self.shape
+        inf['uri'] = self.uri
+        return {key: val for key, val in inf.items() if val}    
+    
+    @staticmethod    
+    def len_shape(shape):
+        prod = 1
+        for dim in shape:
+            prod *= dim
+        return prod 
+    
 class NpUtil:
     '''ntv-ndarray utilities.
 

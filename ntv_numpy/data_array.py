@@ -58,7 +58,6 @@ class Darray(ABC):
             self.data = np.array(data, dtype=dtype).reshape(-1)
         self.ref = ref
         self.coding = np.array(coding)
-        return
 
     def __repr__(self):
         '''return classname and number of value'''
