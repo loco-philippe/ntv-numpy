@@ -8,6 +8,7 @@ Created on Thu Mar  7 09:56:11 2024
 import json
 from ntv_numpy.ndarray import NpUtil
 from ntv_numpy.xndarray import Xndarray
+from ntv_numpy.xconnector import XarrayConnec, ScippConnec
 import xarray as xr
 import scipp as sc
 import numpy as np
@@ -319,6 +320,9 @@ class Xdataset:
                                header=kwargs.get('header', True), 
                                encoded=kwargs.get('encoded', False))
 
+    def to_xarray2(self, **kwargs):
+        return XarrayConnec.xexport(self, **kwargs)     
+        
     def to_xarray(self, **kwargs):
         '''return a DataArray or a Dataset from a Xdataset
        
@@ -326,11 +330,10 @@ class Xdataset:
 
         - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
         '''
-        option = {'dataset': True} | kwargs 
+        option = {'dataset': True, 'datagroup': True} | kwargs 
         coords = Xutil.to_xr_vars(self, self.dimensions + self.coordinates)
         coords |= Xutil.to_xr_vars(self, self.additionals)
-        attrs = {meta: self[meta].meta for meta in self.metadata}
-        attrs |= {'name': self.name} if self.name else {}
+        attrs = Xutil.to_xr_attrs(self, **option)
         if len(self.data_vars) == 1 and not option['dataset']:
             var_name = self.data_vars[0]
             data = self[var_name].nda
@@ -343,8 +346,14 @@ class Xdataset:
             return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
                                 name=name)
         data_vars = Xutil.to_xr_vars(self, self.data_vars)
-        return xr.Dataset(data_vars, coords=coords, attrs=attrs)
+        xrd = xr.Dataset(data_vars, coords=coords, attrs=attrs)
+        #xrd = xrd if option['dataset'] else xrd[list(xrd)[0]]
+        return xrd
 
+    @staticmethod 
+    def from_xarray2(xar, **kwargs):
+        return XarrayConnec.ximport(xar, Xdataset, **kwargs)     
+        
     @staticmethod 
     def from_xarray(xar, **kwargs):
         '''return a Xdataset from a DataArray or a Dataset'''
@@ -352,7 +361,10 @@ class Xdataset:
         if xar.attrs:
             attrs = {k: v for k, v in xar.attrs.items() if not k in ['name', 'ntv_type']}
             for name, meta in attrs.items():
-                xnd += [Xndarray(name, meta=meta)]
+                if isinstance(meta, list):
+                    xnd += [Xndarray.read_json({name: meta})]
+                else:    
+                    xnd += [Xndarray(name, meta=meta)]
         for coord in xar.coords:
             xnd += [Xutil.var_xr_to_xnd(xar.coords[coord])]
             if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
@@ -367,6 +379,9 @@ class Xdataset:
         for var in xar.data_vars:
             xnd += [Xutil.var_xr_to_xnd(xar.data_vars[var])]
         return Xdataset(xnd, xar.attrs.get('name')).to_canonical()
+
+    def to_scipp2(self, **kwargs):
+        return ScippConnec.xexport(self, **kwargs)     
                 
     def to_scipp(self, **kwargs):
         '''return a sc.DataArray or a sc.Dataset from a Xdataset
@@ -387,8 +402,13 @@ class Xdataset:
         scd = scd if option['dataset'] else scd[list(scd)[0]]
         if not option['datagroup']:
             return scd
-        return sc.DataGroup({self.name:scd} | Xutil.to_scipp_grp(self, **option))
+        sc_name = self.name if self.name else 'no_name'
+        return sc.DataGroup({sc_name:scd} | Xutil.to_scipp_grp(self, **option))
 
+    @staticmethod 
+    def from_scipp2(xar, **kwargs):
+        return ScippConnec.ximport(xar, Xdataset, **kwargs)    
+    
     @staticmethod 
     def from_scipp(sc_obj, **kwargs):
         '''return a Xdataset from a scipp object DataArray, Dataset or DataGroup'''
@@ -529,6 +549,19 @@ class Xutil:
         return Xndarray(full_name, nda, ntv_type, dims, attrs)
 
     @staticmethod 
+    def to_xr_attrs(xd, **option):
+        '''return a dict with attributes from a Xdataset'''
+        attrs = {meta: xd[meta].meta for meta in xd.metadata}
+        attrs |= {'name': xd.name} if xd.name else {}
+        if option['datagroup']:
+            for name in xd.names: 
+                if xd[name].mode == 'relative': 
+                    attrs |= xd[name].to_json(header=False)
+            for name in xd.data_arrays: 
+                attrs |= xd[name].to_json(header=False)
+        return attrs        
+        
+    @staticmethod 
     def to_xr_coord(xd, name):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
         data = xd[name].nda
@@ -544,7 +577,8 @@ class Xutil:
     def to_xr_vars(xd, list_names):
         '''return a dict with Xarray attributes from a list of Xndarray names'''
         arg_vars = {}
-        for xnd_name in list_names:
+        valid_names = [name for name in list_names if xd[name].mode == 'absolute']
+        for xnd_name in valid_names:
             arg_vars |= Xutil.to_xr_coord(xd, xnd_name)
         return arg_vars
     
