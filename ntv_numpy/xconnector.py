@@ -59,7 +59,7 @@ class XarrayConnec:
                 xnd[-1].links = [list(xar.data_vars)[0]]                
         if isinstance(xar, xr.DataArray):
             xnd += [XarrayConnec.var_xr_to_xnd(xar, name='data', add_attrs=False)]
-            xd = Xdataset(xnd, xar.attrs.get('name'))
+            xd = Xclass(xnd, xar.attrs.get('name'))
             for var in xd.data_vars:
                 if var != xar.name and xar.name:
                     xd[var].links = [xar.name]
