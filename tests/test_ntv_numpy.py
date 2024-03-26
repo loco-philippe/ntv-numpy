@@ -473,7 +473,7 @@ class Test_Xdataset(unittest.TestCase):
 
     def test_xdataset_mixte(self):    
         
-        examples = [{ 'test': {
+        examples = [{ 'test:xdataset': {
             'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', ['x', 'y']],    
             'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
             'var2.variance': [[[2, 2], [0.1, 0.2, 0.3, 0.4]]],
@@ -490,6 +490,7 @@ class Test_Xdataset(unittest.TestCase):
 
             'z': [['float', [10, 20]], ['x']],
             'z_bis': [[['z1_bis', 'z2_bis']]],
+            'z.uncertainty': [[[0.1, 0.2]]],
             'z.variance': [[[0.1, 0.2]]],
 
             'info': {'example': 'everything'}
