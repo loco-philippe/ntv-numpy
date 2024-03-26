@@ -99,6 +99,8 @@ class Xndarray:
             return False
         if self.nda is None and other.nda is None:
             return True
+        if self.nda is None or other.nda is None:
+            return False
         return Ndarray.equals(self.nda, other.nda)
 
     def __len__(self):
