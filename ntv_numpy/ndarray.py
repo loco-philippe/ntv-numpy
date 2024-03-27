@@ -2,7 +2,8 @@
 """
 @author: Philippe@loco-labs.io
 
-The `ndarray` module is part of the `ntv-numpy.ntv_numpy` package ([specification document](
+The `ndarray` module is part of the `ntv-numpy.ntv_numpy` package 
+([specification document](
 https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
 
 It contains the classes `Ndarray`, `NpUtil`, `NdarrayError` for the JSON interface
@@ -13,11 +14,11 @@ For more information, see the
  or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 
 """
-#import os
+# import os
 import datetime
 import json
-#import configparser
-#from pathlib import Path
+# import configparser
+# from pathlib import Path
 from decimal import Decimal
 import pandas as pd
 import numpy as np
@@ -33,7 +34,8 @@ class Ndarray:
     - `to_json`
     - `equals`
     '''
-    def __init__(self, darray, ntv_type=None, shape=None ):
+
+    def __init__(self, darray, ntv_type=None, shape=None):
         '''Ndarray constructor.
 
         *Parameters*
@@ -42,7 +44,8 @@ class Ndarray:
         - **shape** : String or integer (default None) - name or index of another Darray
         - **ntv_type**: string (default None) - NTVtype to apply
         '''
-        darray = None if isinstance(darray, list) and len(darray) == 0 else darray
+        darray = None if isinstance(
+            darray, list) and len(darray) == 0 else darray
         if isinstance(darray, Ndarray):
             self.darray = darray.darray
             self.uri = darray.uri
@@ -56,12 +59,12 @@ class Ndarray:
             self.uri = None
             darray = np.array(darray if isinstance(darray, (list, np.ndarray))
                               else [darray], dtype=NpUtil.dtype(ntv_type))
-            
+
         self.shape = shape if shape else list(darray.shape)
         darray = np.array(darray).reshape(-1)
         ntv_type = NpUtil.nda_ntv_type(darray) if not (
             ntv_type or darray is None) else ntv_type
-        self.is_json = NpUtil.is_json(darray[0]) 
+        self.is_json = NpUtil.is_json(darray[0])
         self.ntvtype = Datatype(ntv_type)
         self.darray = darray.astype(NpUtil.dtype(str(self.ntvtype)))
 
@@ -106,8 +109,8 @@ class Ndarray:
     def __copy__(self):
         ''' Copy all the data '''
         return self.__class__(self)
-    
-    @property    
+
+    @property
     def ntv_type(self):
         ''' string representation of ntvtype'''
         return str(self.ntvtype)
@@ -149,7 +152,7 @@ class Ndarray:
         darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
         darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
                                      convert=option['convert'])
-        #return darray.values.reshape(shape)
+        # return darray.values.reshape(shape)
         return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
 
     @staticmethod
@@ -193,20 +196,20 @@ class Ndarray:
         if self.mode == 'absolute' and len(self.darray) == 0:
             return [[]]
 
-        shape = None if len(self.shape) < 2 and option['noshape'] else self.shape
+        shape = None if len(
+            self.shape) < 2 and option['noshape'] else self.shape
 
         if self.mode == 'relative':
             js_val = self.uri
         else:
-            #val_flat = self.darray.flatten()
-            val_flat = self.darray
-            js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(self.ntv_type, val_flat,
-                                                                option['format'], self.is_json)
+            js_val = NpUtil.ntv_val(self.ntv_type, self.darray, option['format'],
+                                    self.is_json) if not option['novalue'] else ['-']
+
         lis = [self.ntv_type if not option['notype'] else None, shape, js_val]
-        #return [val for val in lis if not val is None]
         return NpUtil.json_ntv(None, 'ndarray',
                                [val for val in lis if not val is None],
-                               header=option['header'], encoded=option['encoded'])    
+                               header=option['header'], encoded=option['encoded'])
+
     @staticmethod
     def to_json(value, **kwargs):
         ''' convert a ndarray into json-value
@@ -274,15 +277,16 @@ class Ndarray:
         inf['ntvtype'] = self.ntv_type
         inf['shape'] = self.shape
         inf['uri'] = self.uri
-        return {key: val for key, val in inf.items() if val}    
-    
-    @staticmethod    
+        return {key: val for key, val in inf.items() if val}
+
+    @staticmethod
     def len_shape(shape):
         prod = 1
         for dim in shape:
             prod *= dim
-        return prod 
-    
+        return prod
+
+
 class NpUtil:
     '''ntv-ndarray utilities.
 
@@ -364,7 +368,7 @@ class NpUtil:
                 return min(is_js(obj_in) for obj_in in obj.values())
             case _:
                 return False
-            
+
     @staticmethod
     def convert(ntv_type, nda, tojson=True, convert=True):
         ''' convert ndarray with external NTVtype.
@@ -437,7 +441,7 @@ class NpUtil:
         ref = darray.ref
         coding = darray.coding
         if is_json:
-            return Format(darray.data, ref=ref, coding=coding).to_json()            
+            return Format(darray.data, ref=ref, coding=coding).to_json()
         match ntv_type:
             case 'ndarray':
                 data = [Ndarray.to_json(nd) for nd in darray.data]
@@ -477,7 +481,7 @@ class NpUtil:
             return (null, spl[1])
         sp0 = spl[0][:-1] if spl[0][-1] == ':' else spl[0]
         return (null if sp0 == '' else sp0, null if spl[1] == '' else spl[1])
-    
+
     @staticmethod
     def ntv_type(dtype, ntv_type=None, ext=None):
         ''' return NTVtype from dtype, additional type and extension.
@@ -576,7 +580,6 @@ class NpUtil:
         else:
             value = jso
             name = None"""
-
 
 
 class NdarrayError(Exception):
