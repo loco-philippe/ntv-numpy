@@ -21,7 +21,7 @@ import json
 from decimal import Decimal
 import pandas as pd
 import numpy as np
-from json_ntv import ShapelyConnec, Datatype, NtvConnector
+from json_ntv import Ntv, ShapelyConnec, Datatype, NtvConnector
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray
 
 
@@ -33,7 +33,7 @@ class Ndarray:
     - `to_json`
     - `equals`
     '''
-    def __init__(self, darray, shape=None, ntv_type=None):
+    def __init__(self, darray, ntv_type=None, shape=None ):
         '''Ndarray constructor.
 
         *Parameters*
@@ -53,16 +53,18 @@ class Ndarray:
             darray = None
         else:
             self.uri = None
-            darray = np.array(darray if isinstance(darray, (np.ndarray)) else [darray])
+            darray = np.array(darray if isinstance(darray, (list, np.ndarray))
+                              else [darray], dtype=NpUtil.dtype(ntv_type))
         self.shape = shape if shape else list(darray.shape)
-        self.darray = np.array(darray).reshape(-1)
-        ntv_type = NpUtil.nda_ntv_type(self.darray) if not (
-            ntv_type or self.darray is None) else ntv_type
+        darray = np.array(darray).reshape(-1)
+        ntv_type = NpUtil.nda_ntv_type(darray) if not (
+            ntv_type or darray is None) else ntv_type
         self.ntvtype = Datatype(ntv_type)
+        self.darray = darray.astype(NpUtil.dtype(str(self.ntvtype)))
 
     def __repr__(self):
         '''return classname, the shape and the ntv_type'''
-        return self.__class__.__name__ + '(' + self.ntv_type + ', ' + self.shape + ')'
+        return self.__class__.__name__ + '(' + self.ntv_type + ', ' + str(self.shape) + ')'
 
     def __str__(self):
         '''return json string format'''
@@ -132,6 +134,8 @@ class Ndarray:
         non Numpy ntv_type into data with python type
         '''
         option = {'convert': True} | kwargs
+        ntv_value, = Ntv.decode_json(ntv_value)[:1]
+
         ntv_type = None
         shape = None
         match ntv_value[:-1]:
@@ -179,17 +183,8 @@ class Ndarray:
         - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
         '''
-        option = {'notype': False, 'extension': None, 'format': 'full',
-                  'noshape': True, 'novalue': False} | kwargs
-        match [self.darray, self.uri]:
-            case [None, str()]:
-                return 'relative'
-            case [None, None]:
-                return 'undefined'
-            case [_, None]:
-                return 'absolute'
-            case _:
-                return 'inconsistent'
+        option = {'format': 'full', 'header': True, 'encoded': False,
+                  'notype': False, 'noshape': True, 'novalue': False} | kwargs
         if self.mode in ['undefined', 'inconsistent']:
             return None
         if self.mode == 'absolute' and len(self.darray) == 0:
@@ -204,8 +199,10 @@ class Ndarray:
             js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(self.ntv_type, val_flat,
                                                                 option['format'])
         lis = [self.ntv_type if not option['notype'] else None, shape, js_val]
-        return [val for val in lis if not val is None]
-    
+        #return [val for val in lis if not val is None]
+        return NpUtil.json_ntv(None, 'ndarray',
+                               [val for val in lis if not val is None],
+                               header=option['header'], encoded=option['encoded'])    
     @staticmethod
     def to_json(value, **kwargs):
         ''' convert a ndarray into json-value
@@ -251,6 +248,8 @@ class Ndarray:
             return True
         if len(nself) != len(nother):
             return False
+        if len(nself) == 0:
+            return True
         if isinstance(nself[0], (np.ndarray, pd.Series, pd.DataFrame)):
             SeriesConnec = NtvConnector.connector().get('SeriesConnec')
             DataFrameConnec = NtvConnector.connector().get('DataFrameConnec')
@@ -433,6 +432,20 @@ class NpUtil:
         return (spl[0], None) if len(spl) == 1 else (spl[0], spl[1][:-1])
 
     @staticmethod
+    def split_json_name(string, notnone=False):
+        '''return a tuple with name, ntv_type from string'''
+        null = '' if notnone else None
+        if not string or string == ':':
+            return (null, null)
+        spl = string.rsplit(':', maxsplit=1)
+        if len(spl) == 1:
+            return (string, null)
+        if spl[0] == '':
+            return (null, spl[1])
+        sp0 = spl[0][:-1] if spl[0][-1] == ':' else spl[0]
+        return (null if sp0 == '' else sp0, null if spl[1] == '' else spl[1])
+    
+    @staticmethod
     def ntv_type(dtype, ntv_type=None, ext=None):
         ''' return NTVtype from dtype, additional type and extension.
 
@@ -508,6 +521,29 @@ class NpUtil:
         if option['encoded']:
             return json.dumps(jsn)
         return jsn
+
+    """@staticmethod
+    def from_json_ntv(jso):
+        ''' return NTVname, NTVtype, NTVvalue(list) of a json data'''
+        if not ((isinstance(jso, dict) and len(jso) == 1) or isinstance(jso, list)):
+            return None
+        if isinstance(jso, list):
+            json_name = None
+            value = jso
+        else:
+            json_name, value = list(jso.items())[0]
+        full_name, ntv_type = NpUtil.split_json_name(json_name)
+        return (full_name, ntv_type, value)
+
+        if not isinstance(jso, dict):
+            return None
+        if len(jso) == 1:
+            json_name, value = list(jso.items())[0]
+            name = Xndarray.split_json_name(json_name)[0]
+        else:
+            value = jso
+            name = None"""
+
 
 
 class NdarrayError(Exception):

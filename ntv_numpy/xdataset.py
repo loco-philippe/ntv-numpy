@@ -9,7 +9,7 @@ import json
 from ntv_numpy.ndarray import NpUtil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xconnector import XarrayConnec, ScippConnec
-
+from json_ntv import Ntv
 
 class Xdataset:
     ''' Representation of a multidimensional Dataset
@@ -274,14 +274,18 @@ class Xdataset:
         non Numpy ntv_type into Xndarray with python type
         '''
         option = {'convert': True} | kwargs
-        if not isinstance(jso, dict):
+        value, name = Ntv.decode_json(jso)[:2]
+
+        '''if not isinstance(jso, dict):
             return None
         if len(jso) == 1:
             json_name, value = list(jso.items())[0]
             name = Xndarray.split_json_name(json_name)[0]
         else:
             value = jso
-            name = None
+            name = None'''
+            
+            
         xnd = [Xndarray.read_json({key: val}, **option)
                for key, val in value.items()]
         return Xdataset(xnd, name)

@@ -78,6 +78,41 @@ class Test_Darray(unittest.TestCase):
     
 class Test_Ndarray(unittest.TestCase):    
 
+    def test_ndarray_simple2(self):    
+        
+        example =[[[1,2], 'int64'],
+                  [[], None],
+                  [[[1,2], [3,4]], 'int64'],
+                  [[True, False], 'boolean'],
+                  #[['1+2j', 1], 'complex'],
+                  [['test1', 'test2'], 'string'], 
+                  [['2022-01-01T10:05:21.0002', '2023-01-01T10:05:21.0002'], 'datetime'],
+                  [['2022-01-01', '2023-01-01'], 'date'],
+                  [['2022-01', '2023-01'], 'yearmonth'],
+                  [['2022', '2023'], 'year'],
+                  #[[1,2], 'timedelta[D]'],
+                  [[b'abc\x09', b'abc'], 'base16'],
+                  [[time(10, 2, 3), time(20, 2, 3)], 'time'],
+                  [[{'one':1}, {'two':2}], 'object'],
+                  [[None, None], 'null'],
+                  [[Decimal('10.5'), Decimal('20.5')], 'decimal64'],
+                  [[Point([1,2]), Point([3,4])], 'point'],
+                  #[[Ntv.obj({':point':[1,2]}), NtvSingle(12, 'noon', 'hour')], 'ntv'],
+                  [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
+                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'line'],
+                  ]
+        """
+                  []]"""
+        for ex in example:
+            arr = Ndarray(ex[0], ntv_type=ex[1])
+            for format in ['full', 'complete']:
+                js = arr.to_json2(format=format)
+                #print(js)
+                ex_rt = Ndarray.read_json2(js, header=False)
+                self.assertEqual(ex_rt, arr)        
+                #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+
+    
     def test_ndarray_simple(self):    
         
         example =[[[1,2], 'int64'],

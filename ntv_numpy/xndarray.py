@@ -14,7 +14,7 @@ For more information, see the
 
 import json
 from ntv_numpy.ndarray import Ndarray, NpUtil
-
+from json_ntv import Ntv
 
 class Xndarray:
     ''' Representation of a labelled multidimensional Array
@@ -194,14 +194,17 @@ class Xndarray:
         non Numpy ntv_type into data with python type
         '''
         option = {'convert': True} | kwargs
-        if not ((isinstance(jso, dict) and len(jso) == 1) or isinstance(jso, list)):
+        value, full_name, ntv_type = Ntv.decode_json(jso)[:3]
+        #full_name, ntv_type, value = NpUtil.from_json_ntv(jso)
+        '''if not ((isinstance(jso, dict) and len(jso) == 1) or isinstance(jso, list)):
             return None
         if isinstance(jso, list):
             json_name = None
             value = jso
         else:
             json_name, value = list(jso.items())[0]
-        full_name = Xndarray.split_json_name(json_name)[0]
+        full_name = Xndarray.split_json_name(json_name)[0]'''
+        
         uri = meta = links = str_nda = None
         match value:
             case str(meta) | dict(meta): ...
