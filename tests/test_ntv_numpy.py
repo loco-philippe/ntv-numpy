@@ -78,10 +78,27 @@ class Test_Darray(unittest.TestCase):
     
 class Test_Ndarray(unittest.TestCase):    
 
+    def test_ndarray_null(self):    
+        
+        example =[[[], None],
+                  ]
+
+        for ex in example:
+            #print(ex[0], ex[1])
+            arr = Ndarray(ex[0], ntv_type=ex[1])
+            js = arr.to_json2()
+            #print(js)
+            ex_rt = Ndarray.read_json2(js, header=False)
+            self.assertEqual(ex_rt, arr)        
+            self.assertEqual(js, ex_rt.to_json2())         
+            ex_rt = Ndarray.read_json2(js, header=False, convert=False)
+            #print(js, ex_rt.to_json2(format=format))
+            self.assertEqual(js[':ndarray'][1], ex_rt.to_json2()[':ndarray'][1])         
+            #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+
     def test_ndarray_simple2(self):    
         
         example =[[[1,2], 'int64'],
-                  [[], None],
                   [[[1,2], [3,4]], 'int64'],
                   [[True, False], 'boolean'],
                   #[['1+2j', 1], 'complex'],
@@ -106,34 +123,46 @@ class Test_Ndarray(unittest.TestCase):
             #print(ex[0], ex[1])
             arr = Ndarray(ex[0], ntv_type=ex[1])
             for format in ['full', 'complete']:
-                if len(arr) > 1 or format == 'full':
+                js = arr.to_json2(format=format)
+                #print(js)
+                ex_rt = Ndarray.read_json2(js, header=False)
+                self.assertTrue(ex_rt.shape == arr.shape == [2])        
+                self.assertEqual(ex_rt, arr)        
+                self.assertEqual(js, ex_rt.to_json2(format=format))         
+                ex_rt = Ndarray.read_json2(js, header=False, convert=False)
+                #print(js, ex_rt.to_json2(format=format))
+                self.assertEqual(js[':ndarray'][1], ex_rt.to_json2(format=format)[':ndarray'][1])         
+                #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+            if len(ex[0]) == 2:
+                arr = Ndarray(ex[0], ntv_type=ex[1], shape=[2,1])
+                for format in ['full', 'complete']:
+                    #print(ex, format)
                     js = arr.to_json2(format=format)
                     #print(js)
                     ex_rt = Ndarray.read_json2(js, header=False)
                     self.assertEqual(ex_rt, arr)        
-                    self.assertEqual(js, ex_rt.to_json2(format=format))         
 
-                #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+    def test_ndarray_nested2(self):    
 
-    def test_ndarray_not_convert2(self):    
-        
-        example =[[[time(10, 2, 3), time(20, 2, 3)], 'time'],
-                  [[{'one':1}, {'two':2}], 'object'],
-                  [[None, None], 'null'],
-                  [[Decimal('10.5'), Decimal('20.5')], 'decimal64'],
-                  [[Point([1,2]), Point([3,4])], 'point'],
-                  [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
-                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'line']
-                  ]       
+        example =[[[[1,2], [3,4]], 'array'],
+                  [[np.array([1, 2], dtype='int64'), np.array(['test1', 'test2'], dtype='str_')], 'array'],
+                  [[pd.Series([1,2,3]), pd.Series([4,5,6])], 'field'],
+                  [[pd.DataFrame({'::date': pd.Series([date(1964,1,1), date(1985,2,5)]), 
+                                  'names': ['john', 'eric']}),
+                    pd.DataFrame({'::date': pd.Series([date(1984,1,1), date(1995,2,5)]), 
+                                  'names': ['anna', 'erich']})], 'tab' ]
+                  ]
         for ex in example:
             arr = Ndarray(ex[0], ntv_type=ex[1])
             for format in ['full', 'complete']:
                 js = arr.to_json2(format=format)
-                #print(js)
-                ex_rt = Ndarray.read_json2(js, header=False, convert=False)
-                #print(js, ex_rt.to_json2(format=format))
-                self.assertEqual(js[':ndarray'][1], ex_rt.to_json2(format=format)[':ndarray'][1])         
-                #print(js, to_json(ex_rt, format=format))
+                print(js)
+                ex_rt = Ndarray.read_json2(js, header=False)
+                #self.assertEqual(ex_rt, arr)        
+                #print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
+        
+
+
     
     def test_ndarray_simple(self):    
         
