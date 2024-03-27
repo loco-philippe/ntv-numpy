@@ -99,19 +99,41 @@ class Test_Ndarray(unittest.TestCase):
                   [[Point([1,2]), Point([3,4])], 'point'],
                   #[[Ntv.obj({':point':[1,2]}), NtvSingle(12, 'noon', 'hour')], 'ntv'],
                   [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
-                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'line'],
+                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'line']
                   ]
-        """
-                  []]"""
+
+        for ex in example:
+            #print(ex[0], ex[1])
+            arr = Ndarray(ex[0], ntv_type=ex[1])
+            for format in ['full', 'complete']:
+                if len(arr) > 1 or format == 'full':
+                    js = arr.to_json2(format=format)
+                    #print(js)
+                    ex_rt = Ndarray.read_json2(js, header=False)
+                    self.assertEqual(ex_rt, arr)        
+                    self.assertEqual(js, ex_rt.to_json2(format=format))         
+
+                #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+
+    def test_ndarray_not_convert2(self):    
+        
+        example =[[[time(10, 2, 3), time(20, 2, 3)], 'time'],
+                  [[{'one':1}, {'two':2}], 'object'],
+                  [[None, None], 'null'],
+                  [[Decimal('10.5'), Decimal('20.5')], 'decimal64'],
+                  [[Point([1,2]), Point([3,4])], 'point'],
+                  [[LineString([[0, 0], [0, 1], [1, 1], [0, 0]]), 
+                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]])], 'line']
+                  ]       
         for ex in example:
             arr = Ndarray(ex[0], ntv_type=ex[1])
             for format in ['full', 'complete']:
                 js = arr.to_json2(format=format)
                 #print(js)
-                ex_rt = Ndarray.read_json2(js, header=False)
-                self.assertEqual(ex_rt, arr)        
-                #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
-
+                ex_rt = Ndarray.read_json2(js, header=False, convert=False)
+                #print(js, ex_rt.to_json2(format=format))
+                self.assertEqual(js[':ndarray'][1], ex_rt.to_json2(format=format)[':ndarray'][1])         
+                #print(js, to_json(ex_rt, format=format))
     
     def test_ndarray_simple(self):    
         

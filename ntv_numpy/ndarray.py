@@ -42,6 +42,7 @@ class Ndarray:
         - **shape** : String or integer (default None) - name or index of another Darray
         - **ntv_type**: string (default None) - NTVtype to apply
         '''
+        darray = None if isinstance(darray, list) and len(darray) == 0 else darray
         if isinstance(darray, Ndarray):
             self.darray = darray.darray
             self.uri = darray.uri
@@ -55,10 +56,12 @@ class Ndarray:
             self.uri = None
             darray = np.array(darray if isinstance(darray, (list, np.ndarray))
                               else [darray], dtype=NpUtil.dtype(ntv_type))
+            
         self.shape = shape if shape else list(darray.shape)
         darray = np.array(darray).reshape(-1)
         ntv_type = NpUtil.nda_ntv_type(darray) if not (
             ntv_type or darray is None) else ntv_type
+        self.is_json = NpUtil.is_json(darray[0]) 
         self.ntvtype = Datatype(ntv_type)
         self.darray = darray.astype(NpUtil.dtype(str(self.ntvtype)))
 
@@ -195,9 +198,10 @@ class Ndarray:
         if self.mode == 'relative':
             js_val = self.uri
         else:
-            val_flat = self.darray.flatten()
+            #val_flat = self.darray.flatten()
+            val_flat = self.darray
             js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(self.ntv_type, val_flat,
-                                                                option['format'])
+                                                                option['format'], self.is_json)
         lis = [self.ntv_type if not option['notype'] else None, shape, js_val]
         #return [val for val in lis if not val is None]
         return NpUtil.json_ntv(None, 'ndarray',
@@ -336,6 +340,32 @@ class NpUtil:
     DT_NTVTYPE = DT_DATATION | DT_LOCATION | DT_OTHER | DT_CONNECTOR | DT_PYTHON
 
     @staticmethod
+    def is_json(obj):
+        ''' check if obj is a json structure and return True if obj is a json-value
+
+        *Parameters*
+
+        - **obj** : object to check'''
+        if obj is None:
+            return True
+        is_js = NtvConnector.is_json
+        match obj:
+            case str() | int() | float() | bool():
+                return True
+            case list() | tuple() as obj:
+                if not obj:
+                    return True
+                return min(is_js(obj_in) for obj_in in obj)
+            case dict() as obj:
+                if not obj:
+                    return True
+                if not min(isinstance(key, str) for key in obj.keys()):
+                    return False
+                return min(is_js(obj_in) for obj_in in obj.values())
+            case _:
+                return False
+            
+    @staticmethod
     def convert(ntv_type, nda, tojson=True, convert=True):
         ''' convert ndarray with external NTVtype.
 
@@ -389,7 +419,7 @@ class NpUtil:
                     return nda.astype(NpUtil.dtype(ntv_type))
 
     @staticmethod
-    def ntv_val(ntv_type, nda, form):
+    def ntv_val(ntv_type, nda, form, is_json=False):
         ''' convert a simple ndarray into NTV json-value.
 
         *Parameters*
@@ -397,6 +427,7 @@ class NpUtil:
         - **ntv_type** : string - NTVtype deduced from the ndarray, name_type and dtype,
         - **nda** : ndarray to be converted.
         - **form** : format of data ('full', 'complete', 'sparse', 'primary').
+        - **is_json** : boolean (defaut False) - True if nda data is Json data
         '''
         if form == 'complete' and len(nda) < 2:
             raise NdarrayError(
@@ -405,6 +436,8 @@ class NpUtil:
         darray = Format(nda)
         ref = darray.ref
         coding = darray.coding
+        if is_json:
+            return Format(darray.data, ref=ref, coding=coding).to_json()            
         match ntv_type:
             case 'ndarray':
                 data = [Ndarray.to_json(nd) for nd in darray.data]
