@@ -47,26 +47,29 @@ class Ndarray:
         darray = None if isinstance(
             darray, list) and len(darray) == 0 else darray
         if isinstance(darray, Ndarray):
-            self.darray = darray.darray
             self.uri = darray.uri
-            self.shape = darray.shape
+            self.is_json = darray.is_json
             self.ntvtype = darray.ntvtype
+            self.shape = darray.shape
+            self.darray = darray.darray
             return
         if isinstance(darray, str):
             self.uri = darray
-            darray = None
+            self.is_json = True
+            self.ntvtype = Datatype(ntv_type) 
+            self.shape = shape
+            self.darray = None
+            return
+        if shape:
+            darray = Dfull(darray, dtype=NpUtil.dtype(ntv_type), unidim=True).data
         else:
-            self.uri = None
-            if shape:
-                darray = Dfull(darray, dtype=NpUtil.dtype(ntv_type), unidim=True).data
-            else:
-                darray = np.array(darray if isinstance(darray, (list, np.ndarray))
-                                  else [darray], dtype=NpUtil.dtype(ntv_type))
-                shape = list(darray.shape)
-        #self.shape = shape if shape else list(darray.shape)
+            darray = np.array(darray if isinstance(darray, (list, np.ndarray))
+                              else [darray], dtype=NpUtil.dtype(ntv_type))
+            shape = list(darray.shape)
         darray = np.array(darray).reshape(-1)
         ntv_type = NpUtil.nda_ntv_type(darray) if not (
             ntv_type or darray is None) else ntv_type
+        self.uri = None
         self.is_json = NpUtil.is_json(darray[0])
         self.ntvtype = Datatype(ntv_type)
         self.shape = shape
@@ -134,7 +137,7 @@ class Ndarray:
                 return 'inconsistent'
 
     @staticmethod
-    def read_json2(ntv_value, **kwargs):
+    def read_json2(jsn, **kwargs):
         ''' convert json ntv_value into a ndarray.
 
 
@@ -144,7 +147,8 @@ class Ndarray:
         non Numpy ntv_type into data with python type
         '''
         option = {'convert': True} | kwargs
-        ntv_value, = Ntv.decode_json(ntv_value)[:1]
+        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
+        ntv_value, = Ntv.decode_json(jso)[:1]
 
         ntv_type = None
         shape = None
@@ -154,10 +158,12 @@ class Ndarray:
             case [str(ntv_type)]: ...
             case [list(shape)]: ...
         unidim = not shape is None
-        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type), unidim=unidim)
+        if isinstance(ntv_value[-1], str):
+            return Ndarray(ntv_value[-1], shape=shape, ntv_type=ntv_type)
+        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type), 
+                                  unidim=unidim)
         darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
                                      convert=option['convert'])
-        # return darray.values.reshape(shape)
         return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
 
     @staticmethod
@@ -201,8 +207,8 @@ class Ndarray:
         if self.mode == 'absolute' and len(self.darray) == 0:
             return [[]]
 
-        shape = None if len(
-            self.shape) < 2 and option['noshape'] else self.shape
+        shape = None if not self.shape or (len(self.shape) < 2 and 
+                                           option['noshape']) else self.shape
 
         if self.mode == 'relative':
             js_val = self.uri

@@ -265,7 +265,7 @@ class Xdataset:
         return {key: val for key, val in inf.items() if val}
 
     @staticmethod
-    def read_json(jso, **kwargs):
+    def read_json(jsn, **kwargs):
         ''' convert json data into a Xdataset.
 
         *Parameters*
@@ -274,18 +274,9 @@ class Xdataset:
         non Numpy ntv_type into Xndarray with python type
         '''
         option = {'convert': True} | kwargs
+        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         value, name = Ntv.decode_json(jso)[:2]
-
-        '''if not isinstance(jso, dict):
-            return None
-        if len(jso) == 1:
-            json_name, value = list(jso.items())[0]
-            name = Xndarray.split_json_name(json_name)[0]
-        else:
-            value = jso
-            name = None'''
-            
-            
+          
         xnd = [Xndarray.read_json({key: val}, **option)
                for key, val in value.items()]
         return Xdataset(xnd, name)

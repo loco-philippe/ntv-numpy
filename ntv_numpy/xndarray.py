@@ -185,7 +185,7 @@ class Xndarray:
         return self.full_name + add_ntv_type
 
     @staticmethod
-    def read_json(jso, **kwargs):
+    def read_json(jsn, **kwargs):
         ''' convert json data into a Xndarray.
 
         *Parameters*
@@ -194,16 +194,8 @@ class Xndarray:
         non Numpy ntv_type into data with python type
         '''
         option = {'convert': True} | kwargs
+        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         value, full_name, ntv_type = Ntv.decode_json(jso)[:3]
-        #full_name, ntv_type, value = NpUtil.from_json_ntv(jso)
-        '''if not ((isinstance(jso, dict) and len(jso) == 1) or isinstance(jso, list)):
-            return None
-        if isinstance(jso, list):
-            json_name = None
-            value = jso
-        else:
-            json_name, value = list(jso.items())[0]
-        full_name = Xndarray.split_json_name(json_name)[0]'''
         
         uri = meta = links = str_nda = None
         match value:
