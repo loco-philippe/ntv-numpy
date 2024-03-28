@@ -56,6 +56,7 @@ class Ndarray:
         if isinstance(darray, str):
             self.uri = darray
             self.is_json = True
+            ntv_type = ntv_type if ntv_type else 'object' 
             self.ntvtype = Datatype(ntv_type) 
             self.shape = shape
             self.darray = None
@@ -198,7 +199,8 @@ class Ndarray:
         - **notype** : Boolean (default False) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
         - **format** : string (default 'full') - representation format of the ndarray,
-        - **extension** : string (default None) - type extension
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including ndarray type
         '''
         option = {'format': 'full', 'header': True, 'encoded': False,
                   'notype': False, 'noshape': True, 'novalue': False} | kwargs

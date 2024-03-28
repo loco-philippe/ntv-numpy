@@ -380,16 +380,17 @@ class Test_Xndarray(unittest.TestCase):
                   {':xndarray': [['json', [1, 'two', {'three': 3}]]]},
                   {':xndarray': [['base16', ['1F23', '236A5E']]]},
                   {':xndarray': [['uri', ['geo:13.4125,103.86673', 'geo:13.41,103.86']]]},
-                  {':xndarray': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv']}   
+                  {':xndarray': [['object', 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv']]}   
                 ]
         for ex in example:
+            #print(ex)
             self.assertEqual(ex, Xndarray.read_json(ex).to_json())    
             xnd = Xndarray.read_json(ex)
             self.assertEqual(xnd, Xndarray.read_json(xnd.to_json()))    
             
     def test_xndarray_dataset(self):    
         
-        example =[[{'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+        example =[[{'var1': [['object', 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], 
                                     ['x', 'y']]}, 'relative', 'variable'],
                   [{'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]}, 'absolute', 'variable'],
 
