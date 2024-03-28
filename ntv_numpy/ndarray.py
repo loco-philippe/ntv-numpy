@@ -57,15 +57,19 @@ class Ndarray:
             darray = None
         else:
             self.uri = None
-            darray = np.array(darray if isinstance(darray, (list, np.ndarray))
-                              else [darray], dtype=NpUtil.dtype(ntv_type))
-
-        self.shape = shape if shape else list(darray.shape)
+            if shape:
+                darray = Dfull(darray, dtype=NpUtil.dtype(ntv_type), unidim=True).data
+            else:
+                darray = np.array(darray if isinstance(darray, (list, np.ndarray))
+                                  else [darray], dtype=NpUtil.dtype(ntv_type))
+                shape = list(darray.shape)
+        #self.shape = shape if shape else list(darray.shape)
         darray = np.array(darray).reshape(-1)
         ntv_type = NpUtil.nda_ntv_type(darray) if not (
             ntv_type or darray is None) else ntv_type
         self.is_json = NpUtil.is_json(darray[0])
         self.ntvtype = Datatype(ntv_type)
+        self.shape = shape
         self.darray = darray.astype(NpUtil.dtype(str(self.ntvtype)))
 
     def __repr__(self):
@@ -149,7 +153,8 @@ class Ndarray:
             case [ntv_type, shape]: ...
             case [str(ntv_type)]: ...
             case [list(shape)]: ...
-        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
+        unidim = not shape is None
+        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type), unidim=unidim)
         darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
                                      convert=option['convert'])
         # return darray.values.reshape(shape)

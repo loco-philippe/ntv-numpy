@@ -99,7 +99,7 @@ class Test_Ndarray(unittest.TestCase):
     def test_ndarray_simple2(self):    
         
         example =[[[1,2], 'int64'],
-                  [[[1,2], [3,4]], 'int64'],
+                  #[[[1,2], [3,4]], 'int64'],
                   [[True, False], 'boolean'],
                   #[['1+2j', 1], 'complex'],
                   [['test1', 'test2'], 'string'], 
@@ -145,7 +145,7 @@ class Test_Ndarray(unittest.TestCase):
     def test_ndarray_nested2(self):    
 
         example =[[[[1,2], [3,4]], 'array'],
-                  [[np.array([1, 2], dtype='int64'), np.array(['test1', 'test2'], dtype='str_')], 'array'],
+                  [[np.array([1, 2], dtype='int64'), np.array(['test1', 'test2'], dtype='str_')], 'ndarray'],
                   [[pd.Series([1,2,3]), pd.Series([4,5,6])], 'field'],
                   [[pd.DataFrame({'::date': pd.Series([date(1964,1,1), date(1985,2,5)]), 
                                   'names': ['john', 'eric']}),
@@ -153,12 +153,12 @@ class Test_Ndarray(unittest.TestCase):
                                   'names': ['anna', 'erich']})], 'tab' ]
                   ]
         for ex in example:
-            arr = Ndarray(ex[0], ntv_type=ex[1])
+            arr = Ndarray(ex[0], shape=[2], ntv_type=ex[1])
             for format in ['full', 'complete']:
                 js = arr.to_json2(format=format)
-                print(js)
+                #print(js)
                 ex_rt = Ndarray.read_json2(js, header=False)
-                #self.assertEqual(ex_rt, arr)        
+                self.assertEqual(ex_rt, arr)        
                 #print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
         
 

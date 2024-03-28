@@ -36,7 +36,7 @@ class Darray(ABC):
     - `to_json`
     '''
 
-    def __init__(self, data, ref=None, coding=None, dtype=None):
+    def __init__(self, data, ref=None, coding=None, dtype=None, unidim=False):
         '''Darray constructor.
 
         *Parameters*
@@ -52,7 +52,7 @@ class Darray(ABC):
             self.coding = data.coding
             return
         data = data if isinstance(data, (list, np.ndarray)) else [data]
-        if len(data) > 0 and isinstance(data[0], (list, np.ndarray)):
+        if (len(data) > 0 and isinstance(data[0], (list, np.ndarray))) or unidim:
             self.data = np.fromiter(data, dtype='object')
         else:
             self.data = np.array(data, dtype=dtype).reshape(-1)
@@ -92,7 +92,7 @@ class Darray(ABC):
         return self.__class__(self)
 
     @staticmethod
-    def read_json(val, dtype=None):
+    def read_json(val, dtype=None, unidim=False):
         ''' return a Darray entity from a list of data.
 
         *Parameters*
@@ -102,7 +102,7 @@ class Darray(ABC):
         '''
         val = val if isinstance(val, list) else [val]
         if not val or not isinstance(val[0], list):
-            return Dfull(val, dtype=dtype)
+            return Dfull(val, dtype=dtype, unidim=unidim)
         match val:
             case [data, ref, list(coding)] if (isinstance(ref, (int, str)) and
                                                isinstance(coding[0], int) and
@@ -115,9 +115,9 @@ class Darray(ABC):
                 return None
             case [data, list(coding)] if (isinstance(coding[0], int) and
                                           max(coding) < len(data)):
-                return Dcomplete(data, None, coding, dtype=dtype)
+                return Dcomplete(data, None, coding, dtype=dtype, unidim=unidim)
             case _:
-                return Dfull(val, dtype=dtype)
+                return Dfull(val, dtype=dtype, unidim=unidim)
 
     @abstractmethod
     def to_json(self):
@@ -153,7 +153,7 @@ class Dfull(Darray):
     - `to_json`
     '''
 
-    def __init__(self, data, ref=None, coding=None, dtype=None):
+    def __init__(self, data, ref=None, coding=None, dtype=None, unidim=False):
         '''Dfull constructor.
 
         *Parameters*
@@ -163,7 +163,7 @@ class Dfull(Darray):
         - **coding**: unused
         - **dtype**: string (default None) - numpy.dtype to apply
         '''
-        super().__init__(data, None, None, dtype=dtype)
+        super().__init__(data, dtype=dtype, unidim=unidim)
 
     def to_json(self):
         ''' return a JsonValue of the Dfull entity.'''
@@ -192,7 +192,7 @@ class Dcomplete(Darray):
     - `to_json`
     '''
 
-    def __init__(self, data, ref=None, coding=None, dtype=None):
+    def __init__(self, data, ref=None, coding=None, dtype=None, unidim=False):
         '''Dcomplete constructor.
 
         *Parameters*
@@ -209,7 +209,7 @@ class Dcomplete(Darray):
                 dat, idx, coding = np.unique(np.frompyfunc(Ntv.from_obj, 1, 1)(data),
                                              return_index=True, return_inverse=True)
                 data = data[idx]
-        super().__init__(data, None, coding, dtype=dtype)
+        super().__init__(data, coding=coding, dtype=dtype, unidim=unidim)
 
     def to_json(self):
         ''' return a JsonValue of the Dcomplete entity.'''
