@@ -161,8 +161,33 @@ class Test_Ndarray(unittest.TestCase):
                 self.assertEqual(ex_rt, arr)        
                 #print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
         
+    def test_ndarray_ntvtype2(self):    
 
+        example = [['int64[kg]', [[1, 2], [3,4]]],
+                   ['int', [[1, 2], [3,4]]],
+                   ['json', [1, 'two']],
+                   ['month', [1, 2]],
+                   ['base16', ['1F23', '236A5E']],
+                   ['duration', ['P3Y6M4DT12H30M5S', 'P3Y6M4DT12H30M']],
+                   ['uri', ['geo:13.4125,103.86673', 'geo:13.41,103.86']],
+                   ['email', ['John Doe <jdoe@mac.example>', 'Anna Doe <adoe@mac.example>']],
+                   #['$org.propertyID', ['NO2', 'NH3']]
+                   ['ipv4', ['192.168.1.1', '192.168.2.5']]
+                   ]
+        for ex in example:
+            arr = Ndarray(ex[1], ntv_type=ex[0])
+            for format in ['full', 'complete']:
+                js = arr.to_json2(format=format)
+                #print(js)
+                ex_rt = Ndarray.read_json2(js, header=False)
+                #print(ex_rt)
+                self.assertEqual(ex_rt, arr)        
 
+    def test_ndarray_uri2(self):    
+        file = 'https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example/ex_ndarray.ntv'
+        jsn = requests.get(file, allow_redirects=True).content.decode()
+        nda = read_json(jsn)
+        self.assertEqual(to_json(nda), {':ndarray': ['int64', [2, 2], [1, 2, 3, 4]]})
     
     def test_ndarray_simple(self):    
         
