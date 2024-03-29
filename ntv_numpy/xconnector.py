@@ -5,8 +5,7 @@ Created on Tue Mar 26 11:44:48 2024
 @author: a lab in the Air
 """
 
-import json
-from ntv_numpy.ndarray import NpUtil
+from ntv_numpy.ndarray import NpUtil, Ndarray
 from ntv_numpy.xndarray import Xndarray
 import xarray as xr
 import scipp as sc
@@ -28,13 +27,21 @@ class XarrayConnec:
         attrs = XarrayConnec.to_xr_attrs(xd, **option)
         if len(xd.data_vars) == 1 and not option['dataset']:
             var_name = xd.data_vars[0]
-            data = xd[var_name].nda
+            #data = xd[var_name].nda
+            data = xd[var_name].nda.darray
             if data.dtype.name[:8] == 'datetime':
                 data = data.astype('datetime64[ns]')
             dims = xd.dims(var_name)
-            attrs |= {'ntv_type': xd[var_name].ntv_type}
+            #attrs |= {'ntv_type': xd[var_name].ntv_type}
+            attrs |= {'ntv_type': xd[var_name].nda.ntv_type}
             attrs |= xd[var_name].meta if xd[var_name].meta else {}
+            #attrs |= xd[var_name].nda.meta if xd[var_name].nda.meta else {}
             name = var_name if var_name != 'data' else None
+            print('data :', data)
+            print('coords:', coords)
+            print('dims:', dims)
+            print('attrs:', attrs)
+            print('name:', name)
             return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
                                 name=name)
         data_vars = XarrayConnec.to_xr_vars(xd, xd.data_vars)
@@ -82,7 +89,8 @@ class XarrayConnec:
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
         attrs = {k: v for k, v in xar.attrs.items() 
                  if not k in ['ntv_type', 'name']} if add_attrs else {}
-        return Xndarray(full_name, nda, ntv_type, dims, attrs)
+        return Xndarray(full_name, Ndarray(nda, ntv_type), dims, attrs)
+        #return Xndarray(full_name, nda, ntv_type, dims, attrs)
 
     @staticmethod 
     def to_xr_attrs(xd, **option):
@@ -100,7 +108,8 @@ class XarrayConnec:
     @staticmethod 
     def to_xr_coord(xd, name):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
-        data = xd[name].nda
+        #data = xd[name].nda
+        data = xd[name].nda.darray
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
         if name in xd.additionals and not xd[name].links:
@@ -212,17 +221,21 @@ class ScippConnec:
         ext_name, typ1 = Xndarray.split_json_name(sc_name, True)
         var_name, typ2 = Xndarray.split_json_name(var, True)
         full_name = var_name + ('.' if var_name and ext_name else '') + ext_name
-        ntv_type = typ1 + typ2 + ('[' + unit + ']' if unit else '')
+        ntv_type_base = typ1 + typ2
+        ntv_type = ntv_type_base + ('[' + unit + ']' if unit else '')
         links = [Xndarray.split_json_name(jsn)[0] for jsn in scv.dims]
         if not scd is None and sc_name in scd.coords and scv.dims == scd.dims:
             links = [Xndarray.split_json_name(list(scd)[0])[0]]
         if not scv.variances is None:
-            nda = np.array(scv.variances)
-            l_xnda.append(Xndarray(full_name + '.variance', nda, None, links))
+            nda = Ndarray(np.array(scv.variances), ntv_type_base)
+            #nda = np.array(scv.variances)
+            l_xnda.append(Xndarray(full_name + '.variance', nda, links))
+            #l_xnda.append(Xndarray(full_name + '.variance', nda, None, links))
         nda = np.array(scv.values, dtype=ScippConnec.SCTYPE_DTYPE.get(str(scv.dtype),                                                                str(scv.dtype)))
         if nda.dtype.name == 'datetime64[ns]' and ntv_type: 
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
-        l_xnda.append(Xndarray(full_name, nda, ntv_type, links))
+        l_xnda.append(Xndarray(full_name, Ndarray(nda, ntv_type), links))
+        #l_xnda.append(Xndarray(full_name, nda, ntv_type, links))
         return l_xnda
 
         
@@ -260,11 +273,13 @@ class ScippConnec:
         add_name = Xndarray.split_name(name)[1]
         new_n = add_name if name in xd.masks and not option['grp_mask'] else name
         opt_n = option['ntv_type']
-        values = xd[name].nda.reshape(xd.shape_dims(name))
+        #values = xd[name].nda.reshape(xd.shape_dims(name))
+        values = xd[name].nda.darray.reshape(xd.shape_dims(name))
         if values.dtype.name[:8] == 'datetime':
             values = values.astype('datetime64[ns]')
         vari_name = name + '.variance'
-        variances = xd[vari_name].nda if vari_name in xd.names else None
+        variances = xd[vari_name].nda.darray if vari_name in xd.names else None
+        #variances = xd[vari_name].nda if vari_name in xd.names else None
         if not variances is None:
             variances = variances.reshape(xd.shape_dims(vari_name))
         dims = xd.dims(name, opt_n) if xd.dims(name, opt_n) else [xd[name].name]

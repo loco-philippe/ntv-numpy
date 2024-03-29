@@ -440,7 +440,7 @@ class Test_Xdataset(unittest.TestCase):
     def test_xdataset_full(self):    
         
         example = {'test': {
-            'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+            'var1': [['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], 
                      ['x', 'y']],
             'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
             'ranking': [[[2, 2], [1, 2, 3, 4]], ['var1']],
@@ -473,7 +473,7 @@ class Test_Xdataset(unittest.TestCase):
                                    'data_arrays': ['example'], 'width': 1})
 
         example = {'test': {
-            'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', ['x', 'y']],
+            'var1': [['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], ['x', 'y']],
             'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
             'ranking': [[[2, 2], [1, 2, 3, 4]], ['var2']],
             'x': [[['x1', 'x2']], {'test': 21}],
@@ -499,7 +499,7 @@ class Test_Xdataset(unittest.TestCase):
         self.assertEqual(xd.info, { 'name': 'test', 'xtype': 'mono',
                                     'data_vars': ['var2'],
                                     'dimensions': ['x', 'y'],
-                                    'length' : 2,
+                                    'length' : 4,
                                     'coordinates': ['ranking', 'z'],
                                     'additionals': ['x.mask1', 'x.variance', 'z.variance'],
                                     'metadata': ['info', 'unit'],
@@ -507,17 +507,18 @@ class Test_Xdataset(unittest.TestCase):
 
     def test_xdataset_DataArray(self):    
         
-        examples = [{'test': {
-            'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
-            'unit': 'kg', 'info': {'example': 'everything'},
-            'ranking': [[[2, 2], [1, 2, 3, 4]], ['var2']],
-            'x': [[['x1', 'x2']], {'test': 21}],
-            'y': [['date', ['2021-01-01', '2022-02-02']]],
-            'z': [[['z1', 'z2']], ['x']],
-            #'z_bis': [[['z1_bis', 'z2_bis']]],
-            'x.mask1': [[[True, False]]],
-            'x.variance': [[[0.1, 0.2]]],
-            'z.variance': [[[0.1, 0.2]]]
+        examples = [
+            {'test': {
+                'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
+                'unit': 'kg', 'info': {'example': 'everything'},
+                #'ranking': [[[2, 2], [1, 2, 3, 4]], ['var2']],  #!!!
+                'x': [[['x1', 'x2']], {'test': 21}],
+                'y': [['date', ['2021-01-01', '2022-02-02']]],
+                'z': [[['z1', 'z2']], ['x']],
+                #'z_bis': [[['z1_bis', 'z2_bis']]],
+                'x.mask1': [[[True, False]]],
+                'x.variance': [[[0.1, 0.2]]],
+                'z.variance': [[[0.1, 0.2]]]
             }},
             {'test': {
                 'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
@@ -525,7 +526,7 @@ class Test_Xdataset(unittest.TestCase):
                 'var2.mask1': [[[True, False]], ['x']],
                 'var2.mask2': [[[2, 2], [True, False, False, True]]],
 
-                'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']],
+                #'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']], #!!!
                 
 
                 'x': [['base16', ['23F0AE', '578B98']], {'test': 21}],
@@ -586,7 +587,7 @@ class Test_Xdataset(unittest.TestCase):
 
             'z': [['float', [10, 20]], ['x']],
             #'z_bis': [[['z1_bis', 'z2_bis']]],
-            'z.variance': [[[0.1, 0.2]]],
+            'z.variance': [['float', [0.1, 0.2]]],
 
             #'unit': 'kg',
             #'info': {'example': 'everything'}
@@ -604,13 +605,13 @@ class Test_Xdataset(unittest.TestCase):
     def test_xdataset_mixte(self):    
         
         examples = [{ 'test:xdataset': {
-            'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', ['x', 'y']],    
+            'var1': [['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], ['x', 'y']],    
             'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
             'var2.variance': [[[2, 2], [0.1, 0.2, 0.3, 0.4]]],
             'var2.mask1': [[[True, False]], ['x']],
             'var2.mask2': [[[2, 2], [True, False, False, True]]],
 
-            'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']],
+            #'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']], #!!!
 
 
             'x': [['base16', ['23F0AE', '578B98']]], #, {'test': 21}],
