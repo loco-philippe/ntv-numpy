@@ -114,6 +114,16 @@ class Xndarray:
         return self.__class__(self)
 
     @property
+    def darray(self):
+        '''return the darray of the ndarray'''
+        return self.nda.darray if self.nda is not None else None
+
+    @property
+    def ndarray(self):
+        '''return the darray of the ndarray'''
+        return self.nda.ndarray if self.nda is not None else None
+    
+    @property
     def shape(self):
         '''return the shape of the ndarray'''
         return self.nda.shape if self.nda is not None else None

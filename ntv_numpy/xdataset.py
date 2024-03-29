@@ -119,7 +119,7 @@ class Xdataset:
         return list_dims
 
     def shape_dims(self, var):
-        return [len(self[dim]) for dim in self.dims(var)]
+        return [len(self[dim]) for dim in self.dims(var)] if set(self.dims(var)) <= set(self.names) else None
 
     @property
     def validity(self):

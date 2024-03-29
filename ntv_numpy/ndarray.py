@@ -123,6 +123,11 @@ class Ndarray:
         ''' string representation of ntvtype'''
         return str(self.ntvtype) if self.ntvtype else None
 
+    @property 
+    def ndarray(self):
+        '''representation with a np.ndarray not flattened'''
+        return self.darray.reshape(self.shape) if not self.darray is None else None
+    
     @property
     def mode(self):
         '''representation mode of the darray/uri data (relative, absolute,

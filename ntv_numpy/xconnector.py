@@ -28,7 +28,13 @@ class XarrayConnec:
         if len(xd.data_vars) == 1 and not option['dataset']:
             var_name = xd.data_vars[0]
             #data = xd[var_name].nda
-            data = xd[var_name].nda.darray
+            #data = xd[var_name].nda.darray
+            if xd.shape_dims(var_name) is None:
+                data = xd[var_name].ndarray
+            else:
+                data = xd[var_name].darray.reshape(xd.shape_dims(var_name))
+            #data = xd[var_name].nda.darray.reshape(xd.shape_dims(var_name))  #!!!
+
             if data.dtype.name[:8] == 'datetime':
                 data = data.astype('datetime64[ns]')
             dims = xd.dims(var_name)
@@ -37,11 +43,11 @@ class XarrayConnec:
             attrs |= xd[var_name].meta if xd[var_name].meta else {}
             #attrs |= xd[var_name].nda.meta if xd[var_name].nda.meta else {}
             name = var_name if var_name != 'data' else None
-            print('data :', data)
+            """print('data :', data)
             print('coords:', coords)
             print('dims:', dims)
             print('attrs:', attrs)
-            print('name:', name)
+            print('name:', name)"""
             return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
                                 name=name)
         data_vars = XarrayConnec.to_xr_vars(xd, xd.data_vars)
@@ -109,11 +115,13 @@ class XarrayConnec:
     def to_xr_coord(xd, name):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
         #data = xd[name].nda
-        data = xd[name].nda.darray
+        #data = xd[name].nda.darray
+        data = xd[name].nda.darray.reshape(xd.shape_dims(name))  #!!!
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
         if name in xd.additionals and not xd[name].links:
-            data = data.reshape(xd[xd[name].name].shape)
+            #data = data.reshape(xd[xd[name].name].shape)
+            data = data.reshape(xd.shape_dims(xd[name].name))
         dims = tuple(xd.dims(name)) if xd.dims(name) else (xd[name].name)
         meta = {'ntv_type': xd[name].ntv_type} | (xd[name].meta if xd[name].meta else {})
         return {name:(dims, data, meta)}
