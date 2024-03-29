@@ -406,6 +406,7 @@ class Test_Xndarray(unittest.TestCase):
                 ]
         
         for ex, mode, xtype in example:
+            print(ex)
             self.assertEqual(ex, Xndarray.read_json(ex).to_json(header=False)) 
             self.assertEqual(mode, Xndarray.read_json(ex).mode) 
             self.assertEqual(xtype, Xndarray.read_json(ex).xtype) 

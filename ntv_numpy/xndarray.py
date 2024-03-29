@@ -54,6 +54,7 @@ class Xndarray:
         - **ntv_type**: string (default None) - ntv_type to apply to data
         - **meta**: dict (default None) - information
         '''
+        #print('init xnd', full_name, nda.to_json2(), links, meta)
         if isinstance(full_name, Xndarray):
             self.name = full_name.name
             self.add_name = full_name.add_name
@@ -62,7 +63,7 @@ class Xndarray:
             self.meta = full_name.meta
             return
         self.name, self.add_name = Xndarray.split_name(full_name)
-        self.nda = Ndarray(nda)
+        self.nda = Ndarray(nda) if not nda is None else None
         self.links = sorted(links) if links else None
         self.meta = meta if meta else None
         if self.meta is None and self.nda is None:
@@ -193,7 +194,9 @@ class Xndarray:
             case [list(nda), list(links), str(meta)]: ...
             case _:
                 return None
+        #print('xnd json', nda, meta, links)
         nda = Ndarray.read_json2(nda, **option) if nda else None
+        #print('xnd nda', nda.to_json2())
         return Xndarray(full_name, links=links, meta=meta, nda=nda)
 
     def to_json(self, **kwargs):

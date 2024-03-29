@@ -56,8 +56,7 @@ class Ndarray:
         if isinstance(darray, str):
             self.uri = darray
             self.is_json = True
-            ntv_type = ntv_type if ntv_type else 'object' 
-            self.ntvtype = Datatype(ntv_type) 
+            self.ntvtype = Datatype(ntv_type) if ntv_type else None
             self.shape = shape
             self.darray = None
             return
@@ -100,7 +99,8 @@ class Ndarray:
 
     def __len__(self):
         ''' len of ndarray'''
-        return len(self.darray) if self.darray is not None else Ndarray.len_shape(self.shape)
+        #return len(self.darray) if self.darray is not None else Ndarray.len_shape(self.shape)
+        return len(self.darray) if self.darray is not None else 0
 
     def __contains__(self, item):
         ''' item of darray values'''
@@ -121,7 +121,7 @@ class Ndarray:
     @property
     def ntv_type(self):
         ''' string representation of ntvtype'''
-        return str(self.ntvtype)
+        return str(self.ntvtype) if self.ntvtype else None
 
     @property
     def mode(self):
@@ -463,6 +463,8 @@ class NpUtil:
                         for nd in darray.data]
             case 'point' | 'line' | 'polygon' | 'geometry':
                 data = np.frompyfunc(ShapelyConnec.to_coord, 1, 1)(darray.data)
+            case None:
+                data = nda
             case _:
                 data = NpUtil.convert(ntv_type, darray.data)
         return Format(data, ref=ref, coding=coding).to_json()
