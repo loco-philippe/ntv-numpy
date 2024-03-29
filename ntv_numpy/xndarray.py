@@ -126,7 +126,7 @@ class Xndarray:
     @property
     def mode(self):
         '''return the mode of the ndarray'''
-        return self.nda.mode if self.nda is not None else None
+        return self.nda.mode if self.nda is not None else 'undefined'
 
     @property
     def info(self):

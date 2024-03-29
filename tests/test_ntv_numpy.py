@@ -392,9 +392,11 @@ class Test_Xndarray(unittest.TestCase):
         
         example =[[{'var1': [['object', 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], 
                                     ['x', 'y']]}, 'relative', 'variable'],
+                  [{'var1': [['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], 
+                                    ['x', 'y']]}, 'relative', 'variable'],
                   [{'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]}, 'absolute', 'variable'],
 
-                  [{'ranking': [['int32', [2, 2], [1, 2, 3, 4]], ['var1']]}, 'absolute', 'variable'],
+                  [{'ranking': [['int', [2, 2], [1, 2, 3, 4]], ['var1']]}, 'absolute', 'variable'],
                   [{'x': [['string', ['x1', 'x2']], {'test': 21}]}, 'absolute', 'namedarray'],
                   [{'y': [['string', ['y1', 'y2']]]}, 'absolute', 'namedarray'],
                   [{'z': [['string', ['z1', 'z2']], ['x']]}, 'absolute', 'variable'],
@@ -406,7 +408,7 @@ class Test_Xndarray(unittest.TestCase):
                 ]
         
         for ex, mode, xtype in example:
-            print(ex)
+            #print(ex)
             self.assertEqual(ex, Xndarray.read_json(ex).to_json(header=False)) 
             self.assertEqual(mode, Xndarray.read_json(ex).mode) 
             self.assertEqual(xtype, Xndarray.read_json(ex).xtype) 
@@ -416,7 +418,9 @@ class Test_Xndarray(unittest.TestCase):
                 #print(Xndarray.read_json(xa.to_json(format=format)))
                 self.assertEqual(xa, Xndarray.read_json(xa.to_json(format=format)))      
 
-        example2 =[{'var1': ['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv', 
+        example2 =[{'var1': [['object', 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], 
+                            ['x', 'y']]},
+                   {'var1': [['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], 
                             ['x', 'y']]},
                    {'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']]},
                    {'ranking': [[[2, 2], [1, 2, 3, 4]], ['var1']]},
