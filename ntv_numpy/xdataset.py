@@ -11,6 +11,7 @@ from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xconnector import XarrayConnec, ScippConnec
 from json_ntv import Ntv
 
+
 class Xdataset:
     ''' Representation of a multidimensional Dataset
 
@@ -119,12 +120,13 @@ class Xdataset:
         return list_dims
 
     def shape_dims(self, var):
-        return [len(self[dim]) for dim in self.dims(var)] if set(self.dims(var)) <= set(self.names) else None
+        return [len(self[dim]) for dim in self.dims(var)
+                ] if set(self.dims(var)) <= set(self.names) else None
 
     @property
     def validity(self):
-        for xn in self:
-            if xn.mode in ['relative', 'inconsistent']:
+        for xnda in self:
+            if xnda.mode in ['relative', 'inconsistent']:
                 return 'undefined'
         if self.undef_links or self.undef_vars:
             return 'inconsistent'
@@ -276,7 +278,7 @@ class Xdataset:
         option = {'convert': True} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         value, name = Ntv.decode_json(jso)[:2]
-          
+
         xnd = [Xndarray.read_json({key: val}, **option)
                for key, val in value.items()]
         return Xdataset(xnd, name)
@@ -301,7 +303,7 @@ class Xdataset:
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
         return data
-    
+
     def to_json(self, **kwargs):
         ''' convert a Xdataset into json-value.
 
