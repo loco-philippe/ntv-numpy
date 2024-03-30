@@ -511,7 +511,7 @@ class Test_Xdataset(unittest.TestCase):
             {'test': {
                 'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
                 'unit': 'kg', 'info': {'example': 'everything'},
-                #'ranking': [[[2, 2], [1, 2, 3, 4]], ['var2']],  #!!!
+                'ranking': [[[2, 2], [1, 2, 3, 4]], ['var2']],  #!!!
                 'x': [[['x1', 'x2']], {'test': 21}],
                 'y': [['date', ['2021-01-01', '2022-02-02']]],
                 'z': [[['z1', 'z2']], ['x']],
@@ -526,7 +526,7 @@ class Test_Xdataset(unittest.TestCase):
                 'var2.mask1': [[[True, False]], ['x']],
                 'var2.mask2': [[[2, 2], [True, False, False, True]]],
 
-                #'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']], #!!!
+                'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']], #!!!
                 
 
                 'x': [['base16', ['23F0AE', '578B98']], {'test': 21}],
@@ -611,7 +611,7 @@ class Test_Xdataset(unittest.TestCase):
             'var2.mask1': [[[True, False]], ['x']],
             'var2.mask2': [[[2, 2], [True, False, False, True]]],
 
-            #'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']], #!!!
+            'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']], #!!!
 
 
             'x': [['base16', ['23F0AE', '578B98']]], #, {'test': 21}],
@@ -622,7 +622,7 @@ class Test_Xdataset(unittest.TestCase):
             'z': [['float', [10, 20]], ['x']],
             'z_bis': [[['z1_bis', 'z2_bis']]],
             'z.uncertainty': [[[0.1, 0.2]]],
-            'z.variance': [[[0.1, 0.2]]],
+            'z.variance': [['float', [0.1, 0.2]]],
 
             'info': {'example': 'everything'}
             } }

@@ -35,45 +35,43 @@ class Ndarray:
     - `equals`
     '''
 
-    def __init__(self, darray, ntv_type=None, shape=None):
+    def __init__(self, dar, ntv_type=None, shape=None):
         '''Ndarray constructor.
 
         *Parameters*
 
-        - **darray**: Darray or np.ndarray - data to represent
+        - **dar**: Darray or np.ndarray - data to represent
         - **shape** : String or integer (default None) - name or index of another Darray
         - **ntv_type**: string (default None) - NTVtype to apply
         '''
-        darray = None if isinstance(
-            darray, list) and len(darray) == 0 else darray
-        if isinstance(darray, Ndarray):
-            self.uri = darray.uri
-            self.is_json = darray.is_json
-            self.ntvtype = darray.ntvtype
-            self.shape = darray.shape
-            self.darray = darray.darray
+        dar = None if isinstance(dar, list) and len(dar) == 0 else dar
+        if isinstance(dar, Ndarray):
+            self.uri = dar.uri
+            self.is_json = dar.is_json
+            self.ntvtype = dar.ntvtype
+            self.shape = dar.shape
+            self.darray = dar.darray
             return
-        if isinstance(darray, str):
-            self.uri = darray
+        if isinstance(dar, str):
+            self.uri = dar
             self.is_json = True
             self.ntvtype = Datatype(ntv_type) if ntv_type else None
             self.shape = shape
             self.darray = None
             return
         if shape:
-            darray = Dfull(darray, dtype=NpUtil.dtype(ntv_type), unidim=True).data
+            dar = Dfull(dar, dtype=NpUtil.dtype(ntv_type), unidim=True).data
         else:
-            darray = np.array(darray if isinstance(darray, (list, np.ndarray))
-                              else [darray], dtype=NpUtil.dtype(ntv_type))
-            shape = list(darray.shape)
-        darray = np.array(darray).reshape(-1)
-        ntv_type = NpUtil.nda_ntv_type(darray) if not (
-            ntv_type or darray is None) else ntv_type
+            dar = np.array(dar if isinstance(dar, (list, np.ndarray))
+                              else [dar], dtype=NpUtil.dtype(ntv_type))
+            shape = list(dar.shape)
+        dar = np.array(dar).reshape(-1)
+        ntv_type = NpUtil.nda_ntv_type(dar) if not (ntv_type or dar is None) else ntv_type
         self.uri = None
-        self.is_json = NpUtil.is_json(darray[0])
+        self.is_json = NpUtil.is_json(dar[0])
         self.ntvtype = Datatype(ntv_type)
         self.shape = shape
-        self.darray = darray.astype(NpUtil.dtype(str(self.ntvtype)))
+        self.darray = dar.astype(NpUtil.dtype(str(self.ntvtype)))
 
     def __repr__(self):
         '''return classname, the shape and the ntv_type'''

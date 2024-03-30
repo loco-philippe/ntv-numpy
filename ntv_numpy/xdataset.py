@@ -120,6 +120,7 @@ class Xdataset:
 
     def shape_dims(self, var):
         return [len(self[dim]) for dim in self.dims(var)] if set(self.dims(var)) <= set(self.names) else None
+        #return [len(self[dim]) for dim in self.dims(var)]
 
     @property
     def validity(self):
@@ -292,6 +293,16 @@ class Xdataset:
                 self[add].links = None
         return self
 
+    def to_ndarray(self, name):
+        '''convert a Xndarray from a Xdataset in a np.ndarray'''
+        if self.shape_dims(name) is None:
+            data = self[name].ndarray
+        else:
+            data = self[name].darray.reshape(self.shape_dims(name))
+        if data.dtype.name[:8] == 'datetime':
+            data = data.astype('datetime64[ns]')
+        return data
+    
     def to_json(self, **kwargs):
         ''' convert a Xdataset into json-value.
 
