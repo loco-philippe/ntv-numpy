@@ -302,6 +302,8 @@ class Xdataset:
             data = self[name].darray.reshape(self.shape_dims(name))
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
+        if data.dtype.name[:5] == 'bytes':
+            data = data.astype('str')
         return data
 
     def to_json(self, **kwargs):

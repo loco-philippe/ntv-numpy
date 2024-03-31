@@ -228,10 +228,13 @@ class ScippConnec:
         if not scv.variances is None:
             nda = Ndarray(np.array(scv.variances), ntv_type_base)
             l_xnda.append(Xndarray(full_name + '.variance', nda, links))
-        nda = np.array(scv.values, dtype=ScippConnec.SCTYPE_DTYPE.get(str(scv.dtype),
+        nda = np.array(scv.values, dtype=ScippConnec.SCTYPE_DTYPE.get(str(scv.dtype), #!!!Darray
                                                                       str(scv.dtype)))
         if nda.dtype.name == 'datetime64[ns]' and ntv_type:
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
+        if ntv_type and ntv_type[:4] == 'base':
+            nda = nda.astype('bytes')
+            print(nda, Ndarray(nda, ntv_type))
         l_xnda.append(Xndarray(full_name, Ndarray(nda, ntv_type), links))
         return l_xnda
 

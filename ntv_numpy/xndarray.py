@@ -205,7 +205,8 @@ class Xndarray:
             case _:
                 return None
         #print('xnd json', nda, meta, links)
-        nda = Ndarray.read_json2(nda, **option) if nda else None
+        #nda = Ndarray.read_json2(nda, **option) if nda else None
+        nda = Ndarray.read_json(nda, **option) if nda else None
         #print('xnd nda', nda.to_json2())
         return Xndarray(full_name, links=links, meta=meta, nda=nda)
 
@@ -229,8 +230,9 @@ class Xndarray:
         if not option['format'] in ['full', 'complete']:
             option['noshape'] = False
         opt_nda = option | {'header': False} 
-        nda_str = Ndarray.to_json2(self.nda, 
-                                  **opt_nda) if not self.nda is None else None
+        #nda_str = Ndarray.to_json2(self.nda, 
+        #nda_str = Ndarray.to_json(self.nda, **opt_nda) if not self.nda is None else None
+        nda_str = self.nda.to_json(**opt_nda) if not self.nda is None else None
         lis = [nda_str, self.links, self.meta]
         lis = [val for val in lis if not val is None]
         return NpUtil.json_ntv(None if option['noname'] else self.full_name,

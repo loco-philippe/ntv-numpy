@@ -86,14 +86,14 @@ class Test_Ndarray(unittest.TestCase):
         for ex in example:
             #print(ex[0], ex[1])
             arr = Ndarray(ex[0], ntv_type=ex[1])
-            js = arr.to_json2()
+            js = arr.to_json()
             #print(js)
-            ex_rt = Ndarray.read_json2(js)
+            ex_rt = Ndarray.read_json(js)
             self.assertEqual(ex_rt, arr)        
-            self.assertEqual(js, ex_rt.to_json2())         
-            ex_rt = Ndarray.read_json2(js, convert=False)
-            #print(js, ex_rt.to_json2(format=format))
-            self.assertEqual(js[':ndarray'][1], ex_rt.to_json2()[':ndarray'][1])         
+            self.assertEqual(js, ex_rt.to_json())         
+            ex_rt = Ndarray.read_json(js, convert=False)
+            #print(js, ex_rt.to_json(format=format))
+            self.assertEqual(js[':ndarray'][1], ex_rt.to_json()[':ndarray'][1])         
             #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
 
     def test_ndarray_simple2(self):    
@@ -123,23 +123,23 @@ class Test_Ndarray(unittest.TestCase):
             #print(ex[0], ex[1])
             arr = Ndarray(ex[0], ntv_type=ex[1])
             for format in ['full', 'complete']:
-                js = arr.to_json2(format=format)
+                js = arr.to_json(format=format)
                 #print(js)
-                ex_rt = Ndarray.read_json2(js)
+                ex_rt = Ndarray.read_json(js)
                 self.assertTrue(ex_rt.shape == arr.shape == [2])        
                 self.assertEqual(ex_rt, arr)        
-                self.assertEqual(js, ex_rt.to_json2(format=format))         
-                ex_rt = Ndarray.read_json2(js, convert=False)
-                #print(js, ex_rt.to_json2(format=format))
-                self.assertEqual(js[':ndarray'][1], ex_rt.to_json2(format=format)[':ndarray'][1])         
+                self.assertEqual(js, ex_rt.to_json(format=format))         
+                ex_rt = Ndarray.read_json(js, convert=False)
+                #print(js, ex_rt.to_json(format=format))
+                self.assertEqual(js[':ndarray'][1], ex_rt.to_json(format=format)[':ndarray'][1])         
                 #print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
             if len(ex[0]) == 2:
                 arr = Ndarray(ex[0], ntv_type=ex[1], shape=[2,1])
                 for format in ['full', 'complete']:
                     #print(ex, format)
-                    js = arr.to_json2(format=format)
+                    js = arr.to_json(format=format)
                     #print(js)
-                    ex_rt = Ndarray.read_json2(js)
+                    ex_rt = Ndarray.read_json(js)
                     self.assertEqual(ex_rt, arr)        
 
     def test_ndarray_nested2(self):    
@@ -155,9 +155,9 @@ class Test_Ndarray(unittest.TestCase):
         for ex in example:
             arr = Ndarray(ex[0], shape=[2], ntv_type=ex[1])
             for format in ['full', 'complete']:
-                js = arr.to_json2(format=format)
+                js = arr.to_json(format=format)
                 #print(js)
-                ex_rt = Ndarray.read_json2(js)
+                ex_rt = Ndarray.read_json(js)
                 self.assertEqual(ex_rt, arr)        
                 #print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
         
@@ -180,9 +180,9 @@ class Test_Ndarray(unittest.TestCase):
         for ex in example:
             arr = Ndarray(ex[1], ntv_type=ex[0])
             for format in ['full', 'complete']:
-                js = arr.to_json2(format=format)
+                js = arr.to_json(format=format)
                 #print(js)
-                ex_rt = Ndarray.read_json2(js)
+                ex_rt = Ndarray.read_json(js)
                 #print(ex_rt)
                 self.assertEqual(ex_rt, arr)        
 
@@ -190,9 +190,9 @@ class Test_Ndarray(unittest.TestCase):
         file = 'https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example/ex_ndarray.ntv'
         jsn = requests.get(file, allow_redirects=True).content.decode()
         #print(type(jsn), jsn)
-        nda = Ndarray.read_json2(jsn)
+        nda = Ndarray.read_json(jsn)
         #print(nda)
-        self.assertEqual(nda, Ndarray.read_json2({':ndarray': ['int64[kg]', [2, 2], [1, 2, 3, 4]]}))
+        self.assertEqual(nda, Ndarray.read_json({':ndarray': ['int64[kg]', [2, 2], [1, 2, 3, 4]]}))
         example = [['uri', 'int32', None],
                    ['uri', None, None],
                    ['uri', 'int32', [2,2]],
@@ -200,7 +200,7 @@ class Test_Ndarray(unittest.TestCase):
                   ]
         for ex in example:
             nda = Ndarray(ex[0], ex[1], ex[2])
-            self.assertEqual(Ndarray.read_json2(nda.to_json2()), nda )
+            self.assertEqual(Ndarray.read_json(nda.to_json()), nda )
         
     def test_ndarray_simple(self):    
         
@@ -378,7 +378,7 @@ class Test_Xndarray(unittest.TestCase):
                   {':xndarray': [['month', [1, 2]]]},
                   {':xndarray': [['ipv4', ['192.168.1.1', '192.168.2.5']]]},
                   {':xndarray': [['json', [1, 'two', {'three': 3}]]]},
-                  {':xndarray': [['base16', ['1F23', '236A5E']]]},
+                  {':xndarray': [['base16', [b'1F23', b'236A5E']]]},
                   {':xndarray': [['uri', ['geo:13.4125,103.86673', 'geo:13.41,103.86']]]},
                   {':xndarray': [['object', 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv']]}   
                 ]

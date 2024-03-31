@@ -139,9 +139,10 @@ class Ndarray:
                 return 'absolute'
             case _:
                 return 'inconsistent'
+                #def read_json2(jsn, **kwargs):
 
     @staticmethod
-    def read_json2(jsn, **kwargs):
+    def read_json(jsn, **kwargs):
         ''' convert json ntv_value into a ndarray.
 
 
@@ -169,31 +170,9 @@ class Ndarray:
         darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
                                      convert=option['convert'])
         return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
-
-    @staticmethod
-    def read_json(ntv_value, **kwargs):
-        ''' convert json ntv_value into a ndarray.
-
-
-        *Parameters*
-
-        - **convert** : boolean (default True) - If True, convert json data with
-        non Numpy ntv_type into data with python type
-        '''
-        option = {'convert': True} | kwargs
-        ntv_type = None
-        shape = None
-        match ntv_value[:-1]:
-            case []: ...
-            case [ntv_type, shape]: ...
-            case [str(ntv_type)]: ...
-            case [list(shape)]: ...
-        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
-        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
-                                     convert=option['convert'])
-        return darray.values.reshape(shape)
-
-    def to_json2(self, **kwargs):
+        #def to_json2(self, **kwargs):
+            
+    def to_json(self, **kwargs):
         ''' convert a ndarray into json-value
 
         *Parameters*
@@ -225,40 +204,6 @@ class Ndarray:
         return NpUtil.json_ntv(None, 'ndarray',
                                [val for val in lis if not val is None],
                                header=option['header'], encoded=option['encoded'])
-
-    @staticmethod
-    def to_json(value, **kwargs):
-        ''' convert a ndarray into json-value
-
-        *Parameters*
-
-        - **ntv_type** : string (default None) - ntv_type of the ndarray object,
-        - **value** : ndarray value
-        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
-        - **notype** : Boolean (default False) - including data type if False
-        - **novalue** : Boolean (default False) - including value if False
-        - **format** : string (default 'full') - representation format of the ndarray,
-        - **extension** : string (default None) - type extension
-        '''
-        option = {'ntv_type': None, 'notype': False, 'extension': None, 'format': 'full',
-                  'noshape': True, 'novalue': False} | kwargs
-        if value is None:
-            return None
-        if len(value) == 0:
-            return [[]]
-
-        shape = list(value.shape)
-        shape = None if len(shape) < 2 and option['noshape'] else shape
-        val_flat = value.flatten() if shape else value
-
-        ntv_type, ext = NpUtil.split_type(option['ntv_type'])
-        ext = ext if ext else option['extension']
-        ntv_type = NpUtil.nda_ntv_type(val_flat, ntv_type, ext)
-
-        js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(ntv_type, val_flat,
-                                                                option['format'])
-        lis = [ntv_type if not option['notype'] else None, shape, js_val]
-        return [val for val in lis if not val is None]
 
     @staticmethod
     def equals(nself, nother):
@@ -347,7 +292,8 @@ class NpUtil:
     NUMBER_DT = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
                  'wday': 'int', 'yday': 'int', 'week': 'hour', 'minute': 'int',
                  'second': 'int'}
-    STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str',
+    #STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str',
+    STRING_DT = {'base16': 'bytes', 'base32': 'bytes', 'base64': 'bytes',
                  'period': 'str', 'duration': 'str', 'jpointer': 'str',
                  'uri': 'str', 'uriref': 'str', 'iri': 'str', 'iriref': 'str',
                  'email': 'str', 'regex': 'str', 'hostname': 'str', 'ipv4': 'str',
@@ -602,3 +548,62 @@ class NpUtil:
 
 class NdarrayError(Exception):
     '''Multidimensional exception'''
+
+
+"""@staticmethod
+    def read_json(ntv_value, **kwargs):
+        ''' convert json ntv_value into a ndarray.
+
+
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with
+        non Numpy ntv_type into data with python type
+        '''
+        option = {'convert': True} | kwargs
+        ntv_type = None
+        shape = None
+        match ntv_value[:-1]:
+            case []: ...
+            case [ntv_type, shape]: ...
+            case [str(ntv_type)]: ...
+            case [list(shape)]: ...
+        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
+        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
+                                     convert=option['convert'])
+        return darray.values.reshape(shape)
+
+    @staticmethod
+    def to_json(value, **kwargs):
+        ''' convert a ndarray into json-value
+
+        *Parameters*
+
+        - **ntv_type** : string (default None) - ntv_type of the ndarray object,
+        - **value** : ndarray value
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
+        - **notype** : Boolean (default False) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
+        - **format** : string (default 'full') - representation format of the ndarray,
+        - **extension** : string (default None) - type extension
+        '''
+        option = {'ntv_type': None, 'notype': False, 'extension': None, 'format': 'full',
+                  'noshape': True, 'novalue': False} | kwargs
+        if value is None:
+            return None
+        if len(value) == 0:
+            return [[]]
+
+        shape = list(value.shape)
+        shape = None if len(shape) < 2 and option['noshape'] else shape
+        val_flat = value.flatten() if shape else value
+
+        ntv_type, ext = NpUtil.split_type(option['ntv_type'])
+        ext = ext if ext else option['extension']
+        ntv_type = NpUtil.nda_ntv_type(val_flat, ntv_type, ext)
+
+        js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(ntv_type, val_flat,
+                                                                option['format'])
+        lis = [ntv_type if not option['notype'] else None, shape, js_val]
+        return [val for val in lis if not val is None]
+"""
