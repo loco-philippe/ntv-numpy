@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Mar 26 11:44:48 2024
+@author: Philippe@loco-labs.io
 
-@author: a lab in the Air
+The `xconnector` module is part of the `ntv-numpy.ntv_numpy` package ([specification document](
+https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
+
+It contains the `XarrayConnec` class for the Xarray interface and the `ScippConnec`
+ class for Scipp interface.
+
+For more information, see the
+[user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html)
+ or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 """
 
 from ntv_numpy.ndarray import NpUtil, Ndarray
@@ -13,20 +21,24 @@ import numpy as np
 
 
 class XarrayConnec:
+    ''' Xarray interface with two static methods ximport and xexport'''
 
     @staticmethod
     def xexport(xdt, **kwargs):
-        '''return a DataArray or a Dataset from a xdataset
+        '''return a xr.DataArray or a xr.Dataset from a Xdataset
 
         *Parameters*
 
         - **dataset** : Boolean (default True) - if False and a single data_var,
-        return a DataArray
+        return a sc.DataArray
+        - **datagroup** : Boolean (default True) - if True, return a sc.DataGroup 
+        which contains the sc.DataArray/sc.Dataset and the other data else only
+        sc.DataArray/sc.Dataset
         '''
         option = {'dataset': True, 'datagroup': True} | kwargs
-        coords = XarrayConnec.to_xr_vars(xdt, xdt.dimensions + xdt.coordinates)
-        coords |= XarrayConnec.to_xr_vars(xdt, xdt.additionals)
-        attrs = XarrayConnec.to_xr_attrs(xdt, **option)
+        coords = XarrayConnec._to_xr_vars(xdt, xdt.dimensions + xdt.coordinates)
+        coords |= XarrayConnec._to_xr_vars(xdt, xdt.additionals)
+        attrs = XarrayConnec._to_xr_attrs(xdt, **option)
         if len(xdt.data_vars) == 1 and not option['dataset']:
             var_name = xdt.data_vars[0]
             data = xdt.to_ndarray(var_name)
@@ -36,14 +48,14 @@ class XarrayConnec:
             name = var_name if var_name != 'data' else None
             return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
                                 name=name)
-        data_vars = XarrayConnec.to_xr_vars(xdt, xdt.data_vars)
+        data_vars = XarrayConnec._to_xr_vars(xdt, xdt.data_vars)
         xrd = xr.Dataset(data_vars, coords=coords, attrs=attrs)
         return xrd
 
     @staticmethod
     def ximport(xar, Xclass, **kwargs):
-        '''return a xdataset from a DataArray or a Dataset'''
-        xnd = []
+        '''return a Xdataset from a xr.DataArray or a xr.Dataset'''
+        xnd = []    
         if xar.attrs:
             attrs = {k: v for k, v in xar.attrs.items() if not k in [
                 'name', 'ntv_type']}
@@ -53,12 +65,12 @@ class XarrayConnec:
                 else:
                     xnd += [Xndarray(name, meta=meta)]
         for coord in xar.coords:
-            xnd += [XarrayConnec.var_xr_to_xnd(xar.coords[coord])]
+            xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
             if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
                 xnd[-1].links = [list(xar.data_vars)[0]]
         if isinstance(xar, xr.DataArray):
-            var = XarrayConnec.var_xr_to_xnd(xar, name='data', add_attrs=False)
-            xnd += [XarrayConnec.var_xr_to_xnd(xar,
+            var = XarrayConnec._var_xr_to_xnd(xar, name='data', add_attrs=False)
+            xnd += [XarrayConnec._var_xr_to_xnd(xar,
                                                name='data', add_attrs=False)]
             xdt = Xclass(xnd, xar.attrs.get('name'))
             for var in xdt.data_vars:
@@ -66,12 +78,19 @@ class XarrayConnec:
                     xdt[var].links = [xar.name]
             return xdt.to_canonical()
         for var in xar.data_vars:
-            xnd += [XarrayConnec.var_xr_to_xnd(xar.data_vars[var])]
+            xnd += [XarrayConnec._var_xr_to_xnd(xar.data_vars[var])]
         return Xclass(xnd, xar.attrs.get('name')).to_canonical()
 
     @staticmethod
-    def var_xr_to_xnd(xar, name=None, add_attrs=True):
-        '''return a Xndarray from a Xarray variable'''
+    def _var_xr_to_xnd(xar, name=None, add_attrs=True):
+        '''return a Xndarray from a Xarray variable
+        
+        *Parameters*
+
+        - **xar** : Xarray variable to convert in Xndarray,
+        - **name** : string (default None) - default name if xar have non name,
+        - **add_attrs** : boolean (default True) - if False, attrs are not converted
+        '''
         full_name = xar.name if xar.name else name
         name = Xndarray.split_name(full_name)[0]
         dims = None if xar.dims == (name,) else list(xar.dims)
@@ -84,8 +103,14 @@ class XarrayConnec:
         return Xndarray(full_name, Ndarray(nda, ntv_type), dims, attrs)
 
     @staticmethod
-    def to_xr_attrs(xdt, **option):
-        '''return a dict with attributes from a xdataset'''
+    def _to_xr_attrs(xdt, **option):
+        '''return a dict with attributes from a xdataset
+        
+        *Parameters*
+
+        - **datagroup** : Boolean  if True, add json representation of 'relative'
+        Xndarrays and 'data_arrays' Xndarrays 
+        '''
         attrs = {meta: xdt[meta].meta for meta in xdt.metadata}
         attrs |= {'name': xdt.name} if xdt.name else {}
         if option['datagroup']:
@@ -97,7 +122,7 @@ class XarrayConnec:
         return attrs
 
     @staticmethod
-    def to_xr_coord(xdt, name):
+    def _to_xr_coord(xdt, name):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
         data = xdt.to_ndarray(name)
         if name in xdt.additionals and not xdt[name].links:
@@ -108,28 +133,30 @@ class XarrayConnec:
         return {name: (dims, data, meta)}
 
     @staticmethod
-    def to_xr_vars(xdt, list_names):
+    def _to_xr_vars(xdt, list_names):
         '''return a dict with Xarray attributes from a list of Xndarray names'''
         arg_vars = {}
         valid_names = [
             name for name in list_names if xdt[name].mode == 'absolute']
         for xnd_name in valid_names:
-            arg_vars |= XarrayConnec.to_xr_coord(xdt, xnd_name)
+            arg_vars |= XarrayConnec._to_xr_coord(xdt, xnd_name)
         return arg_vars
 
     @staticmethod
-    def xr_add_type(xar):
+    def _xr_add_type(xar):
+        '''add 'ntv_type' as attribute for a xr.DataArray'''
         if isinstance(xar, xr.DataArray) and not 'ntv_type' in xar.attrs:
             xar.attrs |= {'ntv_type': NpUtil.ntv_type(xar.data.dtype.name)}
             return
         for coord in xar.coords:
-            XarrayConnec.xr_add_type(coord)
+            XarrayConnec._xr_add_type(coord)
         for var in xar.data_vars:
-            XarrayConnec.xr_add_type(var)
+            XarrayConnec._xr_add_type(var)
         return
 
 
 class ScippConnec:
+    ''' Scipp interface with two static methods ximport and xexport'''
 
     SCTYPE_DTYPE = {'string': 'str'}
 
@@ -147,17 +174,17 @@ class ScippConnec:
         '''
         option = {'dataset': True, 'datagroup': True,
                   'ntv_type': True} | kwargs
-        coords = dict([ScippConnec.to_scipp_var(xdt, name, **option)
+        coords = dict([ScippConnec._to_scipp_var(xdt, name, **option)
                        for name in xdt.coordinates + xdt.dimensions
                        if xdt[name].mode == 'absolute'])
-        scd = sc.Dataset(dict([ScippConnec.to_sc_dataarray(xdt, name, coords, **option)
+        scd = sc.Dataset(dict([ScippConnec._to_sc_dataarray(xdt, name, coords, **option)
                                for name in xdt.data_vars
                                if xdt[name].mode == 'absolute']))
         scd = scd if option['dataset'] else scd[list(scd)[0]]
         if not option['datagroup']:
             return scd
         sc_name = xdt.name if xdt.name else 'no_name'
-        return sc.DataGroup({sc_name: scd} | ScippConnec.to_scipp_grp(xdt, **option))
+        return sc.DataGroup({sc_name: scd} | ScippConnec._to_scipp_grp(xdt, **option))
 
     @staticmethod
     def ximport(sc_obj, Xclass, **kwargs):
@@ -175,19 +202,19 @@ class ScippConnec:
             scd = sc.Dataset({(scd.name if scd.name else 'no_name'): scd})
         if isinstance(scd, sc.Dataset):
             for coord in scd.coords:
-                xnd += ScippConnec.var_sc_to_xnd(scd.coords[coord], scd, coord)
+                xnd += ScippConnec._var_sc_to_xnd(scd.coords[coord], scd, coord)
             for var in scd:
                 for mask in scd[var].masks:
                     m_var = Xndarray.split_json_name(var)[0]
-                    xnd += ScippConnec.var_sc_to_xnd(
+                    xnd += ScippConnec._var_sc_to_xnd(
                         scd[var].masks[mask], scd, mask, m_var)
-                xnd += ScippConnec.var_sc_to_xnd(scd[var].data, scd, var)
+                xnd += ScippConnec._var_sc_to_xnd(scd[var].data, scd, var)
         if isinstance(sc_obj, sc.DataGroup):
-            xnd = ScippConnec.grp_sc_to_xnd(sc_obj, xnd)
+            xnd = ScippConnec._grp_sc_to_xnd(sc_obj, xnd)
         return Xclass(xnd, xnd_name).to_canonical()
 
     @staticmethod
-    def grp_sc_to_xnd(sc_obj, xnd):
+    def _grp_sc_to_xnd(sc_obj, xnd):
         '''return a list of Xndarray from a scipp variable'''
         dic_xnd = {xar.name: xar for xar in xnd}
         for obj in sc_obj:
@@ -196,7 +223,7 @@ class ScippConnec:
                 case [name, None, list()]:
                     xnd += [Xndarray.read_json({name: sc_obj[obj]})]
                 case [name, add_name, sc.Variable()]:
-                    xnd += ScippConnec.var_sc_to_xnd(
+                    xnd += ScippConnec._var_sc_to_xnd(
                         sc_obj[obj], None, add_name, name)
                 case [name, _, dict() | str() | list()] if name in dic_xnd:
                     if dic_xnd[name].meta:
@@ -209,7 +236,7 @@ class ScippConnec:
         return xnd
 
     @staticmethod
-    def var_sc_to_xnd(scv, scd=None, sc_name='', var=None):
+    def _var_sc_to_xnd(scv, scd=None, sc_name='', var=None):
         '''return a list of Xndarray from a scipp variable
         - var : name
         - sc_name : scipp name'''
@@ -239,22 +266,22 @@ class ScippConnec:
         return l_xnda
 
     @staticmethod
-    def to_sc_dataarray(xdt, name, coords, **option):
+    def _to_sc_dataarray(xdt, name, coords, **option):
         '''return a scipp.DataArray from a xdataset.global_var defined by his name'''
-        scipp_name, data = ScippConnec.to_scipp_var(xdt, name, **option)
-        masks = dict([ScippConnec.to_scipp_var(xdt, nam, **option)
+        scipp_name, data = ScippConnec._to_scipp_var(xdt, name, **option)
+        masks = dict([ScippConnec._to_scipp_var(xdt, nam, **option)
                      for nam in set(xdt.var_group(name)) & set(xdt.masks)])
         return (scipp_name, sc.DataArray(data, coords=coords, masks=masks))
 
     @staticmethod
-    def to_scipp_grp(xdt, **option):
+    def _to_scipp_grp(xdt, **option):
         '''return a dict with metadata, data-array and data_add from a xdataset'''
         grp = {}
-        grp |= dict([ScippConnec.to_scipp_var(xdt, name, **option)
+        grp |= dict([ScippConnec._to_scipp_var(xdt, name, **option)
                      for name in xdt.data_add + xdt.data_arrays
                      if xdt[name].add_name != 'variance'])
         opt_mask = option | {'grp_mask': True}
-        grp |= dict([ScippConnec.to_scipp_var(xdt, name, **opt_mask)
+        grp |= dict([ScippConnec._to_scipp_var(xdt, name, **opt_mask)
                      for name in xdt.masks
                      if xdt[name].name in xdt.names and not xdt[name].name in xdt.data_vars])
         grp |= {name + '.meta': xdt[name].meta for name in xdt.names
@@ -265,7 +292,7 @@ class ScippConnec:
         return grp
 
     @staticmethod
-    def to_scipp_var(xdt, name, **kwargs):
+    def _to_scipp_var(xdt, name, **kwargs):
         '''return a scipp.Variable from a Xndarray defined by his name'''
         option = {'grp_mask': False, 'ntv_type': True} | kwargs
         add_name = Xndarray.split_name(name)[1]
