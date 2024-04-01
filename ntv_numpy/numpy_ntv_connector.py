@@ -167,7 +167,7 @@ class NdarrayConnec(NtvConnector):
                   'notype': False, 'noshape': True, 'novalue': False} | kwargs
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
-        return (Ndarray.to_json2(value, **option), name, 'ndarray')
+        return (Ndarray(value).to_json2(**option), name, 'ndarray')
 
 class XndarrayConnec(NtvConnector):
 
@@ -210,7 +210,7 @@ class XndarrayConnec(NtvConnector):
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
         option['noname'] = True
-        return (Xndarray.to_json(value, **option), value.full_name, 'xndarray')
+        return (value.to_json(**option), value.full_name, 'xndarray')
 
 class XdatasetConnec(NtvConnector):
 
@@ -252,4 +252,4 @@ class XdatasetConnec(NtvConnector):
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
         option['noname'] = True
-        return (Xdataset.to_json(value, **option), value.name, 'xdataset')
+        return (value.to_json(**option), value.name, 'xdataset')

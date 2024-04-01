@@ -156,7 +156,7 @@ class Test_Ndarray(unittest.TestCase):
             arr = Ndarray(ex[0], shape=[2], ntv_type=ex[1])
             for format in ['full', 'complete']:
                 js = arr.to_json2(format=format)
-                print(js)
+                #print(js)
                 ex_rt = Ndarray.read_json2(js)
                 self.assertEqual(ex_rt, arr)        
                 #print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)

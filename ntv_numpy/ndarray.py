@@ -194,7 +194,7 @@ class Ndarray:
         return darray.values.reshape(shape)
 
     def to_json2(self, **kwargs):
-        ''' convert a ndarray into json-value
+        ''' convert a Ndarray into json-value
 
         *Parameters*
 
