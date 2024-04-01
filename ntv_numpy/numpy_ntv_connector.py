@@ -129,11 +129,51 @@ def read_json_tab(js):
     return (nda.reshape(shape), {'dims': list(axes_n),
             'coords': {axe_n: [axe_v] for axe_n, axe_v in zip(axes_n, axes_v)}})
 
-class NdarrayConnec(NtvConnector):
+class NarrayConnec(NtvConnector):
 
     '''NTV connector for Numpy ndarray.'''
 
     clas_obj = 'ndarray'
+    clas_typ = 'narray'
+
+    @staticmethod
+    def to_obj_ntv(ntv_value, **kwargs):
+        ''' convert json ntv_value into a np.ndarray.
+        
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with 
+        non Numpy ntv_type into data with python type'''
+        #return Ndarray.read_json(ntv_value, **kwargs)
+        return Ndarray.read_json2(ntv_value, **kwargs).darray
+
+    @staticmethod
+    def to_json_ntv(value, name=None, typ=None, **kwargs):
+        ''' convert a np.ndarray (value, name, type) into NTV json (json-value, name, type).
+
+        *Parameters*
+
+        - **typ** : string (default None) - ntv_type of the ndarray object,
+        - **name** : string (default None) - name of the ndarray object
+        - **value** : ndarray value
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
+        - **notype** : Boolean (default False) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
+        - **format** : string (default 'full') - representation format of the ndarray,
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including ndarray type
+        '''
+        option = {'format': 'full', 'header': True, 'encoded': False,
+                  'notype': False, 'noshape': True, 'novalue': False} | kwargs
+        if not option['format'] in ['full', 'complete']: 
+            option['noshape'] = False
+        return (Ndarray(value).to_json2(**option), name, 'narray')
+
+class NdarrayConnec(NtvConnector):
+
+    '''NTV connector for Numpy ndarray.'''
+
+    clas_obj = 'Ndarray'
     clas_typ = 'ndarray'
 
     @staticmethod
