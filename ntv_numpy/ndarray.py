@@ -461,7 +461,7 @@ class NpUtil:
         match ntv_type:
             case 'ndarray':
                 #data = [Ndarray.to_json(nd) for nd in darray.data]
-                data = [nd.to_json2() for nd in darray.data]
+                data = [Ndarray(nd).to_json2(header=False) for nd in darray.data]
             case connec if connec in NpUtil.CONNECTOR_DT:
                 data = [NtvConnector.cast(nd, None, connec)[0]
                         for nd in darray.data]
