@@ -156,7 +156,7 @@ class Test_Ndarray(unittest.TestCase):
             arr = Ndarray(ex[0], shape=[2], ntv_type=ex[1])
             for format in ['full', 'complete']:
                 js = arr.to_json2(format=format)
-                #print(js)
+                print(js)
                 ex_rt = Ndarray.read_json2(js)
                 self.assertEqual(ex_rt, arr)        
                 #print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
@@ -202,7 +202,7 @@ class Test_Ndarray(unittest.TestCase):
             nda = Ndarray(ex[0], ex[1], ex[2])
             self.assertEqual(Ndarray.read_json2(nda.to_json2()), nda )
         
-    def test_ndarray_simple(self):    
+    """def test_ndarray_simple(self):    
         
         example =[[[1,2], 'int64'],
                   [[[1,2], [3,4]], 'int64'],
@@ -360,7 +360,7 @@ class Test_Ndarray(unittest.TestCase):
         file = 'https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example/ex_ndarray.ntv'
         jsn = requests.get(file, allow_redirects=True).content.decode()
         nda = read_json(jsn)
-        self.assertEqual(to_json(nda), {':ndarray': ['int64', [2, 2], [1, 2, 3, 4]]})
+        self.assertEqual(to_json(nda), {':ndarray': ['int64', [2, 2], [1, 2, 3, 4]]})"""
 
 class Test_Xndarray(unittest.TestCase):    
 

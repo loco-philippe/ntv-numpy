@@ -138,17 +138,18 @@ class NdarrayConnec(NtvConnector):
 
     @staticmethod
     def to_obj_ntv(ntv_value, **kwargs):
-        ''' convert json ntv_value into a ndarray.
+        ''' convert json ntv_value into a Ndarray.
         
         *Parameters*
 
         - **convert** : boolean (default True) - If True, convert json data with 
         non Numpy ntv_type into data with python type'''
-        return Ndarray.read_json(ntv_value, **kwargs)
+        #return Ndarray.read_json(ntv_value, **kwargs)
+        return Ndarray.read_json2(ntv_value, **kwargs)
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
-        ''' convert a ndarray (value, name, type) into NTV json (json-value, name, type).
+        ''' convert a Ndarray (value, name, type) into NTV json (json-value, name, type).
 
         *Parameters*
 
@@ -158,14 +159,15 @@ class NdarrayConnec(NtvConnector):
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **notype** : Boolean (default False) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
-        - **noname** : Boolean (default False) - including data type and name if False
         - **format** : string (default 'full') - representation format of the ndarray,
-        - **extension** : string (default None) - type extension
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including ndarray type
         '''
-        option = {'notype': False, 'extension': None, 'format': 'full',
-                  'noshape': True, 'novalue': False, 'noname': False} | kwargs
-        option['noname'] = True
-        return (Ndarray.to_json(value, ntv_type=typ, **option), name, 'ndarray')
+        option = {'format': 'full', 'header': True, 'encoded': False,
+                  'notype': False, 'noshape': True, 'novalue': False} | kwargs
+        if not option['format'] in ['full', 'complete']: 
+            option['noshape'] = False
+        return (Ndarray.to_json2(value, **option), name, 'ndarray')
 
 class XndarrayConnec(NtvConnector):
 
