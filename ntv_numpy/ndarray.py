@@ -79,7 +79,7 @@ class Ndarray:
 
     def __str__(self):
         '''return json string format'''
-        return json.dumps(self.to_json())
+        return json.dumps(self.to_json2())
 
     def __eq__(self, other):
         ''' equal if attributes are equal'''
@@ -440,7 +440,7 @@ class NpUtil:
 
     @staticmethod
     def ntv_val(ntv_type, nda, form, is_json=False):
-        ''' convert a simple ndarray into NTV json-value.
+        ''' convert a np.ndarray into NTV json-value.
 
         *Parameters*
 
@@ -460,7 +460,8 @@ class NpUtil:
             return Format(darray.data, ref=ref, coding=coding).to_json()
         match ntv_type:
             case 'ndarray':
-                data = [Ndarray.to_json(nd) for nd in darray.data]
+                #data = [Ndarray.to_json(nd) for nd in darray.data]
+                data = [nd.to_json2() for nd in darray.data]
             case connec if connec in NpUtil.CONNECTOR_DT:
                 data = [NtvConnector.cast(nd, None, connec)[0]
                         for nd in darray.data]
