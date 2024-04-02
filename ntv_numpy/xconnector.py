@@ -104,7 +104,7 @@ class XarrayConnec:
 
     @staticmethod
     def _to_xr_attrs(xdt, **option):
-        '''return a dict with attributes from a xdataset
+        '''return a dict with attributes from a Xdataset
         
         *Parameters*
 

@@ -125,6 +125,10 @@ class Ndarray:
     def ndarray(self):
         '''representation with a np.ndarray not flattened'''
         return self.darray.reshape(self.shape) if not self.darray is None else None
+
+    def to_ndarray(self):
+        '''representation with a np.ndarray not flattened'''
+        return self.ndarray
     
     @property
     def mode(self):
@@ -170,7 +174,7 @@ class Ndarray:
                                      convert=option['convert'])
         return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
 
-    @staticmethod
+    """@staticmethod
     def read_json(ntv_value, **kwargs):
         ''' convert json ntv_value into a ndarray.
 
@@ -191,7 +195,7 @@ class Ndarray:
         darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
         darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
                                      convert=option['convert'])
-        return darray.values.reshape(shape)
+        return darray.values.reshape(shape)"""
 
     def to_json2(self, **kwargs):
         ''' convert a Ndarray into json-value
@@ -226,7 +230,7 @@ class Ndarray:
                                [val for val in lis if not val is None],
                                header=option['header'], encoded=option['encoded'])
 
-    @staticmethod
+    """@staticmethod
     def to_json(value, **kwargs):
         ''' convert a ndarray into json-value
 
@@ -258,7 +262,7 @@ class Ndarray:
         js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(ntv_type, val_flat,
                                                                 option['format'])
         lis = [ntv_type if not option['notype'] else None, shape, js_val]
-        return [val for val in lis if not val is None]
+        return [val for val in lis if not val is None]"""
 
     @staticmethod
     def equals(nself, nother):
@@ -334,7 +338,7 @@ class NpUtil:
 
     PYTHON_DT = {'array': 'list', 'time': 'datetime.time',
                  'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
-                 'ndarray': 'ndarray'}
+                 'ndarray': 'ndarray', 'narray': 'narray'}
     DT_PYTHON = {val: key for key, val in PYTHON_DT.items()}
 
     OTHER_DT = {'boolean': 'bool', 'string': 'str'}
@@ -423,8 +427,12 @@ class NpUtil:
                     return np.frompyfunc(datetime.time.fromisoformat, 1, 1)(nda)
                 case ['decimal64', True]:
                     return np.frompyfunc(Decimal, 1, 1)(nda)
+                case ['narray', True]:
+                    nar = np.frompyfunc(Ndarray.read_json2, 1, 1)(nda)
+                    return np.frompyfunc(Ndarray.to_ndarray, 1, 1)(nar)
                 case ['ndarray', True]:
-                    return np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
+                    #return np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
+                    return np.frompyfunc(Ndarray.read_json2, 1, 1)(nda)
                 case [python, _] if python in NpUtil.PYTHON_DT:
                     return nda.astype('object')
                 case [connec, True] if connec in NpUtil.CONNECTOR_DT:
@@ -459,6 +467,8 @@ class NpUtil:
         if is_json:
             return Format(darray.data, ref=ref, coding=coding).to_json()
         match ntv_type:
+            case 'narray':
+                data = [Ndarray(nd).to_json2(header=False) for nd in darray.data]
             case 'ndarray':
                 #data = [Ndarray.to_json(nd) for nd in darray.data]
                 data = [Ndarray(nd).to_json2(header=False) for nd in darray.data]

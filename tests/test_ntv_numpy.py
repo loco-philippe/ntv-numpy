@@ -145,7 +145,7 @@ class Test_Ndarray(unittest.TestCase):
     def test_ndarray_nested2(self):    
 
         example =[[[[1,2], [3,4]], 'array'],
-                  [[np.array([1, 2], dtype='int64'), np.array(['test1', 'test2'], dtype='str_')], 'ndarray'],
+                  [[np.array([1, 2], dtype='int64'), np.array(['test1', 'test2'], dtype='str_')], 'narray'],
                   [[pd.Series([1,2,3]), pd.Series([4,5,6])], 'field'],
                   [[pd.DataFrame({'::date': pd.Series([date(1964,1,1), date(1985,2,5)]), 
                                   'names': ['john', 'eric']}),
