@@ -275,6 +275,7 @@ class NpUtil:
                    'timedelta[M]': 'timedelta64[M]'}
     DT_DATATION = {val: key for key, val in DATATION_DT.items()}
 
+    #CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
     CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
     DT_CONNECTOR = {val: key for key, val in CONNECTOR_DT.items()}
 
@@ -304,7 +305,8 @@ class NpUtil:
     CONVERT_DT = {'object': 'object', 'array': 'object', 'json': 'object',
                   'number': 'float', 'boolean': 'bool', 'null': 'object',
                   'string': 'str', 'integer': 'int'}
-
+    STRUCT_DT = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
+    
     DT_NTVTYPE = DT_DATATION | DT_LOCATION | DT_OTHER | DT_CONNECTOR | DT_PYTHON
 
     @staticmethod
@@ -488,7 +490,10 @@ class NpUtil:
         - **ext** : string - type extension
         '''
         dtype = nda.dtype.name
-        dtype = nda.flat[0].__class__.__name__ if dtype == 'object' else dtype
+        pytype = nda.flat[0].__class__.__name__
+        dtype = pytype if dtype == 'object' and not pytype in NpUtil.STRUCT_DT else dtype
+        #dtype = pytype if dtype == 'object' and pytype in NpUtil.DT_NTVTYPE else dtype
+        #dtype = nda.flat[0].__class__.__name__ if dtype == 'object' else dtype
         return NpUtil.ntv_type(dtype, ntv_type, ext)
 
     @staticmethod
