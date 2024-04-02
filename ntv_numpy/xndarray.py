@@ -54,7 +54,7 @@ class Xndarray:
         - **ntv_type**: string (default None) - ntv_type to apply to data
         - **meta**: dict (default None) - information
         '''
-        #print('init xnd', full_name, nda.to_json2(), links, meta)
+        #print('init xnd', full_name, nda.to_json(), links, meta)
         if isinstance(full_name, Xndarray):
             self.name = full_name.name
             self.add_name = full_name.add_name
@@ -205,8 +205,8 @@ class Xndarray:
             case _:
                 return None
         #print('xnd json', nda, meta, links)
-        nda = Ndarray.read_json2(nda, **option) if nda else None
-        #print('xnd nda', nda.to_json2())
+        nda = Ndarray.read_json(nda, **option) if nda else None
+        #print('xnd nda', nda.to_json())
         return Xndarray(full_name, links=links, meta=meta, nda=nda)
 
     def to_json(self, **kwargs):
@@ -229,8 +229,8 @@ class Xndarray:
         if not option['format'] in ['full', 'complete']:
             option['noshape'] = False
         opt_nda = option | {'header': False} 
-        #nda_str = Ndarray.to_json2(self.nda, 
-        nda_str = self.nda.to_json2(**opt_nda) if not self.nda is None else None
+        #nda_str = Ndarray.to_json(self.nda, 
+        nda_str = self.nda.to_json(**opt_nda) if not self.nda is None else None
         lis = [nda_str, self.links, self.meta]
         lis = [val for val in lis if not val is None]
         return NpUtil.json_ntv(None if option['noname'] else self.full_name,

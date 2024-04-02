@@ -146,7 +146,7 @@ class NarrayConnec(NtvConnector):
 
         - **convert** : boolean (default True) - If True, convert json data with 
         non Numpy ntv_type into data with python type'''
-        return Ndarray.read_json2(ntv_value, **kwargs).darray
+        return Ndarray.read_json(ntv_value, **kwargs).darray
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
@@ -168,7 +168,7 @@ class NarrayConnec(NtvConnector):
                   'notype': False, 'noshape': True, 'novalue': False} | kwargs
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
-        return (Ndarray(value).to_json2(**option), name, 'narray')
+        return (Ndarray(value).to_json(**option), name, 'narray')
 
 class NdarrayConnec(NtvConnector):
 
@@ -185,7 +185,7 @@ class NdarrayConnec(NtvConnector):
 
         - **convert** : boolean (default True) - If True, convert json data with 
         non-Numpy ntv_type into data with python type'''
-        return Ndarray.read_json2(ntv_value, **kwargs)
+        return Ndarray.read_json(ntv_value, **kwargs)
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
@@ -207,7 +207,7 @@ class NdarrayConnec(NtvConnector):
                   'notype': False, 'noshape': True, 'novalue': False} | kwargs
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
-        return (Ndarray(value).to_json2(**option), name, 'ndarray')
+        return (Ndarray(value).to_json(**option), name, 'ndarray')
 
 class XndarrayConnec(NtvConnector):
 

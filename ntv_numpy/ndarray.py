@@ -78,7 +78,7 @@ class Ndarray:
 
     def __str__(self):
         '''return json string format'''
-        return json.dumps(self.to_json2())
+        return json.dumps(self.to_json())
 
     def __eq__(self, other):
         ''' equal if attributes are equal'''
@@ -144,7 +144,7 @@ class Ndarray:
                 return 'inconsistent'
 
     @staticmethod
-    def read_json2(jsn, **kwargs):
+    def read_json(jsn, **kwargs):
         ''' convert json ntv_value into a ndarray.
 
 
@@ -173,7 +173,7 @@ class Ndarray:
                                      convert=option['convert'])
         return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
 
-    def to_json2(self, **kwargs):
+    def to_json(self, **kwargs):
         ''' convert a Ndarray into json-value
 
         *Parameters*
@@ -283,7 +283,8 @@ class NpUtil:
                  'ndarray': 'ndarray', 'narray': 'narray'}
     DT_PYTHON = {val: key for key, val in PYTHON_DT.items()}
 
-    OTHER_DT = {'boolean': 'bool', 'string': 'str'}
+    #OTHER_DT = {'boolean': 'bool', 'string': 'str'}
+    OTHER_DT = {'boolean': 'bool', 'string': 'str', 'base16': 'bytes'}
     DT_OTHER = {val: key for key, val in OTHER_DT.items()}
 
     LOCATION_DT = {'point': 'Point',
@@ -293,7 +294,8 @@ class NpUtil:
     NUMBER_DT = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
                  'wday': 'int', 'yday': 'int', 'week': 'hour', 'minute': 'int',
                  'second': 'int'}
-    STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str',
+    #STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str',
+    STRING_DT = {'base32': 'str', 'base64': 'str',
                  'period': 'str', 'duration': 'str', 'jpointer': 'str',
                  'uri': 'str', 'uriref': 'str', 'iri': 'str', 'iriref': 'str',
                  'email': 'str', 'regex': 'str', 'hostname': 'str', 'ipv4': 'str',
@@ -370,10 +372,10 @@ class NpUtil:
                 case ['decimal64', True]:
                     return np.frompyfunc(Decimal, 1, 1)(nda)
                 case ['narray', True]:
-                    nar = np.frompyfunc(Ndarray.read_json2, 1, 1)(nda)
+                    nar = np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
                     return np.frompyfunc(Ndarray.to_ndarray, 1, 1)(nar)
                 case ['ndarray', True]:
-                    return np.frompyfunc(Ndarray.read_json2, 1, 1)(nda)
+                    return np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
                 case [python, _] if python in NpUtil.PYTHON_DT:
                     return nda.astype('object')
                 case [connec, True] if connec in NpUtil.CONNECTOR_DT:
@@ -409,10 +411,10 @@ class NpUtil:
             return Format(darray.data, ref=ref, coding=coding).to_json()
         match ntv_type:
             case 'narray':
-                data = [Ndarray(nd).to_json2(header=False) for nd in darray.data]
+                data = [Ndarray(nd).to_json(header=False) for nd in darray.data]
             case 'ndarray':
                 #data = [Ndarray.to_json(nd) for nd in darray.data]
-                data = [Ndarray(nd).to_json2(header=False) for nd in darray.data]
+                data = [Ndarray(nd).to_json(header=False) for nd in darray.data]
             case connec if connec in NpUtil.CONNECTOR_DT:
                 data = [NtvConnector.cast(nd, None, connec)[0]
                         for nd in darray.data]
@@ -470,7 +472,8 @@ class NpUtil:
             case string if string[:3] == 'str':
                 return NpUtil.add_ext('string', ext)
             case byte if byte[:5] == 'bytes':
-                return NpUtil.add_ext('bytes', ext)
+                #return NpUtil.add_ext('bytes', ext)
+                return NpUtil.add_ext('base16', ext)
             case _:
                 return NpUtil.add_ext(dtype, ext)
 
