@@ -146,7 +146,6 @@ class NarrayConnec(NtvConnector):
 
         - **convert** : boolean (default True) - If True, convert json data with 
         non Numpy ntv_type into data with python type'''
-        #return Ndarray.read_json(ntv_value, **kwargs)
         return Ndarray.read_json2(ntv_value, **kwargs).darray
 
     @staticmethod
@@ -186,7 +185,6 @@ class NdarrayConnec(NtvConnector):
 
         - **convert** : boolean (default True) - If True, convert json data with 
         non-Numpy ntv_type into data with python type'''
-        #return Ndarray.read_json(ntv_value, **kwargs)
         return Ndarray.read_json2(ntv_value, **kwargs)
 
     @staticmethod

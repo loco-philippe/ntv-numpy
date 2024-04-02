@@ -14,11 +14,10 @@ For more information, see the
  or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 
 """
-# import os
+
 import datetime
 import json
-# import configparser
-# from pathlib import Path
+
 from decimal import Decimal
 import pandas as pd
 import numpy as np
@@ -174,29 +173,6 @@ class Ndarray:
                                      convert=option['convert'])
         return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
 
-    """@staticmethod
-    def read_json(ntv_value, **kwargs):
-        ''' convert json ntv_value into a ndarray.
-
-
-        *Parameters*
-
-        - **convert** : boolean (default True) - If True, convert json data with
-        non Numpy ntv_type into data with python type
-        '''
-        option = {'convert': True} | kwargs
-        ntv_type = None
-        shape = None
-        match ntv_value[:-1]:
-            case []: ...
-            case [ntv_type, shape]: ...
-            case [str(ntv_type)]: ...
-            case [list(shape)]: ...
-        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type))
-        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
-                                     convert=option['convert'])
-        return darray.values.reshape(shape)"""
-
     def to_json2(self, **kwargs):
         ''' convert a Ndarray into json-value
 
@@ -229,40 +205,6 @@ class Ndarray:
         return NpUtil.json_ntv(None, 'ndarray',
                                [val for val in lis if not val is None],
                                header=option['header'], encoded=option['encoded'])
-
-    """@staticmethod
-    def to_json(value, **kwargs):
-        ''' convert a ndarray into json-value
-
-        *Parameters*
-
-        - **ntv_type** : string (default None) - ntv_type of the ndarray object,
-        - **value** : ndarray value
-        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
-        - **notype** : Boolean (default False) - including data type if False
-        - **novalue** : Boolean (default False) - including value if False
-        - **format** : string (default 'full') - representation format of the ndarray,
-        - **extension** : string (default None) - type extension
-        '''
-        option = {'ntv_type': None, 'notype': False, 'extension': None, 'format': 'full',
-                  'noshape': True, 'novalue': False} | kwargs
-        if value is None:
-            return None
-        if len(value) == 0:
-            return [[]]
-
-        shape = list(value.shape)
-        shape = None if len(shape) < 2 and option['noshape'] else shape
-        val_flat = value.flatten() if shape else value
-
-        ntv_type, ext = NpUtil.split_type(option['ntv_type'])
-        ext = ext if ext else option['extension']
-        ntv_type = NpUtil.nda_ntv_type(val_flat, ntv_type, ext)
-
-        js_val = ['-'] if option['novalue'] else NpUtil.ntv_val(ntv_type, val_flat,
-                                                                option['format'])
-        lis = [ntv_type if not option['notype'] else None, shape, js_val]
-        return [val for val in lis if not val is None]"""
 
     @staticmethod
     def equals(nself, nother):
@@ -431,7 +373,6 @@ class NpUtil:
                     nar = np.frompyfunc(Ndarray.read_json2, 1, 1)(nda)
                     return np.frompyfunc(Ndarray.to_ndarray, 1, 1)(nar)
                 case ['ndarray', True]:
-                    #return np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
                     return np.frompyfunc(Ndarray.read_json2, 1, 1)(nda)
                 case [python, _] if python in NpUtil.PYTHON_DT:
                     return nda.astype('object')
@@ -587,28 +528,6 @@ class NpUtil:
         if option['encoded']:
             return json.dumps(jsn)
         return jsn
-
-    """@staticmethod
-    def from_json_ntv(jso):
-        ''' return NTVname, NTVtype, NTVvalue(list) of a json data'''
-        if not ((isinstance(jso, dict) and len(jso) == 1) or isinstance(jso, list)):
-            return None
-        if isinstance(jso, list):
-            json_name = None
-            value = jso
-        else:
-            json_name, value = list(jso.items())[0]
-        full_name, ntv_type = NpUtil.split_json_name(json_name)
-        return (full_name, ntv_type, value)
-
-        if not isinstance(jso, dict):
-            return None
-        if len(jso) == 1:
-            json_name, value = list(jso.items())[0]
-            name = Xndarray.split_json_name(json_name)[0]
-        else:
-            value = jso
-            name = None"""
 
 
 class NdarrayError(Exception):
