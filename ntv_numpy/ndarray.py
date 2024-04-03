@@ -40,7 +40,7 @@ class Ndarray:
         *Parameters*
 
         - **dar**: Darray or np.ndarray - data to represent
-        - **shape** : String or integer (default None) - name or index of another Darray
+        - **shape** : list of integer (default None) - length of dimensions
         - **ntv_type**: string (default None) - NTVtype to apply
         '''
         dar = None if isinstance(dar, list) and len(dar) == 0 else dar

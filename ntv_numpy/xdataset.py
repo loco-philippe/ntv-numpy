@@ -324,6 +324,7 @@ class Xdataset:
         noshape = kwargs.get('noshape', True)
         dic_xnd = {}
         for xna, notyp, forma in zip(self.xnd, notype, forma):
+            #not_shape = True if len(xna.links) == 1 else noshape
             dic_xnd |= xna.to_json(notype=notyp, novalue=kwargs.get('novalue', False),
                                    noshape=noshape, format=forma, header=False)
         return NpUtil.json_ntv(self.name, 'xdataset', dic_xnd,
