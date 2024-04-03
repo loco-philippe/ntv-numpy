@@ -125,6 +125,27 @@ class Ndarray:
         '''representation with a np.ndarray not flattened'''
         return self.darray.reshape(self.shape) if not self.darray is None else None
 
+    def set_array(self, darray):
+        '''set a new darray and return the removed uri link'''
+        ntv_type = None
+        shape = None
+        if isinstance(darray, Ndarray):
+            darray = darray.darray
+            ntv_type = darray.ntv_type
+            shape = darray.shape
+        darray = np.array(darray).reshape(-1)
+        self.shape = shape if self.shape is None else self.shape
+        self.ntv_type = ntv_type if self.ntv_type is None else self.ntv_type
+        if len(darray) != Ndarray.len_shape(shape):
+            return
+        self.uri = None
+        self.darray = darray
+        return
+    
+    def set_uri(self, uri):
+        '''set a new uri and return the removed np.ndarray'''
+
+
     def to_ndarray(self):
         '''representation with a np.ndarray not flattened'''
         return self.ndarray
