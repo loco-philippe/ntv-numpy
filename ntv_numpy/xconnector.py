@@ -92,7 +92,7 @@ class XarrayConnec:
         - **add_attrs** : boolean (default True) - if False, attrs are not converted
         '''
         full_name = xar.name if xar.name else name
-        name = Xndarray.split_name(full_name)[0]
+        name = NpUtil.split_name(full_name)[0]
         dims = None if xar.dims == (name,) else list(xar.dims)
         ntv_type = xar.attrs.get('ntv_type')
         nda = xar.values
@@ -205,7 +205,7 @@ class ScippConnec:
                 xnd += ScippConnec._var_sc_to_xnd(scd.coords[coord], scd, coord)
             for var in scd:
                 for mask in scd[var].masks:
-                    m_var = Xndarray.split_json_name(var)[0]
+                    m_var = NpUtil.split_json_name(var)[0]
                     xnd += ScippConnec._var_sc_to_xnd(
                         scd[var].masks[mask], scd, mask, m_var)
                 xnd += ScippConnec._var_sc_to_xnd(scd[var].data, scd, var)
@@ -218,7 +218,7 @@ class ScippConnec:
         '''return a list of Xndarray from a scipp variable'''
         dic_xnd = {xar.name: xar for xar in xnd}
         for obj in sc_obj:
-            name, add_name = Xndarray.split_name(obj)
+            name, add_name = NpUtil.split_name(obj)
             match [name, add_name, sc_obj[obj]]:
                 case [name, None, list()]:
                     xnd += [Xndarray.read_json({name: sc_obj[obj]})]
@@ -243,15 +243,15 @@ class ScippConnec:
         l_xnda = []
         unit = scv.unit.name if scv.unit and not scv.unit in [
             'dimensionless', 'ns'] else ''
-        ext_name, typ1 = Xndarray.split_json_name(sc_name, True)
-        var_name, typ2 = Xndarray.split_json_name(var, True)
+        ext_name, typ1 = NpUtil.split_json_name(sc_name, True)
+        var_name, typ2 = NpUtil.split_json_name(var, True)
         full_name = var_name + \
             ('.' if var_name and ext_name else '') + ext_name
         ntv_type_base = typ1 + typ2
         ntv_type = ntv_type_base + ('[' + unit + ']' if unit else '')
-        links = [Xndarray.split_json_name(jsn)[0] for jsn in scv.dims]
+        links = [NpUtil.split_json_name(jsn)[0] for jsn in scv.dims]
         if not scd is None and sc_name in scd.coords and scv.dims == scd.dims:
-            links = [Xndarray.split_json_name(list(scd)[0])[0]]
+            links = [NpUtil.split_json_name(list(scd)[0])[0]]
         if not scv.variances is None:
             nda = Ndarray(np.array(scv.variances), ntv_type_base)
             l_xnda.append(Xndarray(full_name + '.variance', nda, links))
@@ -292,7 +292,7 @@ class ScippConnec:
     def _to_scipp_var(xdt, name, **kwargs):
         '''return a scipp.Variable from a Xndarray defined by his name'''
         option = {'grp_mask': False, 'ntv_type': True} | kwargs
-        add_name = Xndarray.split_name(name)[1]
+        add_name = NpUtil.split_name(name)[1]
         new_n = add_name if name in xdt.masks and not option['grp_mask'] else name
         opt_n = option['ntv_type']
         values = xdt.to_ndarray(name)

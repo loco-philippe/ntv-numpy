@@ -126,25 +126,43 @@ class Ndarray:
         return self.darray.reshape(self.shape) if not self.darray is None else None
 
     def set_array(self, darray):
-        '''set a new darray and return the removed uri link'''
-        ntv_type = None
-        shape = None
-        if isinstance(darray, Ndarray):
-            darray = darray.darray
-            ntv_type = darray.ntv_type
-            shape = darray.shape
-        darray = np.array(darray).reshape(-1)
-        self.shape = shape if self.shape is None else self.shape
-        self.ntv_type = ntv_type if self.ntv_type is None else self.ntv_type
-        if len(darray) != Ndarray.len_shape(shape):
-            return
+        '''set a new darray and remove uri, return the result (True, False)
+        
+        *Parameters*
+
+        - **darray** : list, np.ndarray, Ndarray - data to include'''
+        ndarray = Ndarray(darray)
+        darray = ndarray.darray
+        ntv_type = ndarray.ntv_type
+        shape = ndarray.shape
+        new_shape = shape if self.shape is None else self.shape
+        new_ntv_type = ntv_type if self.ntv_type is None else self.ntv_type
+        if (len(darray) != Ndarray.len_shape(new_shape) or 
+            new_ntv_type != ntv_type or new_shape != shape):
+            return False
         self.uri = None
         self.darray = darray
-        return
+        self.ntvtype = Datatype(new_ntv_type)
+        self.shape = new_shape
+        return True
     
-    def set_uri(self, uri):
-        '''set a new uri and return the removed np.ndarray'''
+    def set_uri(self, uri, no_ntv_type=False, no_shape=False):
+        '''set a new uri and remove ndarray and optionaly ntv_type and shape.
+        Return the result (True, False)
+        
+        *Parameters*
 
+        - **uri** : string - URI of the Ndarray
+        - **no_ntv_type** : boolean (default False) - If True, ntv_type is None
+        - **no_shape** : boolean (default False) - If True, shape is None
+        '''
+        if not isinstance(uri, str) or not uri:
+            return False
+        self.uri = uri
+        self.darray = None
+        self.ntvtype = None if no_ntv_type else self.ntvtype
+        self.shape = None if no_shape else self.shape
+        return True
 
     def to_ndarray(self):
         '''representation with a np.ndarray not flattened'''
@@ -167,7 +185,6 @@ class Ndarray:
     @staticmethod
     def read_json(jsn, **kwargs):
         ''' convert json ntv_value into a ndarray.
-
 
         *Parameters*
 
@@ -275,6 +292,7 @@ class NpUtil:
 
     *static methods*
     - `convert`
+    - `is_json`
     - `ntv_val`
     - `add_ext`
     - `split_type`
@@ -282,6 +300,9 @@ class NpUtil:
     - `nda_ntv_type`
     - `dtype`
     - `json_ntv`
+    - `split_name`
+    - `split_json_name`
+
     '''
 
     DATATION_DT = {'date': 'datetime64[D]', 'year': 'datetime64[Y]',
@@ -476,6 +497,15 @@ class NpUtil:
             return (null, spl[1])
         sp0 = spl[0][:-1] if spl[0][-1] == ':' else spl[0]
         return (null if sp0 == '' else sp0, null if spl[1] == '' else spl[1])
+
+    @staticmethod
+    def split_name(string):
+        '''return a list with name, add_name from string'''
+        if not string or string == '.':
+            return ['', '']
+        spl = string.split('.', maxsplit=1)
+        spl = [spl[0], ''] if len(spl) < 2 else spl
+        return spl
 
     @staticmethod
     def ntv_type(dtype, ntv_type=None, ext=None):
