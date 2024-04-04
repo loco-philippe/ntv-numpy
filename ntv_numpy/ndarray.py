@@ -62,8 +62,7 @@ class Ndarray:
             dar = Dfull(dar, dtype=NpUtil.dtype(ntv_type), unidim=True).data
         else:
             #dar = np.array(dar if isinstance(dar, (list, np.ndarray)) else [dar],
-            dar = np.array(dar,
-                           dtype=NpUtil.dtype(ntv_type))
+            dar = np.array(dar, dtype=NpUtil.dtype(ntv_type))
             shape = list(dar.shape)
         dar = np.array(dar).reshape(-1)
         ntv_type = NpUtil.nda_ntv_type(dar) if not (ntv_type or dar is None) else ntv_type
@@ -75,7 +74,12 @@ class Ndarray:
 
     def __repr__(self):
         '''return classname, the shape and the ntv_type'''
-        return self.__class__.__name__ + '(' + self.ntv_type + ', ' + str(self.shape) + ')'
+        uri = self.uri if self.uri else ''
+        typ = self.ntv_type if self.ntv_type else ''
+        sha = str(self.shape) if self.shape else ''
+        u_t = ', ' if uri and typ + sha else ''
+        t_s = ', ' if typ and sha else ''        
+        return self.__class__.__name__ + '(' + uri + u_t + typ + t_s + sha + ')'
 
     def __str__(self):
         '''return json string format'''
@@ -125,6 +129,19 @@ class Ndarray:
     def ndarray(self):
         '''representation with a np.ndarray not flattened'''
         return self.darray.reshape(self.shape) if not self.darray is None else None
+
+    def update(self, nda):
+        if not (self.shape is None or 
+                nda.shape is None) and self.shape != nda.shape:
+            return False
+        if not (self.ntv_type is None or 
+                nda.ntv_type is None) and self.ntv_type != nda.ntv_type:
+            return False
+        self.ntvtype = nda.ntvtype if not nda.ntv_type is None else self.ntvtype
+        self.shape = nda.shape if not nda.shape is None else self.shape
+        self.uri = nda.uri if nda.uri else self.uri
+        self.darray = nda.darray if not nda.darray is None else self.darray
+        return True
 
     def set_array(self, darray):
         '''set a new darray and remove uri, return the result (True, False)
@@ -434,7 +451,7 @@ class NpUtil:
                 case _:
                     return nda.astype(NpUtil.dtype(ntv_type))
 
-        # float.hex(), float.fromhex(), x.hex(), bytes(bytearray.fromhex(), 
+        # float.fromhex(x.hex()) == x, bytes(bytearray.fromhex(x.hex())) == x 
     @staticmethod
     def ntv_val(ntv_type, nda, form, is_json=False):
         ''' convert a np.ndarray into NTV json-value.

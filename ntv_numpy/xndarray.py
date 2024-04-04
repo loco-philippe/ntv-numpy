@@ -123,6 +123,11 @@ class Xndarray:
     def ndarray(self):
         '''return the darray of the ndarray'''
         return self.nda.ndarray if self.nda is not None else None
+
+    @property
+    def uri(self):
+        '''return the uri of the ndarray'''
+        return self.nda.uri if self.nda is not None else None
     
     @property
     def shape(self):
@@ -208,13 +213,27 @@ class Xndarray:
         nda = Ndarray.read_json(nda, **option) if nda else None
         return Xndarray(full_name, links=links, meta=meta, nda=nda)
 
-    def set_array(self, darray):
+    def set_ndarray(self, ndarray):
+        '''set a new ndarray with same ntv_type and shape and return the result (True, False)
+        
+        *Parameters*
+
+        - **ndarray** : string, list, np.ndarray, Ndarray - data to include'''
+        ndarray = Ndarray(ndarray)
+        if not self.nda is None:
+            return self.nda.update(ndarray)
+        self.nda = ndarray
+        return True
+        
+    """def set_array(self, darray):
         '''set a new darray in ndarray and remove uri, return the result (True, False)
         
         *Parameters*
 
         - **darray** : list, np.ndarray, Ndarray - data to include'''
-        return self.ndarray.set_array(darray)
+        if not self.nda is None:
+            return self.nda.set_array(darray)
+        self.nda = Ndarray(darray)
 
     def set_uri(self, uri, no_ntv_type=False, no_shape=False):
         '''set a new uri and remove ndarray and optionaly ntv_type and shape.
@@ -226,7 +245,7 @@ class Xndarray:
         - **no_ntv_type** : boolean (default False) - If True, ntv_type is None
         - **no_shape** : boolean (default False) - If True, shape is None
         '''
-        return self.ndarray.set_uri(uri, no_ntv_type=no_ntv_type, no_shape=no_shape)
+        return self.ndarray.set_uri(uri, no_ntv_type=no_ntv_type, no_shape=no_shape)"""
 
         
     def to_json(self, **kwargs):
