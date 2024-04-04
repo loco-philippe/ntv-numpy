@@ -43,7 +43,7 @@ class Ndarray:
         - **shape** : list of integer (default None) - length of dimensions
         - **ntv_type**: string (default None) - NTVtype to apply
         '''
-        dar = None if isinstance(dar, list) and len(dar) == 0 else dar
+        dar = [None] if isinstance(dar, list) and len(dar) == 0 else dar
         if isinstance(dar, Ndarray):
             self.uri = dar.uri
             self.is_json = dar.is_json
@@ -61,8 +61,9 @@ class Ndarray:
         if shape:
             dar = Dfull(dar, dtype=NpUtil.dtype(ntv_type), unidim=True).data
         else:
-            dar = np.array(dar if isinstance(dar, (list, np.ndarray))
-                              else [dar], dtype=NpUtil.dtype(ntv_type))
+            #dar = np.array(dar if isinstance(dar, (list, np.ndarray)) else [dar],
+            dar = np.array(dar,
+                           dtype=NpUtil.dtype(ntv_type))
             shape = list(dar.shape)
         dar = np.array(dar).reshape(-1)
         ntv_type = NpUtil.nda_ntv_type(dar) if not (ntv_type or dar is None) else ntv_type
@@ -433,6 +434,7 @@ class NpUtil:
                 case _:
                     return nda.astype(NpUtil.dtype(ntv_type))
 
+        # float.hex(), float.fromhex(), x.hex(), bytes(bytearray.fromhex(), 
     @staticmethod
     def ntv_val(ntv_type, nda, form, is_json=False):
         ''' convert a np.ndarray into NTV json-value.

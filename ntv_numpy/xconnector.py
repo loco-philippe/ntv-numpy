@@ -17,7 +17,7 @@ from ntv_numpy.ndarray import NpUtil, Ndarray
 from ntv_numpy.xndarray import Xndarray
 import xarray as xr
 import scipp as sc
-import numpy as np
+#import numpy as np
 
 
 class XarrayConnec:
@@ -249,17 +249,21 @@ class ScippConnec:
             ('.' if var_name and ext_name else '') + ext_name
         ntv_type_base = typ1 + typ2
         ntv_type = ntv_type_base + ('[' + unit + ']' if unit else '')
+        
         links = [NpUtil.split_json_name(jsn)[0] for jsn in scv.dims]
         if not scd is None and sc_name in scd.coords and scv.dims == scd.dims:
             links = [NpUtil.split_json_name(list(scd)[0])[0]]
         if not scv.variances is None:
-            nda = Ndarray(np.array(scv.variances), ntv_type_base)
+            #nda = Ndarray(np.array(scv.variances), ntv_type_base)
+            nda = Ndarray(scv.variances, ntv_type_base)
             l_xnda.append(Xndarray(full_name + '.variance', nda, links))
-        nda = np.array(scv.values, dtype=ScippConnec.SCTYPE_DTYPE.get(str(scv.dtype),
+        nda = Ndarray(scv.values, ntv_type)
+        l_xnda.append(Xndarray(full_name, nda, links))
+        '''nda = np.array(scv.values, dtype=ScippConnec.SCTYPE_DTYPE.get(str(scv.dtype),
                                                                       str(scv.dtype)))
         if nda.dtype.name == 'datetime64[ns]' and ntv_type:
             nda = NpUtil.convert(ntv_type, nda, tojson=False)
-        l_xnda.append(Xndarray(full_name, Ndarray(nda, ntv_type), links))
+        l_xnda.append(Xndarray(full_name, Ndarray(nda, ntv_type), links))'''
         return l_xnda
 
     @staticmethod
