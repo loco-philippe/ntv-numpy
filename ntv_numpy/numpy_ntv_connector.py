@@ -17,8 +17,10 @@ It contains :
 - functions `read_json` and `to_json` to convert JSON data and numpy entities
 
 - the child classes of `NTV.json_ntv.ntv.NtvConnector` abstract class:
-    - `NdarrayConnec`: 'ndarray'   connector
-    - `XndarrayConnec`: 'xndarray' connector
+    - `NarrayConnec`: 'narray' connector for np.ndarray data
+    - `NdarrayConnec`: 'ndarray'   connector for Ndarray data
+    - `XndarrayConnec`: 'xndarray' connector for Xndarray data
+    - `XdatasetConnec`: 'xdataset' connector for Xdataset data
 
 - an utility class with static methods : `NpUtil`
 """
@@ -30,8 +32,6 @@ from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xdataset import Xdataset
 
 from json_ntv import NtvConnector
-SeriesConnec = NtvConnector.connector().get('SeriesConnec')
-DataFrameConnec = NtvConnector.connector().get('DataFrameConnec')
 
 def read_json(jsn, **kwargs):
     ''' convert JSON text or JSON Value to Numpy ndarray.
@@ -129,47 +129,88 @@ def read_json_tab(js):
     return (nda.reshape(shape), {'dims': list(axes_n),
             'coords': {axe_n: [axe_v] for axe_n, axe_v in zip(axes_n, axes_v)}})
 
-class NdarrayConnec(NtvConnector):
+class NarrayConnec(NtvConnector):
 
     '''NTV connector for Numpy ndarray.'''
 
     clas_obj = 'ndarray'
-    clas_typ = 'ndarray'
+    clas_typ = 'narray'
 
     @staticmethod
     def to_obj_ntv(ntv_value, **kwargs):
-        ''' convert json ntv_value into a ndarray.
+        ''' convert json ntv_value into a np.ndarray.
         
         *Parameters*
 
         - **convert** : boolean (default True) - If True, convert json data with 
         non Numpy ntv_type into data with python type'''
+        return Ndarray.read_json(ntv_value, **kwargs).darray
+
+    @staticmethod
+    def to_json_ntv(value, name=None, typ=None, **kwargs):
+        ''' convert a np.ndarray (value, name, type) into NTV json (json-value, name, ntv_type).
+
+        *Parameters*
+
+        - **typ** : string (default None) - ntv_type of the np.ndarray object,
+        - **name** : string (default None) - name of the ndarray object
+        - **value** : np.ndarray value
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
+        - **notype** : Boolean (default False) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
+        - **format** : string (default 'full') - representation format of the ndarray,
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including ndarray type
+        '''
+        option = {'format': 'full', 'header': True, 'encoded': False,
+                  'notype': False, 'noshape': True, 'novalue': False} | kwargs
+        if not option['format'] in ['full', 'complete']: 
+            option['noshape'] = False
+        option['header'] = False
+        return (Ndarray(value).to_json(**option), name, 'narray')
+
+class NdarrayConnec(NtvConnector):
+
+    '''NTV connector for Ndarray.'''
+
+    clas_obj = 'Ndarray'
+    clas_typ = 'ndarray'
+
+    @staticmethod
+    def to_obj_ntv(ntv_value, **kwargs):
+        ''' convert json ntv_value into a Ndarray.
+        
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with 
+        non-Numpy ntv_type into data with python type'''
         return Ndarray.read_json(ntv_value, **kwargs)
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
-        ''' convert a ndarray (value, name, type) into NTV json (json-value, name, type).
+        ''' convert a Ndarray (value, name, type) into NTV json (json-value, name, ntv_type).
 
         *Parameters*
 
         - **typ** : string (default None) - ntv_type of the ndarray object,
         - **name** : string (default None) - name of the ndarray object
-        - **value** : ndarray value
+        - **value** : Ndarray value (or np.ndarray value)
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **notype** : Boolean (default False) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
-        - **noname** : Boolean (default False) - including data type and name if False
         - **format** : string (default 'full') - representation format of the ndarray,
-        - **extension** : string (default None) - type extension
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including ndarray type
         '''
-        option = {'notype': False, 'extension': None, 'format': 'full',
-                  'noshape': True, 'novalue': False, 'noname': False} | kwargs
-        option['noname'] = True
-        return (Ndarray.to_json(value, ntv_type=typ, **option), name, 'ndarray')
+        option = {'format': 'full', 'header': True, 'encoded': False,
+                  'notype': False, 'noshape': True, 'novalue': False} | kwargs
+        if not option['format'] in ['full', 'complete']: 
+            option['noshape'] = False
+        return (Ndarray(value).to_json(**option), name, 'ndarray')
 
 class XndarrayConnec(NtvConnector):
 
-    '''NTV connector for xndarray.'''
+    '''NTV connector for Xndarray.'''
 
     clas_obj = 'Xndarray'
     clas_typ = 'xndarray'
@@ -181,19 +222,20 @@ class XndarrayConnec(NtvConnector):
         *Parameters*
 
         - **convert** : boolean (default True) - If True, convert json data with 
-        non Numpy ntv_type into Xndarray with python type
+        non-umpy ntv_type into Xndarray with python type
         '''
+        print(ntv_value)
         return Xndarray.read_json(ntv_value, **kwargs)
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
-        ''' convert a Xndarray (value, name, type) into NTV json (json-value, name, type).
+        ''' convert a Xndarray (value) into NTV json (json-value, name, ntv_type).
 
         *Parameters*
 
-        - **typ** : string (default None) - type of the NTV object,
-        - **name** : string (default None) - name of the NTV object
-        - **value** : ndarray values
+        - **typ** : string (default None) - not used,
+        - **name** : string (default None) - not used
+        - **value** : Xndarray values
         - **encoded** : Boolean (default False) - json-value if False else json-text
         - **header** : Boolean (default True) - including xndarray type
         - **notype** : Boolean (default False) - including data type if False
@@ -204,33 +246,32 @@ class XndarrayConnec(NtvConnector):
         '''            
         option = {'notype': False, 'extension': None, 'format': 'full', 
                   'noshape': True, 'header': True, 'encoded': False,
-                  'novalue': False} | kwargs
+                  'novalue': False, 'noname': False} | kwargs
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
-        option['noname'] = True
-        return (Xndarray.to_json(value, **option), value.full_name, 'xndarray')
+        return (value.to_json(**option), name, 'xndarray')
 
 class XdatasetConnec(NtvConnector):
 
-    '''NTV connector for xdataset.'''
+    '''NTV connector for Xdataset.'''
 
     clas_obj = 'Xdataset'
     clas_typ = 'xdataset'
 
     @staticmethod
     def to_obj_ntv(ntv_value, **kwargs):  # reindex=True, decode_str=False):
-        ''' convert json ntv_value into a Xndarray.
+        ''' convert json ntv_value into a Xdataset.
 
         *Parameters*
 
         - **convert** : boolean (default True) - If True, convert json data with 
-        non Numpy ntv_type into Xndarray with python type
+        non-Numpy ntv_type into Xdataset with python type
         '''
         return Xdataset.read_json(ntv_value, **kwargs)
 
     @staticmethod
     def to_json_ntv(value, name=None, typ=None, **kwargs):
-        ''' convert a Xdataset (value, name, type) into NTV json (json-value, name, type).
+        ''' convert a Xdataset (value) into NTV json (json-value, name, ntv_type).
 
         *Parameters*
 
@@ -246,8 +287,8 @@ class XdatasetConnec(NtvConnector):
         '''            
         option = {'notype': False, 'extension': None, 'format': 'full', 
                   'noshape': True, 'header': True, 'encoded': False,
-                  'novalue': False} | kwargs
+                  'novalue': False, 'noname': False} | kwargs
         if not option['format'] in ['full', 'complete']: 
             option['noshape'] = False
         option['noname'] = True
-        return (Xdataset.to_json(value, **option), value.name, 'xdataset')
+        return (value.to_json(**option), name, 'xdataset')
