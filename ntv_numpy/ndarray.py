@@ -139,8 +139,7 @@ class Ndarray:
             return False
         self.ntvtype = nda.ntvtype if not nda.ntv_type is None else self.ntvtype
         self.shape = nda.shape if not nda.shape is None else self.shape
-        self.uri = nda.uri if nda.uri else self.uri
-        self.darray = nda.darray if not nda.darray is None else self.darray
+        self.uri, self.darray = (nda.uri, None) if nda.uri else (None, nda.darray)
         return True
 
     def set_array(self, darray):
