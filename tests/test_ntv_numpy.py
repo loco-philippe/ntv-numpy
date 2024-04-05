@@ -78,6 +78,12 @@ class Test_Darray(unittest.TestCase):
     
 class Test_Ndarray(unittest.TestCase):    
 
+    def test_update(self):
+        nda = Ndarray.read_json([[2,2],[1,2,3,4]])
+        nda1 = Ndarray.read_json([[2,2],[1,2,3,4]])
+        self.assertTrue(nda.update(Ndarray.read_json(['ex_nda2'])))
+        self.assertTrue(nda.update(Ndarray.read_json([[2,2],[1,2,3,4]])))
+        
     def test_set_array_uri(self):
         ndas = Ndarray.read_json([[2, 2], 'uri'])
         self.assertFalse(ndas.set_array([1, 2, 3]))

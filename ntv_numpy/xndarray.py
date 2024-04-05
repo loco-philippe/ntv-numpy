@@ -213,15 +213,17 @@ class Xndarray:
         nda = Ndarray.read_json(nda, **option) if nda else None
         return Xndarray(full_name, links=links, meta=meta, nda=nda)
 
-    def set_ndarray(self, ndarray):
-        '''set a new ndarray with same ntv_type and shape and return the result (True, False)
+    def set_ndarray(self, ndarray, nda_uri=True):
+        '''set a new ndarray (nda) and return the result (True, False)
         
         *Parameters*
 
-        - **ndarray** : string, list, np.ndarray, Ndarray - data to include'''
+        - **ndarray** : string, list, np.ndarray, Ndarray - data to include
+        - **nda_uri** : boolean (default True) - if True, existing shape and 
+        ntv_type are not updated (but are created if not existing)'''
         ndarray = Ndarray(ndarray)
         if not self.nda is None:
-            return self.nda.update(ndarray)
+            return self.nda.update(ndarray, nda_uri=nda_uri)
         self.nda = ndarray
         return True
         

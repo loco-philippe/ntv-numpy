@@ -65,7 +65,8 @@ class Ndarray:
             dar = np.array(dar, dtype=NpUtil.dtype(ntv_type))
             shape = list(dar.shape)
         dar = np.array(dar).reshape(-1)
-        ntv_type = NpUtil.nda_ntv_type(dar) if not (ntv_type or dar is None) else ntv_type
+        #ntv_type = NpUtil.nda_ntv_type(dar) if not (ntv_type or dar is None) else ntv_type
+        ntv_type = NpUtil.nda_ntv_type(dar, ntv_type)
         self.uri = None
         self.is_json = NpUtil.is_json(dar[0])
         self.ntvtype = Datatype(ntv_type)
@@ -120,6 +121,10 @@ class Ndarray:
         ''' Copy all the data '''
         return self.__class__(self)
 
+    def __array__(self):
+        '''numpy array interface'''
+        return self.ndarray 
+    
     @property
     def ntv_type(self):
         ''' string representation of ntvtype'''
@@ -130,15 +135,29 @@ class Ndarray:
         '''representation with a np.ndarray not flattened'''
         return self.darray.reshape(self.shape) if not self.darray is None else None
 
-    def update(self, nda):
-        if not (self.shape is None or 
-                nda.shape is None) and self.shape != nda.shape:
+    def update(self, nda, nda_uri=True):
+        '''update uri and darray and return the result (True, False)
+        
+        *Parameters*
+
+        - **nda** : string, list, np.ndarray, Ndarray - data to include
+        - **nda_uri** : boolean (default True) - if True, existing shape and 
+        ntv_type are not updated (but are created if not existing)'''
+        if not nda_uri and not (self.shape is None or nda.shape is None
+                                ) and self.shape != nda.shape:
             return False
-        if not (self.ntv_type is None or 
-                nda.ntv_type is None) and self.ntv_type != nda.ntv_type:
+        if not nda_uri and not (self.ntv_type is None or nda.ntv_type is None
+                                ) and self.ntv_type != nda.ntv_type:
             return False
-        self.ntvtype = nda.ntvtype if not nda.ntv_type is None else self.ntvtype
-        self.shape = nda.shape if not nda.shape is None else self.shape
+        if nda_uri: 
+            len_s = self.len_shape(self.shape)
+            if len_s and len_s != len(nda):
+                return False
+            self.ntvtype = nda.ntvtype if self.ntv_type is None else self.ntvtype
+            self.shape = nda.shape if self.shape is None else self.shape
+        else:           
+            self.ntvtype = nda.ntvtype if not nda.ntv_type is None else self.ntvtype
+            self.shape = nda.shape if not nda.shape is None else self.shape   
         self.uri, self.darray = (nda.uri, None) if nda.uri else (None, nda.darray)
         return True
 
@@ -298,6 +317,8 @@ class Ndarray:
 
     @staticmethod
     def len_shape(shape):
+        if not shape:
+            return 0
         prod = 1
         for dim in shape:
             prod *= dim
@@ -558,6 +579,8 @@ class NpUtil:
         - **ntv_type** : string - additional type
         - **ext** : string - type extension
         '''
+        if ntv_type or nda is None:
+            return ntv_type
         dtype = nda.dtype.name
         pytype = nda.flat[0].__class__.__name__
         dtype = pytype if dtype == 'object' and not pytype in NpUtil.STRUCT_DT else dtype
