@@ -151,7 +151,7 @@ class Ndarray:
             return False
         if nda_uri: 
             len_s = self.len_shape(self.shape)
-            if len_s and len_s != len(nda):
+            if len_s and len(nda) and len_s != len(nda):
                 return False
             self.ntvtype = nda.ntvtype if self.ntv_type is None else self.ntvtype
             self.shape = nda.shape if self.shape is None else self.shape

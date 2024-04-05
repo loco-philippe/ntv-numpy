@@ -32,8 +32,6 @@ from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xdataset import Xdataset
 
 from json_ntv import NtvConnector
-SeriesConnec = NtvConnector.connector().get('SeriesConnec')
-DataFrameConnec = NtvConnector.connector().get('DataFrameConnec')
 
 def read_json(jsn, **kwargs):
     ''' convert JSON text or JSON Value to Numpy ndarray.

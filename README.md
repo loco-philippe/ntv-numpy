@@ -1,4 +1,4 @@
-### *NTV-NumPy : A multidimensional semantic, compact and reversible JSON-NumPy converter*
+### *NTV-NumPy : A multidimensional semantic, compact and reversible format for interoperability*
 
 <img src="https://loco-philippe.github.io/ES/ntv_pandas.png" alt="ntv-pandas" align="middle" style="height:80px;">
 

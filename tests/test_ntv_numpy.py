@@ -83,6 +83,7 @@ class Test_Ndarray(unittest.TestCase):
         nda1 = Ndarray.read_json([[2,2],[1,2,3,4]])
         self.assertTrue(nda.update(Ndarray.read_json(['ex_nda2'])))
         self.assertTrue(nda.update(Ndarray.read_json([[2,2],[1,2,3,4]])))
+        self.assertEqual(nda, nda1) 
         
     def test_set_array_uri(self):
         ndas = Ndarray.read_json([[2, 2], 'uri'])
