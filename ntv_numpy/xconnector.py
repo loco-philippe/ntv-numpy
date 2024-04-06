@@ -17,8 +17,64 @@ from ntv_numpy.ndarray import NpUtil, Ndarray
 from ntv_numpy.xndarray import Xndarray
 import xarray as xr
 import scipp as sc
-#import numpy as np
+from astropy.nddata import NDData
+from astropy.nddata.nduncertainty import StdDevUncertainty, VarianceUncertainty
+from astropy.nddata.nduncertainty import InverseVariance
 
+class AstropyConnec:
+    ''' NDData interface with two static methods ximport and xexport'''
+
+    @staticmethod
+    def xexport(xdt, **kwargs):
+        '''return a NDData from a Xdataset
+        '''
+        data = xdt['data'].ndarray
+        mask = xdt['data.mask'].ndarray
+        unit = xdt['data'].nda.ntvtype.extension
+        uncert = xdt['data.uncertainty'].ndarray
+        typ_u = xdt['data.uncertainty'].nda.ntvtype.extension
+        match typ_u:
+            case 'std':
+                uncertainty = StdDevUncertainty(uncert)
+            case 'var':
+                uncertainty = VarianceUncertainty(uncert)
+            case 'inv':
+                uncertainty = InverseVariance(uncert)
+            case _:
+                uncertainty = uncert
+        meta = xdt['meta'].meta
+        psf = xdt['psf'].ndarray        
+        return NDData(data, mask=mask, unit=unit, uncertainty=uncertainty,
+                      meta=meta, psf=psf)
+
+    @staticmethod
+    def ximport(xar, Xclass, **kwargs):
+        '''return a Xdataset from a xr.DataArray or a xr.Dataset'''
+        xnd = []    
+        if xar.attrs:
+            attrs = {k: v for k, v in xar.attrs.items() if not k in [
+                'name', 'ntv_type']}
+            for name, meta in attrs.items():
+                if isinstance(meta, list):
+                    xnd += [Xndarray.read_json({name: meta})]
+                else:
+                    xnd += [Xndarray(name, meta=meta)]
+        for coord in xar.coords:
+            xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
+            if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
+                xnd[-1].links = [list(xar.data_vars)[0]]
+        if isinstance(xar, xr.DataArray):
+            var = XarrayConnec._var_xr_to_xnd(xar, name='data', add_attrs=False)
+            xnd += [XarrayConnec._var_xr_to_xnd(xar,
+                                               name='data', add_attrs=False)]
+            xdt = Xclass(xnd, xar.attrs.get('name'))
+            for var in xdt.data_vars:
+                if var != xar.name and xar.name:
+                    xdt[var].links = [xar.name]
+            return xdt.to_canonical()
+        for var in xar.data_vars:
+            xnd += [XarrayConnec._var_xr_to_xnd(xar.data_vars[var])]
+        return Xclass(xnd, xar.attrs.get('name')).to_canonical()
 
 class XarrayConnec:
     ''' Xarray interface with two static methods ximport and xexport'''
