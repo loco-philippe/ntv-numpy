@@ -8,7 +8,7 @@ Created on Thu Mar  7 09:56:11 2024
 import json
 from ntv_numpy.ndarray import NpUtil
 from ntv_numpy.xndarray import Xndarray
-from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyConnec
+from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyNDDataConnec
 from json_ntv import Ntv
 
 
@@ -366,9 +366,9 @@ class Xdataset:
     def to_nddata(self, **kwargs):
         '''return a NDData from a Xdataset
         '''
-        return AstropyConnec.xexport(self, **kwargs)
+        return AstropyNDDataConnec.xexport(self, **kwargs)
 
     @staticmethod
     def from_nddata(ndd, **kwargs):
         '''return a Xdataset from a NDData'''
-        return AstropyConnec.ximport(ndd, Xdataset, **kwargs)
+        return AstropyNDDataConnec.ximport(ndd, Xdataset, **kwargs)
