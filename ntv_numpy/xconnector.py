@@ -17,6 +17,7 @@ from ntv_numpy.ndarray import NpUtil, Ndarray
 from ntv_numpy.xndarray import Xndarray
 import xarray as xr
 import scipp as sc
+from astropy import wcs
 from astropy.nddata import NDData
 from astropy.nddata.nduncertainty import StdDevUncertainty, VarianceUncertainty
 from astropy.nddata.nduncertainty import InverseVariance
@@ -41,23 +42,37 @@ class AstropyNDDataConnec:
                 uncertainty = InverseVariance(uncert)
             case _:
                 uncertainty = uncert
-        meta = xdt['meta'].meta
+        meta = xdt['meta'].meta | {'name': xdt.name}
+        wcs_dic = xdt['wcs'].meta
         psf = xdt['psf'].ndarray        
         return NDData(data, mask=mask, unit=unit, uncertainty=uncertainty,
-                      meta=meta, psf=psf)
+                      meta=meta, wcs=wcs.WCS(wcs_dic), psf=psf)
 
     @staticmethod
-    def ximport(ndd, **kwargs):
+    def ximport(ndd, Xclass, **kwargs):
         '''return a Xdataset from a astropy.NDData'''
-        xnd = []    
-        if ndd.meta:
-            xnd += [Xndarray('meta', meta=ndd.meta)]
-        if ndd.wcs:
-            xnd += [Xndarray('wcs', meta=ndd.wcs)]
-        if not ndd.psf is None:
-            xnd += [Xndarray('psf', nda=ndd.psf)]
+        xnd = []  
+        name = 'no_name'
         unit = ndd.unit.to_string() if not ndd.unit is None else None
-            xnd += [Xndarray('psf', nda=ndd.psf)]
+        ntv_type = NpUtil.ntv_type(ndd.data.dtype.name, ext=unit)
+        xnd += [Xndarray('data', nda=Ndarray(ndd.data, ntv_type=ntv_type))]
+        if ndd.meta:
+            meta = {key:val for key, val in ndd.meta.items() if key != 'name'}
+            name = meta.get('name', 'no_name')
+            xnd += [Xndarray('meta', meta=meta)]
+        if ndd.wcs:
+            xnd += [Xndarray('wcs', meta=dict(ndd.wcs.to_header()))]
+        if not ndd.psf is None:
+            xnd += [Xndarray('psf', nda=Ndarray(ndd.psf, ntv_type=ntv_type))]
+        if not ndd.mask is None:
+            xnd += [Xndarray('data.mask', nda=ndd.mask)]
+        if not ndd.uncertainty is None:
+            typ_u = ndd.uncertainty.__class__.__name__[:3].lower()      
+            ntv_type = NpUtil.ntv_type(ndd.uncertainty.array.dtype.name, ext=typ_u)
+            nda = Ndarray(ndd.uncertainty.array, ntv_type=ntv_type)
+            xnd += [Xndarray('data.uncertainty', nda=nda)]
+        return Xclass(xnd, name).to_canonical()
+        
         
 
 class XarrayConnec:
