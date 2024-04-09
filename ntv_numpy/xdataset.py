@@ -6,7 +6,7 @@ Created on Thu Mar  7 09:56:11 2024
 """
 
 import json
-from ntv_numpy.ndarray import NpUtil
+from ntv_numpy.ndarray import Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyNDDataConnec
 from json_ntv import Ntv
@@ -324,12 +324,12 @@ class Xdataset:
         noshape = kwargs.get('noshape', True)
         dic_xnd = {}
         for xna, notyp, forma in zip(self.xnd, notype, forma):
-            #not_shape = True if len(xna.links) == 1 else noshape
+            # not_shape = True if len(xna.links) == 1 else noshape
             dic_xnd |= xna.to_json(notype=notyp, novalue=kwargs.get('novalue', False),
                                    noshape=noshape, format=forma, header=False)
-        return NpUtil.json_ntv(self.name, 'xdataset', dic_xnd,
-                               header=kwargs.get('header', True),
-                               encoded=kwargs.get('encoded', False))
+        return Nutil.json_ntv(self.name, 'xdataset', dic_xnd,
+                              header=kwargs.get('header', True),
+                              encoded=kwargs.get('encoded', False))
 
     def to_xarray(self, **kwargs):
         '''return a DataArray or a Dataset from a Xdataset

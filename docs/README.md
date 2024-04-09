@@ -16,4 +16,6 @@ The documentation presents :
 
 # Roadmap
 
-- **first release** : darray, ndarray, xndarray, xdataset support
+- merge tabular format and multidimensional format
+- specific module for numpy data conversion
+

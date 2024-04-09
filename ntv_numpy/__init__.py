@@ -25,14 +25,12 @@ This package contains the following classes and functions:
 - `ntv-numpy.ntv_numpy.ndarray` :
     
     - `ntv-numpy.ntv_numpy.ndarray.Ndarray`
-    - `ntv-numpy.ntv_numpy.ndarray.NpUtil`
+    - `ntv-numpy.ntv_numpy.ndarray.Nutil`
     - `ntv-numpy.ntv_numpy.ndarray.NdarrayError`
     
 - `ntv-numpy.ntv_numpy.xndarray` :
     
     - `ntv-numpy.ntv_numpy.xndarray.Xndarray`
-    - `ntv-numpy.ntv_numpy.xndarray.NpUtil`
-    - `ntv-numpy.ntv_numpy.xndarray.NdarrayError`
     
 - `ntv-numpy.ntv_numpy.xdataset` :
     
@@ -42,7 +40,7 @@ This package contains the following classes and functions:
 #from pathlib import Path
 from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec, read_json, to_json
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
-from ntv_numpy.ndarray import Ndarray, NpUtil
+from ntv_numpy.ndarray import Ndarray, Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xdataset import Xdataset
 #import ntv_pandas.pandas_ntv_connector

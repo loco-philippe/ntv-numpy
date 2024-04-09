@@ -6,17 +6,29 @@ The `ntv_numpy` package includes
 
 - `numpy_ntv_connector` module
   - child classes of `NTV.json_ntv.ntv.NtvConnector` abstract class:
-    - `NarrayConnec`: 'np.ndarray'   connector
-    - `NdarrayConnec`: 'ndarray'   connector
-    - `XndarrayConnec`: 'xndarray' connector
-    - `XdatasetConnec`: 'xdataset' connector
+    - `NarrayConnec` class: 'np.ndarray' connector
+    - `NdarrayConnec` class: 'ndarray'   connector
+    - `XndarrayConnec` class: 'xndarray' connector
+    - `XdatasetConnec` class: 'xdataset' connector
 - `xconnector` module
-  - `XarrayConnec`: interface with `Xarray`
-  - `ScippConnec`: interface with `scipp`
-  - `AstropyNDDataConnec`: interface with `NDData`
+  - `XarrayConnec` class: interface with `Xarray`
+  - `ScippConnec` class: interface with `scipp`
+  - `AstropyNDDataConnec` class: interface with `NDData`
 - `xdataset` module
+  - `Xdataset` class
+- `xndarray` module
+  - `Xndarray` class
+- `ndarray` module
+  - `Ndarray` class
+  - `Nutil` class: utility functions
+  - `NdarrayError` class
+- `data_array` module
+  - `Darray` class: abstract class
+  - `Dfull` class: full format
+  - `Dcomplete` class: complete format
+  - `Dutil` class: utility functions
 - configuration files:
-  - `ntv_numpy.ini` (correspondence between ntv_type and pandas dtype)
+  - `ntv_numpy.ini` (correspondence between ntv_type and numpy dtype)
 
 ## Installation
 
@@ -30,4 +42,5 @@ dependency:
 
 - `json_ntv`: support the NTV format,
 - `shapely`: for the location data,
-- `numpy`
+- `numpy`: for conversion data
+- `Xarray`, `scipp`, `astropy`, `pandas`: for interface

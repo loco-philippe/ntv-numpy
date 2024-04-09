@@ -282,9 +282,9 @@ class Dutil:
                   'number': 'float', 'boolean': 'bool', 'null': 'object',
                   'string': 'str', 'integer': 'int'}
     STRUCT_DT = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
-    
+
     DT_NTVTYPE = DT_DATATION | DT_LOCATION | DT_OTHER | DT_CONNECTOR | DT_PYTHON"""
-    
+
     @staticmethod
     def equals(nself, nother):
         '''return True if all elements are equals and dtype are equal'''
@@ -310,15 +310,15 @@ class Dutil:
             return True
         return np.array_equal(nself, nother)
 
-    @staticmethod 
+    @staticmethod
     def list_json(nda):
         '''return a JSON representation of a unidimensional np.ndarray'''
         if len(nda) == 0:
             return []
         if isinstance(nda[0], np.ndarray):
             return [Dutil.list_json(arr) for arr in nda]
-        return nda.tolist()    
-    
+        return nda.tolist()
+
     """@staticmethod
     def convert(ntv_type, nda, tojson=True, convert=True):
         ''' convert np.ndarray with external NTVtype.
@@ -376,7 +376,3 @@ class Dutil:
                     return nda.astype(Dutil.dtype(ntv_type))
 
         # float.fromhex(x.hex()) == x, bytes(bytearray.fromhex(x.hex())) == x"""
-    
-    
-    
-    

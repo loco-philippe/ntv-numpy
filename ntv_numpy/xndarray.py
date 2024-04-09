@@ -13,8 +13,9 @@ For more information, see the
 """
 
 import json
-from ntv_numpy.ndarray import Ndarray, NpUtil, NdarrayError
 from json_ntv import Ntv
+from ntv_numpy.ndarray import Ndarray, Nutil, NdarrayError
+
 
 class Xndarray:
     ''' Representation of a labelled multidimensional Array
@@ -43,6 +44,7 @@ class Xndarray:
     - `set_array`
     - `set_uri`
     '''
+
     def __init__(self, full_name, nda=None, links=None,
                  meta=None):
         '''Xndarray constructor.
@@ -50,12 +52,12 @@ class Xndarray:
         *Parameters*
 
         - **full_name**: string (default None) - name with additional name
-        - **nda** : Ndarray (default None) - data 
+        - **nda** : Ndarray (default None) - data
         - **links**: List of string (default None) - dims or other names of associated Xndarray
         - **ntv_type**: string (default None) - ntv_type to apply to data
         - **meta**: dict (default None) - information
         '''
-        #print('init xnd', full_name, nda.to_json(), links, meta)
+        # print('init xnd', full_name, nda.to_json(), links, meta)
         if isinstance(full_name, Xndarray):
             self.name = full_name.name
             self.add_name = full_name.add_name
@@ -63,7 +65,7 @@ class Xndarray:
             self.links = full_name.links
             self.meta = full_name.meta
             return
-        self.name, self.add_name = NpUtil.split_name(full_name)
+        self.name, self.add_name = Nutil.split_name(full_name)
         self.nda = Ndarray(nda) if not nda is None else None
         self.links = sorted(links) if links else None
         self.meta = meta if meta else None
@@ -128,7 +130,7 @@ class Xndarray:
     def uri(self):
         '''return the uri of the ndarray'''
         return self.nda.uri if self.nda is not None else None
-    
+
     @property
     def shape(self):
         '''return the shape of the ndarray'''
@@ -149,7 +151,7 @@ class Xndarray:
         ''' infos of the Xndarray'''
         inf = {'name': self.full_name}
         inf['length'] = len(self)
-        if self.nda:    
+        if self.nda:
             inf['mode'] = self.mode
             inf['ntvtype'] = self.ntv_type
             inf['shape'] = self.shape
@@ -198,8 +200,8 @@ class Xndarray:
         '''
         option = {'convert': True} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
-        value, full_name, ntv_type = Ntv.decode_json(jso)[:3]
-        
+        value, full_name = Ntv.decode_json(jso)[:2]
+
         meta = links = nda = None
         match value:
             case str(meta) | dict(meta): ...
@@ -215,41 +217,18 @@ class Xndarray:
 
     def set_ndarray(self, ndarray, nda_uri=True):
         '''set a new ndarray (nda) and return the result (True, False)
-        
+
         *Parameters*
 
         - **ndarray** : string, list, np.ndarray, Ndarray - data to include
-        - **nda_uri** : boolean (default True) - if True, existing shape and 
+        - **nda_uri** : boolean (default True) - if True, existing shape and
         ntv_type are not updated (but are created if not existing)'''
         ndarray = Ndarray(ndarray)
         if not self.nda is None:
             return self.nda.update(ndarray, nda_uri=nda_uri)
         self.nda = ndarray
         return True
-        
-    """def set_array(self, darray):
-        '''set a new darray in ndarray and remove uri, return the result (True, False)
-        
-        *Parameters*
 
-        - **darray** : list, np.ndarray, Ndarray - data to include'''
-        if not self.nda is None:
-            return self.nda.set_array(darray)
-        self.nda = Ndarray(darray)
-
-    def set_uri(self, uri, no_ntv_type=False, no_shape=False):
-        '''set a new uri and remove ndarray and optionaly ntv_type and shape.
-        Return the result (True, False)
-        
-        *Parameters*
-
-        - **uri** : string - URI of the Ndarray
-        - **no_ntv_type** : boolean (default False) - If True, ntv_type is None
-        - **no_shape** : boolean (default False) - If True, shape is None
-        '''
-        return self.ndarray.set_uri(uri, no_ntv_type=no_ntv_type, no_shape=no_shape)"""
-
-        
     def to_json(self, **kwargs):
         ''' convert a Xndarray into json-value.
 
@@ -269,15 +248,15 @@ class Xndarray:
                   'novalue': False, 'noname': False} | kwargs
         if not option['format'] in ['full', 'complete']:
             option['noshape'] = False
-        opt_nda = option | {'header': False} 
-        #nda_str = Ndarray.to_json(self.nda, 
+        opt_nda = option | {'header': False}
+        # nda_str = Ndarray.to_json(self.nda,
         nda_str = self.nda.to_json(**opt_nda) if not self.nda is None else None
         lis = [nda_str, self.links, self.meta]
         lis = [val for val in lis if not val is None]
-        return NpUtil.json_ntv(None if option['noname'] else self.full_name,
-                               None if option['noname'] else 'xndarray',
-                               lis[0] if lis == [self.meta] else lis,
-                               header=option['header'], encoded=option['encoded'])
+        return Nutil.json_ntv(None if option['noname'] else self.full_name,
+                              None if option['noname'] else 'xndarray',
+                              lis[0] if lis == [self.meta] else lis,
+                              header=option['header'], encoded=option['encoded'])
 
     def _to_json(self):
         return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri,

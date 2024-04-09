@@ -2,11 +2,11 @@
 """
 @author: Philippe@loco-labs.io
 
-The `ndarray` module is part of the `ntv-numpy.ntv_numpy` package 
+The `ndarray` module is part of the `ntv-numpy.ntv_numpy` package
 ([specification document](
 https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
 
-It contains the classes `Ndarray`, `NpUtil`, `NdarrayError` for the JSON interface
+It contains the classes `Ndarray`, `Nutil`, `NdarrayError` for the JSON interface
 of numpy.ndarrays.
 
 For more information, see the
@@ -58,19 +58,19 @@ class Ndarray:
             self.darray = None
             return
         if shape:
-            dar = Dfull(dar, dtype=NpUtil.dtype(ntv_type), unidim=True).data
+            dar = Dfull(dar, dtype=Nutil.dtype(ntv_type), unidim=True).data
         else:
-            #dar = np.array(dar if isinstance(dar, (list, np.ndarray)) else [dar],
-            dar = np.array(dar, dtype=NpUtil.dtype(ntv_type))
+            # dar = np.array(dar if isinstance(dar, (list, np.ndarray)) else [dar],
+            dar = np.array(dar, dtype=Nutil.dtype(ntv_type))
             shape = list(dar.shape)
         dar = np.array(dar).reshape(-1)
-        #ntv_type = NpUtil.nda_ntv_type(dar) if not (ntv_type or dar is None) else ntv_type
-        ntv_type = NpUtil.nda_ntv_type(dar, ntv_type)
+        # ntv_type = Nutil.nda_ntv_type(dar) if not (ntv_type or dar is None) else ntv_type
+        ntv_type = Nutil.nda_ntv_type(dar, ntv_type)
         self.uri = None
-        self.is_json = NpUtil.is_json(dar[0])
+        self.is_json = Nutil.is_json(dar[0])
         self.ntvtype = Datatype(ntv_type)
         self.shape = shape
-        self.darray = dar.astype(NpUtil.dtype(str(self.ntvtype)))
+        self.darray = dar.astype(Nutil.dtype(str(self.ntvtype)))
 
     def __repr__(self):
         '''return classname, the shape and the ntv_type'''
@@ -78,7 +78,7 @@ class Ndarray:
         typ = self.ntv_type if self.ntv_type else ''
         sha = str(self.shape) if self.shape else ''
         u_t = ', ' if uri and typ + sha else ''
-        t_s = ', ' if typ and sha else ''        
+        t_s = ', ' if typ and sha else ''
         return self.__class__.__name__ + '(' + uri + u_t + typ + t_s + sha + ')'
 
     def __str__(self):
@@ -101,7 +101,7 @@ class Ndarray:
 
     def __len__(self):
         ''' len of ndarray'''
-        #return len(self.darray) if self.darray is not None else Ndarray.len_shape(self.shape)
+        # return len(self.darray) if self.darray is not None else Ndarray.len_shape(self.shape)
         return len(self.darray) if self.darray is not None else 0
 
     def __contains__(self, item):
@@ -122,25 +122,25 @@ class Ndarray:
 
     def __array__(self):
         '''numpy array interface'''
-        return self.ndarray 
-    
+        return self.ndarray
+
     @property
     def ntv_type(self):
         ''' string representation of ntvtype'''
         return str(self.ntvtype) if self.ntvtype else None
 
-    @property 
+    @property
     def ndarray(self):
         '''representation with a np.ndarray not flattened'''
         return self.darray.reshape(self.shape) if not self.darray is None else None
 
     def update(self, nda, nda_uri=True):
         '''update uri and darray and return the result (True, False)
-        
+
         *Parameters*
 
         - **nda** : string, list, np.ndarray, Ndarray - data to include
-        - **nda_uri** : boolean (default True) - if True, existing shape and 
+        - **nda_uri** : boolean (default True) - if True, existing shape and
         ntv_type are not updated (but are created if not existing)'''
         if not nda_uri and not (self.shape is None or nda.shape is None
                                 ) and self.shape != nda.shape:
@@ -148,21 +148,22 @@ class Ndarray:
         if not nda_uri and not (self.ntv_type is None or nda.ntv_type is None
                                 ) and self.ntv_type != nda.ntv_type:
             return False
-        if nda_uri: 
+        if nda_uri:
             len_s = self.len_shape(self.shape)
             if len_s and len(nda) and len_s != len(nda):
                 return False
             self.ntvtype = nda.ntvtype if self.ntv_type is None else self.ntvtype
             self.shape = nda.shape if self.shape is None else self.shape
-        else:           
+        else:
             self.ntvtype = nda.ntvtype if not nda.ntv_type is None else self.ntvtype
-            self.shape = nda.shape if not nda.shape is None else self.shape   
-        self.uri, self.darray = (nda.uri, None) if nda.uri else (None, nda.darray)
+            self.shape = nda.shape if not nda.shape is None else self.shape
+        self.uri, self.darray = (
+            nda.uri, None) if nda.uri else (None, nda.darray)
         return True
 
     def set_array(self, darray):
         '''set a new darray and remove uri, return the result (True, False)
-        
+
         *Parameters*
 
         - **darray** : list, np.ndarray, Ndarray - data to include'''
@@ -172,19 +173,19 @@ class Ndarray:
         shape = ndarray.shape
         new_shape = shape if self.shape is None else self.shape
         new_ntv_type = ntv_type if self.ntv_type is None else self.ntv_type
-        if (len(darray) != Ndarray.len_shape(new_shape) or 
-            new_ntv_type != ntv_type or new_shape != shape):
+        if (len(darray) != Ndarray.len_shape(new_shape) or
+                new_ntv_type != ntv_type or new_shape != shape):
             return False
         self.uri = None
         self.darray = darray
         self.ntvtype = Datatype(new_ntv_type)
         self.shape = new_shape
         return True
-    
+
     def set_uri(self, uri, no_ntv_type=False, no_shape=False):
         '''set a new uri and remove ndarray and optionaly ntv_type and shape.
         Return the result (True, False)
-        
+
         *Parameters*
 
         - **uri** : string - URI of the Ndarray
@@ -202,7 +203,7 @@ class Ndarray:
     def to_ndarray(self):
         '''representation with a np.ndarray not flattened'''
         return self.ndarray
-    
+
     @property
     def mode(self):
         '''representation mode of the darray/uri data (relative, absolute,
@@ -240,10 +241,10 @@ class Ndarray:
         unidim = not shape is None
         if isinstance(ntv_value[-1], str):
             return Ndarray(ntv_value[-1], shape=shape, ntv_type=ntv_type)
-        darray = Darray.read_json(ntv_value[-1], dtype=NpUtil.dtype(ntv_type), 
+        darray = Darray.read_json(ntv_value[-1], dtype=Nutil.dtype(ntv_type),
                                   unidim=unidim)
-        darray.data = NpUtil.convert(ntv_type, darray.data, tojson=False,
-                                     convert=option['convert'])
+        darray.data = Nutil.convert(ntv_type, darray.data, tojson=False,
+                                    convert=option['convert'])
         return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
 
     def to_json(self, **kwargs):
@@ -265,19 +266,20 @@ class Ndarray:
         if self.mode == 'absolute' and len(self.darray) == 0:
             return [[]]
 
-        shape = None if not self.shape or (len(self.shape) < 2 and 
+        shape = None if not self.shape or (len(self.shape) < 2 and
                                            option['noshape']) else self.shape
 
         if self.mode == 'relative':
             js_val = self.uri
         else:
-            js_val = NpUtil.ntv_val(self.ntv_type, self.darray, option['format'],
-                                    self.is_json) if not option['novalue'] else ['-']
+            js_val = Nutil.ntv_val(self.ntv_type, self.darray, option['format'],
+                                   self.is_json) if not option['novalue'] else ['-']
 
         lis = [self.ntv_type if not option['notype'] else None, shape, js_val]
-        return NpUtil.json_ntv(None, 'ndarray',
-                               [val for val in lis if not val is None],
-                               header=option['header'], encoded=option['encoded'])
+        return Nutil.json_ntv(None, 'ndarray',
+                              [val for val in lis if not val is None],
+                              header=option['header'], encoded=option['encoded'])
+
     @property
     def info(self):
         ''' infos of the Ndarray'''
@@ -290,6 +292,7 @@ class Ndarray:
 
     @staticmethod
     def len_shape(shape):
+        '''return a length from a shape (product of dimensions)'''
         if not shape:
             return 0
         prod = 1
@@ -298,7 +301,7 @@ class Ndarray:
         return prod
 
 
-class NpUtil:
+class Nutil:
     '''ntv-ndarray utilities.
 
     *static methods*
@@ -328,7 +331,7 @@ class NpUtil:
                    'timedelta[M]': 'timedelta64[M]'}
     DT_DATATION = {val: key for key, val in DATATION_DT.items()}
 
-    #CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
+    # CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
     CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
     DT_CONNECTOR = {val: key for key, val in CONNECTOR_DT.items()}
 
@@ -337,7 +340,7 @@ class NpUtil:
                  'ndarray': 'ndarray', 'narray': 'narray'}
     DT_PYTHON = {val: key for key, val in PYTHON_DT.items()}
 
-    #OTHER_DT = {'boolean': 'bool', 'string': 'str'}
+    # OTHER_DT = {'boolean': 'bool', 'string': 'str'}
     OTHER_DT = {'boolean': 'bool', 'string': 'str', 'base16': 'bytes'}
     DT_OTHER = {val: key for key, val in OTHER_DT.items()}
 
@@ -348,7 +351,7 @@ class NpUtil:
     NUMBER_DT = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
                  'wday': 'int', 'yday': 'int', 'week': 'hour', 'minute': 'int',
                  'second': 'int'}
-    #STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str',
+    # STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str',
     STRING_DT = {'base32': 'str', 'base64': 'str',
                  'period': 'str', 'duration': 'str', 'jpointer': 'str',
                  'uri': 'str', 'uriref': 'str', 'iri': 'str', 'iriref': 'str',
@@ -359,7 +362,7 @@ class NpUtil:
                   'number': 'float', 'boolean': 'bool', 'null': 'object',
                   'string': 'str', 'integer': 'int'}
     STRUCT_DT = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
-    
+
     DT_NTVTYPE = DT_DATATION | DT_LOCATION | DT_OTHER | DT_CONNECTOR | DT_PYTHON
 
     @staticmethod
@@ -402,8 +405,8 @@ class NpUtil:
         '''
         if tojson:
             match ntv_type:
-                case dat if dat in NpUtil.DATATION_DT:
-                    return nda.astype(NpUtil.DATATION_DT[dat]).astype(str)
+                case dat if dat in Nutil.DATATION_DT:
+                    return nda.astype(Nutil.DATATION_DT[dat]).astype(str)
                 case 'bytes':
                     return nda.astype('bytes').astype(str)
                 case 'time':
@@ -418,10 +421,10 @@ class NpUtil:
             match [ntv_type, convert]:
                 case [None, _]:
                     return nda
-                case [dat, _] if dat in NpUtil.DATATION_DT:
-                    return nda.astype(NpUtil.DATATION_DT[dat])
-                case [std, _] if std in NpUtil.OTHER_DT:
-                    return nda.astype(NpUtil.OTHER_DT[std])
+                case [dat, _] if dat in Nutil.DATATION_DT:
+                    return nda.astype(Nutil.DATATION_DT[dat])
+                case [std, _] if std in Nutil.OTHER_DT:
+                    return nda.astype(Nutil.OTHER_DT[std])
                 case ['time', True]:
                     return np.frompyfunc(datetime.time.fromisoformat, 1, 1)(nda)
                 case ['decimal64', True]:
@@ -431,20 +434,20 @@ class NpUtil:
                     return np.frompyfunc(Ndarray.to_ndarray, 1, 1)(nar)
                 case ['ndarray', True]:
                     return np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
-                case [python, _] if python in NpUtil.PYTHON_DT:
+                case [python, _] if python in Nutil.PYTHON_DT:
                     return nda.astype('object')
-                case [connec, True] if connec in NpUtil.CONNECTOR_DT:
+                case [connec, True] if connec in Nutil.CONNECTOR_DT:
                     return np.fromiter([NtvConnector.uncast(nd, None, connec)[0]
                                         for nd in nda], dtype='object')
                 case [('point' | 'line' | 'polygon' | 'geometry'), True]:
                     return np.frompyfunc(ShapelyConnec.to_geometry, 1, 1)(nda)
                 case [_, False]:
-                    return nda.astype(NpUtil.CONVERT_DT[
-                        NpUtil.dtype(ntv_type, convert=False)])
+                    return nda.astype(Nutil.CONVERT_DT[
+                        Nutil.dtype(ntv_type, convert=False)])
                 case _:
-                    return nda.astype(NpUtil.dtype(ntv_type))
+                    return nda.astype(Nutil.dtype(ntv_type))
 
-        # float.fromhex(x.hex()) == x, bytes(bytearray.fromhex(x.hex())) == x 
+        # float.fromhex(x.hex()) == x, bytes(bytearray.fromhex(x.hex())) == x
     @staticmethod
     def ntv_val(ntv_type, nda, form, is_json=False):
         ''' convert a np.ndarray into NTV json-value.
@@ -459,7 +462,7 @@ class NpUtil:
         if form == 'complete' and len(nda) < 2:
             raise NdarrayError(
                 "complete format is not available with ndarray length < 2")
-        Format = NpUtil.FORMAT_CLS[form]
+        Format = Nutil.FORMAT_CLS[form]
         darray = Format(nda)
         ref = darray.ref
         coding = darray.coding
@@ -467,11 +470,13 @@ class NpUtil:
             return Format(darray.data, ref=ref, coding=coding).to_json()
         match ntv_type:
             case 'narray':
-                data = [Ndarray(nd).to_json(header=False) for nd in darray.data]
+                data = [Ndarray(nd).to_json(header=False)
+                        for nd in darray.data]
             case 'ndarray':
-                #data = [Ndarray.to_json(nd) for nd in darray.data]
-                data = [Ndarray(nd).to_json(header=False) for nd in darray.data]
-            case connec if connec in NpUtil.CONNECTOR_DT:
+                # data = [Ndarray.to_json(nd) for nd in darray.data]
+                data = [Ndarray(nd).to_json(header=False)
+                        for nd in darray.data]
+            case connec if connec in Nutil.CONNECTOR_DT:
                 data = [NtvConnector.cast(nd, None, connec)[0]
                         for nd in darray.data]
             case 'point' | 'line' | 'polygon' | 'geometry':
@@ -479,7 +484,7 @@ class NpUtil:
             case None:
                 data = nda
             case _:
-                data = NpUtil.convert(ntv_type, darray.data)
+                data = Nutil.convert(ntv_type, darray.data)
         return Format(data, ref=ref, coding=coding).to_json()
 
     @staticmethod
@@ -530,17 +535,17 @@ class NpUtil:
         - **ext** : string - type extension
         '''
         if ntv_type:
-            return NpUtil.add_ext(ntv_type, ext)
+            return Nutil.add_ext(ntv_type, ext)
         match dtype:
-            case dat if dat in NpUtil.DT_NTVTYPE:
-                return NpUtil.add_ext(NpUtil.DT_NTVTYPE[dat], ext)
+            case dat if dat in Nutil.DT_NTVTYPE:
+                return Nutil.add_ext(Nutil.DT_NTVTYPE[dat], ext)
             case string if string[:3] == 'str':
-                return NpUtil.add_ext('string', ext)
+                return Nutil.add_ext('string', ext)
             case byte if byte[:5] == 'bytes':
-                #return NpUtil.add_ext('bytes', ext)
-                return NpUtil.add_ext('base16', ext)
+                # return Nutil.add_ext('bytes', ext)
+                return Nutil.add_ext('base16', ext)
             case _:
-                return NpUtil.add_ext(dtype, ext)
+                return Nutil.add_ext(dtype, ext)
 
     @staticmethod
     def nda_ntv_type(nda, ntv_type=None, ext=None):
@@ -556,10 +561,10 @@ class NpUtil:
             return ntv_type
         dtype = nda.dtype.name
         pytype = nda.flat[0].__class__.__name__
-        dtype = pytype if dtype == 'object' and not pytype in NpUtil.STRUCT_DT else dtype
-        #dtype = pytype if dtype == 'object' and pytype in NpUtil.DT_NTVTYPE else dtype
-        #dtype = nda.flat[0].__class__.__name__ if dtype == 'object' else dtype
-        return NpUtil.ntv_type(dtype, ntv_type, ext)
+        dtype = pytype if dtype == 'object' and not pytype in Nutil.STRUCT_DT else dtype
+        # dtype = pytype if dtype == 'object' and pytype in Nutil.DT_NTVTYPE else dtype
+        # dtype = nda.flat[0].__class__.__name__ if dtype == 'object' else dtype
+        return Nutil.ntv_type(dtype, ntv_type, ext)
 
     @staticmethod
     def dtype(ntv_type, convert=True):
@@ -569,10 +574,10 @@ class NpUtil:
 
         - **convert** : boolean (default True) - if True, dtype if from converted data
         '''
-        DTYPE = (NpUtil.DATATION_DT | NpUtil.NUMBER_DT | NpUtil.OTHER_DT |
-                 NpUtil.STRING_DT)
-        OBJECT = NpUtil.LOCATION_DT | NpUtil.CONNECTOR_DT | NpUtil.PYTHON_DT
-        type_base = NpUtil.split_type(ntv_type)[0]
+        DTYPE = (Nutil.DATATION_DT | Nutil.NUMBER_DT | Nutil.OTHER_DT |
+                 Nutil.STRING_DT)
+        OBJECT = Nutil.LOCATION_DT | Nutil.CONNECTOR_DT | Nutil.PYTHON_DT
+        type_base = Nutil.split_type(ntv_type)[0]
         if convert:
             if type_base in OBJECT:
                 return 'object'

@@ -16,10 +16,10 @@ from shapely.geometry import Point, LineString
 import xarray as xr
 
 import ntv_pandas as npd
-from ntv_numpy import read_json, to_json
-from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab
+
+#from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab
 from ntv_numpy import NdarrayConnec, XndarrayConnec
-from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray, NpUtil, Xdataset, Dutil
+from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray, Nutil, Xdataset, Dutil
 
 from json_ntv import NtvConnector, Ntv, NtvSingle, NtvList
 SeriesConnec = NtvConnector.connector()['SeriesConnec']
