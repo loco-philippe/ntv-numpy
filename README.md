@@ -5,66 +5,93 @@
 For more information, see the [user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html) or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 
 
-# Why a NTV-NumPy converter ?
+# Why a new format for multidimensional data ?
 
-pandas provide JSON converter but three limitations are present:
+Chaque outil a une structure spécifique pour traiter les données multidimensionnelles avec pour conséquences:
 
-- the JSON-pandas converter take into account few data types,
-- the JSON-pandas converter is not always reversible (conversion round trip)
-- external data types (e.g. TableSchema types) are not included
+- des interfaces dédiés à chaque outil,
+- des données traitées partiellement,
+- pas de représentation unifiée des structures de données
 
-pandas does not have a tool for analyzing tabular structures and detecting integrity errors
+The proposed format (NTVmulti) is based on the following principles:
+
+- neutral format available for tabular or multidimensional tools (e.g. Numpy, pandas, xarray, scipp, astropy),
+- taking into account a wide variety of data types as defined in [NTV](https://www.ietf.org/archive/id/draft-thomy-json-ntv-02.html) format,
+- high interoperability: reversible (lossless round-trip) interface with tabular or multidimensional tools,
+- reversible and compact JSON format (including categorical and sparse format),
+- Ease of sharing and exchanging multidimensional and tabular data,
 
 ## main features
 
-The NTV-pandas converter uses the [semantic NTV format](https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)
-to include a large set of data types in a JSON representation.
+The NTV-Numpy converter uses the NTVmulti format pour:
 
-The converter integrates:
-
-- all the pandas `dtype` and the data-type associated to a JSON representation,
-- an always reversible conversion,
+- fournir des interfaces lossless et reversible avec les principaux outils de traitement des données multidimensionnelles et tabulaires,
+- offrir des solutions d'échange et de partage de données avec des formats neutres ou banalisés (e.g. JSON, Numpy).
 
 NTV-NumPy was developped originally in the [json-NTV project](https://github.com/loco-philippe/NTV)
 
-## converter example
+## example
 
-In the example below, a DataFrame with multiple data types is converted to JSON (first to NTV format and then to Table Schema format).
-
-The DataFrame resulting from these JSON conversions are identical to the initial DataFrame (reversibility).
-
-With the existing JSON interface, these conversions are not possible.
+In the example below, a dataset available in JSON is shared with scipp or Xarray.
 
 Data example:
 
 ```python
-In [1]: from shapely.geometry import Point
-        from datetime import date
-        import pandas as pd
-        import ntv_pandas as npd
+In [1]: example = {
+                'example:xdataset': {
+                        'var1': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
+                        'var1.variance': [[[2, 2], [0.1, 0.2, 0.3, 0.4]]],
+                        'var1.mask1': [[[True, False]], ['x']],
+                        'var1.mask2': [[[2, 2], [True, False, False, True]]],
+                
+                        'var2': [['var2.ntv'], ['x', 'y']],    
+                        
+                        'x': [['string', ['23F0AE', '578B98']], {'test': 21}],
+                        'y': [['date', ['2021-01-01', '2022-02-02']]],
+                        
+                        'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var1']],
+                        'z': [['float', [10, 20]], ['x']],
+                        'z.uncertainty': [[[0.1, 0.2]]],
+                        
+                        'z_bis': [[['z1_bis', 'z2_bis']]],
+                
+                        'info': {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/'}
+                }
+        }
 
-In [2]: data = {'index':        [100, 200, 300, 400, 500],
-                'dates::date':  [date(1964,1,1), date(1985,2,5), date(2022,1,21), date(1964,1,1), date(1985,2,5)],
-                'value':        [10, 10, 20, 20, 30],
-                'value32':      pd.Series([12, 12, 22, 22, 32], dtype='int32'),
-                'res':          [10, 20, 30, 10, 20],
-                'coord::point': [Point(1,2), Point(3,4), Point(5,6), Point(7,8), Point(3,4)],
-                'names':        pd.Series(['john', 'eric', 'judith', 'mila', 'hector'], dtype='string'),
-                'unique':       True }
+In [2]: from ntv_numpy import Xdataset
 
-In [3]: df = pd.DataFrame(data).set_index('index')
-        df.index.name = None
-
-In [4]: df
-Out[4]:       dates::date  value  value32  res coord::point   names  unique
-        100    1964-01-01     10       12   10  POINT (1 2)    john    True
-        200    1985-02-05     10       12   20  POINT (3 4)    eric    True
-        300    2022-01-21     20       22   30  POINT (5 6)  judith    True
-        400    1964-01-01     20       22   10  POINT (7 8)    mila    True
-        500    1985-02-05     30       32   20  POINT (3 4)  hector    True
+        x_example = Xdataset.read_json(example)
+        x_example.info
+Out[2]: 
 ```
 
-JSON-NTV representation:
+The JSON representation is equivalent to the Xdataset entity (Json conversion reversible)
+
+```python
+In [3]: x_json = x_example.to_json()
+        x_example_json = Xdataset.read_json(x_json)
+        x_example_json == x_example
+Out[2]: True
+```
+
+Xarray interoperability
+
+```python
+In [4]: x_xarray = x_example.to_xarray()
+        x_xarray
+Out[4]: xxxx
+```
+
+The interface is lossless and reversible.
+
+```python
+In [3]: x_example_xr = Xdataset.from_xarray(x_xarray)
+        x_example_xr == x_example_json == x_example
+Out[2]: True
+```
+
+dddd
 
 ```python
 In [5]: df_to_json = df.npd.to_json()
