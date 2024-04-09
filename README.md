@@ -1,7 +1,5 @@
 ### *NTV-NumPy : A multidimensional semantic, compact and reversible format for interoperability*
 
-<img src="https://loco-philippe.github.io/ES/ntv_pandas.png" alt="ntv-pandas" align="middle" style="height:80px;">
-
 For more information, see the [user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html) or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 
 
@@ -34,7 +32,18 @@ NTV-NumPy was developped originally in the [json-NTV project](https://github.com
 
 In the example below, a dataset available in JSON is shared with scipp or Xarray.
 
-Data example:
+```mermaid
+---
+title: Example of interoperability
+---
+flowchart LR
+    A[Xarray] <--lossless--> B[Neutral\nXdataset]
+    B <--lossless--> C[NDData]
+    D[Scipp] <--lossless--> B
+    B <--lossless--> E[JSON]
+```
+
+### Data example
 
 ```python
 In [1]: example = {
@@ -75,7 +84,7 @@ In [3]: x_json = x_example.to_json()
 Out[2]: True
 ```
 
-Xarray interoperability
+### Xarray interoperability
 
 ```python
 In [4]: x_xarray = x_example.to_xarray()
@@ -83,7 +92,7 @@ In [4]: x_xarray = x_example.to_xarray()
 Out[4]: xxxx
 ```
 
-The interface is lossless and reversible.
+Reversibility:
 
 ```python
 In [3]: x_example_xr = Xdataset.from_xarray(x_xarray)
@@ -91,58 +100,105 @@ In [3]: x_example_xr = Xdataset.from_xarray(x_xarray)
 Out[2]: True
 ```
 
-dddd
+### scipp interoperability
 
 ```python
-In [5]: df_to_json = df.npd.to_json()
-        pprint(df_to_json, compact=True, width=120, sort_dicts=False)
-Out[5]: {':tab': {'index': [100, 200, 300, 400, 500],
-                  'dates::date': ['1964-01-01', '1985-02-05', '2022-01-21', '1964-01-01', '1985-02-05'],
-                  'value': [10, 10, 20, 20, 30],
-                  'value32::int32': [12, 12, 22, 22, 32],
-                  'res': [10, 20, 30, 10, 20],
-                  'coord::point': [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0], [3.0, 4.0]],
-                  'names::string': ['john', 'eric', 'judith', 'mila', 'hector'],
-                  'unique': True}}
+In [4]: x_scipp = x_example.to_scipp()
+        print(x_scipp['example'])
+Out[4]: xxxx
 ```
 
 Reversibility:
 
 ```python
+In [3]: x_example_sc = Xdataset.from_scipp(x_scipp)
+        x_example_sc == x_example_xr == x_example_json == x_example
+Out[2]: True
+```
+
+### NDData interoperability
+
+```python
+In [1]: example = {
+                'example:xdataset': {
+                        'data': [['float[erg/s]', [1,2,3,4]]],
+                        'data.mask': [[[False, False, True, True]]],
+                        'data.uncertainty': [['float64[std]', [1.0, 1.414, 1.732, 2.0]]],
+                        'meta': {'object': 'fictional data.'},
+                        'wcs':  {'WCSAXES': 2, 'CRPIX1': 2048.0, 'CRPIX2': 1024.0, 'PC1_1': 1.2905625619716e-05,
+                                'PC1_2': 5.9530912331034e-06, 'PC2_1': 5.0220581265601e-06, 'PC2_2': -1.2644774105568e-05,
+                                'CDELT1': 1.0, 'CDELT2': 1.0, 'CUNIT1': 'deg', 'CUNIT2': 'deg', 'CTYPE1': 'RA---TAN',
+                                'CTYPE2': 'DEC--TAN', 'CRVAL1': 5.63056810618, 'CRVAL2': -72.05457184279, 'LONPOLE': 180.0,
+                                'LATPOLE': -72.05457184279, 'WCSNAME': 'IDC_qbu1641sj', 'MJDREF': 0.0, 'RADESYS': 'ICRS'},
+                        'psf': [['float[erg/s]', [1,2,3,4]]]
+                }
+        } 
+        n_example = Xdataset.read_json(example)
+        n_example.info 
+Out[4]: xxxx
+```
+
+Reversibility:
+
+```python
+In [5]: n_example_ndd = Xdataset.from_nddata(n_nddata)
+        n_example_ndd == n_example
+Out[5]: True
+
 In [6]: print(npd.read_json(df_to_json).equals(df))
 Out[6]: True
 ```
 
-Table Schema representation:
+## URI usage
+
+In the example, only structural data is exchanged with json format.
 
 ```python
-In [7]: df_to_table = df.npd.to_json(table=True)
-        pprint(df_to_table['data'][0], sort_dicts=False)
-Out[7]: {'index': 100,
-         'dates': '1964-01-01',
-         'value': 10,
-         'value32': 12,
-         'res': 10,
-         'coord': [1.0, 2.0],
-         'names': 'john',
-         'unique': True}
-
-In [8]: pprint(df_to_table['schema'], sort_dicts=False)
-Out[8]: {'fields': [{'name': 'index', 'type': 'integer'},
-                    {'name': 'dates', 'type': 'date'},
-                    {'name': 'value', 'type': 'integer'},
-                    {'name': 'value32', 'type': 'integer', 'format': 'int32'},
-                    {'name': 'res', 'type': 'integer'},
-                    {'name': 'coord', 'type': 'geopoint', 'format': 'array'},
-                    {'name': 'names', 'type': 'string'},
-                    {'name': 'unique', 'type': 'boolean'}],
-         'primaryKey': ['index'],
-         'pandas_version': '1.4.0'}
+In [1]: example = {
+                'example:xdataset': {
+                        'var1': [['float[kg]', [2, 2], 'var1.ntv'], ['x', 'y']],
+                        'var1.variance': [[[2, 2], 'var1_variance.ntv']],
+                        'var1.mask1': [['var1_mask1.ntv'], ['x']],
+                        'var1.mask2': [[[2, 2], 'var1_mask2.ntv']],
+                
+                        'var2': [['var2.ntv'], ['x', 'y']],    
+                        
+                        'x': [['x.ntv'], {'test': 21}],
+                        'y': [['date', 'y.ntv']],
+                        
+                        'ranking': [['month', [2, 2], 'ranking.ntv'], ['var1']],
+                        'z': [['float', 'z.ntv'], ['x']],
+                        'z.uncertainty': [['z_uncertainty.ntv']],
+                        
+                        'z_bis': [['z_bis.ntv']],
+                
+                        'info': {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/'}
+                }
+        }
 ```
 
-Reversibility:
+The complete example can be rebuild with loading data (path + file name).
 
 ```python
-In [9]: print(npd.read_json(df_to_table).equals(df))
-Out[9]: True
+In [5]: # simulation of reading files at the indicated "path"
+        var1          = np.array([10.1, 0.4, 3.4, 8.2])
+        var1_variance = Ndarray([0.1, 0.2, 0.3, 0.4], ntv_type='float')
+        var1_mask1    = np.array([True, False])
+        var1_mask2    = np.array([True, False, False, True])
+        var2          = Ndarray('var2.ntv')
+        x             = np.array(['23F0AE', '578B98'])
+        y             = np.array(['2021-01-01', '2022-02-02'], dtype='datetime64[D]')
+        ranking       = np.array([1, 2, 3, 4])
+        z             = np.array([10.0, 20.0])
+        z_uncertainty = np.array([0.1, 0.2])
+        z_bis         = np.array(['z1_bis', 'z2_bis'])
+
+        array_data = [var1, var1_variance, var1_mask1, var1_mask2, var2, x, y, ranking, z, z_uncertainty, z_bis]
+
+        x_example_mixte_numpy = copy(x_example_mixte)
+        for data, xnda in zip(array_data, x_example_mixte_numpy.xnd):
+        xnda.set_ndarray(Ndarray(data))
+
+        x_example_mixte_numpy == x_example_mixte_json == x_example_sc == x_example_xr == x_example_json == x_example
+Out[5]: True
 ```
