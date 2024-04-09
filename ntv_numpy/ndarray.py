@@ -19,10 +19,9 @@ import datetime
 import json
 
 from decimal import Decimal
-import pandas as pd
 import numpy as np
 from json_ntv import Ntv, ShapelyConnec, Datatype, NtvConnector
-from ntv_numpy.data_array import Dfull, Dcomplete, Darray
+from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
 
 
 class Ndarray:
@@ -98,7 +97,7 @@ class Ndarray:
             return True
         if self.darray is None or other.darray is None:
             return False
-        return Ndarray.equals(self.darray, other.darray)
+        return Dutil.equals(self.darray, other.darray)
 
     def __len__(self):
         ''' len of ndarray'''
@@ -279,32 +278,6 @@ class Ndarray:
         return NpUtil.json_ntv(None, 'ndarray',
                                [val for val in lis if not val is None],
                                header=option['header'], encoded=option['encoded'])
-
-    @staticmethod
-    def equals(nself, nother):
-        '''return True if all elements are equals and dtype are equal'''
-        if not (isinstance(nself, np.ndarray) and isinstance(nother, np.ndarray)):
-            return False
-        if nself.dtype != nother.dtype or nself.shape != nother.shape:
-            return False
-        if len(nself.shape) == 0:
-            return True
-        if len(nself) != len(nother):
-            return False
-        if len(nself) == 0:
-            return True
-        if isinstance(nself[0], (np.ndarray, pd.Series, pd.DataFrame)):
-            SeriesConnec = NtvConnector.connector().get('SeriesConnec')
-            DataFrameConnec = NtvConnector.connector().get('DataFrameConnec')
-            equal = {np.ndarray: Ndarray.equals,
-                     pd.Series: SeriesConnec.equals,
-                     pd.DataFrame: DataFrameConnec.equals}
-            for nps, npo in zip(nself, nother):
-                if not equal[type(nself[0])](nps, npo):
-                    return False
-            return True
-        return np.array_equal(nself, nother)
-
     @property
     def info(self):
         ''' infos of the Ndarray'''
@@ -417,12 +390,12 @@ class NpUtil:
 
     @staticmethod
     def convert(ntv_type, nda, tojson=True, convert=True):
-        ''' convert ndarray with external NTVtype.
+        ''' convert np.ndarray with external NTVtype.
 
         *Parameters*
 
-        - **ntv_type** : string - NTVtype deduced from the ndarray name_type and dtype,
-        - **nda** : ndarray to be converted.
+        - **ntv_type** : string - NTVtype deduced from the np.ndarray name_type and dtype,
+        - **nda** : np.ndarray to be converted.
         - **tojson** : boolean (default True) - apply to json function
         - **convert** : boolean (default True) - If True, convert json data with
         non Numpy ntv_type into data with python type
