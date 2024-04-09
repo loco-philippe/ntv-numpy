@@ -1,16 +1,20 @@
 # installation
 
-## ntv_pandas package
+## ntv_numpy package
 
 The `ntv_numpy` package includes
 
 - `numpy_ntv_connector` module
-  - functions `read_json` and `to_json` to convert JSON data and NumPy entities
-  - function `equals` to extend numpy `equals` method
   - child classes of `NTV.json_ntv.ntv.NtvConnector` abstract class:
+    - `NarrayConnec`: 'np.ndarray'   connector
     - `NdarrayConnec`: 'ndarray'   connector
     - `XndarrayConnec`: 'xndarray' connector
-  - an utility class with static methods : `NpUtil`
+    - `XdatasetConnec`: 'xdataset' connector
+- `xconnector` module
+  - `XarrayConnec`: interface with `Xarray`
+  - `ScippConnec`: interface with `scipp`
+  - `AstropyNDDataConnec`: interface with `NDData`
+- `xdataset` module
 - configuration files:
   - `ntv_numpy.ini` (correspondence between ntv_type and pandas dtype)
 

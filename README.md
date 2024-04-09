@@ -2,7 +2,6 @@
 
 For more information, see the [user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html) or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 
-
 # Why a new format for multidimensional data ?
 
 Chaque outil a une structure spécifique pour traiter les données multidimensionnelles avec pour conséquences:
@@ -72,7 +71,17 @@ In [2]: from ntv_numpy import Xdataset
 
         x_example = Xdataset.read_json(example)
         x_example.info
-Out[2]: 
+Out[2]: {'name': 'example',
+        'xtype': 'group',
+        'data_vars': ['var1', 'var2'],
+        'data_arrays': ['z_bis'],
+        'dimensions': ['x', 'y'],
+        'coordinates': ['ranking', 'z'],
+        'additionals': ['var1.mask1', 'var1.mask2', 'var1.variance', 'z.uncertainty'],
+        'metadata': ['info'],
+        'validity': 'undefined',
+        'length': 4,
+        'width': 12}
 ```
 
 The JSON representation is equivalent to the Xdataset entity (Json conversion reversible)
@@ -88,8 +97,25 @@ Out[2]: True
 
 ```python
 In [4]: x_xarray = x_example.to_xarray()
-        x_xarray
-Out[4]: xxxx
+        print(x_xarray)
+Out[4]: <xarray.Dataset> Size: 182B
+        Dimensions:        (x: 2, y: 2)
+        Coordinates:
+          * x              (x) <U6 48B '23F0AE' '578B98'
+          * y              (y) datetime64[ns] 16B 2021-01-01 2022-02-02
+            ranking        (x, y) int32 16B 1 2 3 4
+            z              (x) float64 16B 10.0 20.0
+            var1.mask1     (x) bool 2B True False
+            var1.mask2     (x, y) bool 4B True False False True
+            var1.variance  (x, y) float64 32B 0.1 0.2 0.3 0.4
+            z.uncertainty  (x) float64 16B 0.1 0.2
+        Data variables:
+            var1           (x, y) float64 32B 10.1 0.4 3.4 8.2
+        Attributes:
+            info:     {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/...
+            name:     example
+            var2:     [['var2.ntv'], ['x', 'y']]
+            z_bis:    [['string', ['z1_bis', 'z2_bis']]]
 ```
 
 Reversibility:
@@ -105,7 +131,18 @@ Out[2]: True
 ```python
 In [4]: x_scipp = x_example.to_scipp()
         print(x_scipp['example'])
-Out[4]: xxxx
+Out[4]: <scipp.Dataset>
+Dimensions: Sizes[x:string:2, y:date:2, ]
+Coordinates:
+* ranking:month           int32  [dimensionless]  (x:string, y:date)  [1, 2, 3, 4]
+* x:string               string  [dimensionless]  (x:string)  ["23F0AE", "578B98"]
+* y:date              datetime64            [ns]  (y:date)  [2021-01-01T00:00:00.000000000, 2022-02-02T00:00:00.000000000]
+* z:float               float64  [dimensionless]  (x:string)  [10, 20]
+Data:
+  var1:float            float64             [kg]  (x:string, y:date)  [10.1, 0.4, 3.4, 8.2]  [0.1, 0.2, 0.3, 0.4]
+    Masks:
+        mask1:boolean      bool  [dimensionless]  (x:string)  [True, False]
+        mask2:boolean      bool  [dimensionless]  (x:string, y:date)  [True, False, False, True]
 ```
 
 Reversibility:
@@ -135,7 +172,19 @@ In [1]: example = {
         } 
         n_example = Xdataset.read_json(example)
         n_example.info 
-Out[4]: xxxx
+Out[4]: {'name': 'example',
+        'xtype': 'group',
+        'data_arrays': ['data', 'psf'],
+        'additionals': ['data.mask', 'data.uncertainty'],
+        'metadata': ['meta', 'wcs'],
+        'validity': 'valid',
+        'width': 6}
+```
+
+```python
+In [4]: n_nddata = n_example.to_nddata()
+        n_nddata
+Out[4]: NDData([1., 2., ——, ——], unit='erg / s')
 ```
 
 Reversibility:
@@ -144,9 +193,6 @@ Reversibility:
 In [5]: n_example_ndd = Xdataset.from_nddata(n_nddata)
         n_example_ndd == n_example
 Out[5]: True
-
-In [6]: print(npd.read_json(df_to_json).equals(df))
-Out[6]: True
 ```
 
 ## URI usage
