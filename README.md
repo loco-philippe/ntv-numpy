@@ -4,13 +4,13 @@ For more information, see the [user guide](https://loco-philippe.github.io/ntv-n
 
 # Why a new format for multidimensional data ?
 
-Chaque outil a une structure spécifique pour traiter les données multidimensionnelles avec pour conséquences:
+Each tool has a specific structure for processing multidimensional data with the following consequences:
 
-- des interfaces dédiés à chaque outil,
-- des données traitées partiellement,
-- pas de représentation unifiée des structures de données
+- interfaces dedicated to each tool,
+- partially processed data,
+- no unified representation of data structures
 
-The proposed format (NTVmulti) is based on the following principles:
+The proposed format is based on the following principles:
 
 - neutral format available for tabular or multidimensional tools (e.g. Numpy, pandas, xarray, scipp, astropy),
 - taking into account a wide variety of data types as defined in [NTV](https://www.ietf.org/archive/id/draft-thomy-json-ntv-02.html) format,
@@ -20,10 +20,10 @@ The proposed format (NTVmulti) is based on the following principles:
 
 ## main features
 
-The NTV-Numpy converter uses the NTVmulti format pour:
+The NTV-Numpy converter uses this format to:
 
-- fournir des interfaces lossless et reversible avec les principaux outils de traitement des données multidimensionnelles et tabulaires,
-- offrir des solutions d'échange et de partage de données avec des formats neutres ou banalisés (e.g. JSON, Numpy).
+- provide lossless and reversible interfaces with multidimensional and tabular data processing tools,
+- offer data exchange and sharing solutions with neutral or standardized formats (e.g. JSON, Numpy).
 
 NTV-NumPy was developped originally in the [json-NTV project](https://github.com/loco-philippe/NTV)
 
