@@ -18,4 +18,3 @@ The documentation presents :
 
 - merge tabular format and multidimensional format
 - specific module for numpy data conversion
-

@@ -1,22 +1,22 @@
 Version x.y.z
 =============
 
-0.1.0 alpha 1 (2024-04-xx)
+0.1.0 alpha 1 (2024-04-10)
 --------------------
 - First version
-- specific methods available in the class `DataFrameConnec` and `SeriesConnec`
-- correspondance between `NTVtype` and `dtype` in `ntv_numpy.ini`
+- exchanging via JSON format
+- lightweight format (structure: json, arrays: URI) 
 - numpy.dtype supported: all except 'complex' and 'timedelta'
 - NTVtype supported:
-    - duration, period
     - datetime, date, time, dat
     - month, year, day, wday, yday, week, hour, minute, second
     - json, string, number, boolean, array, object, null
     - floatxx, uintxx, intxx
-    - uri, email, file
+    - base16, decimal
+    - uri, ipv4, email, file
     - point, line, polygon, geometry, geojson
     - multipoint, multiline, multipolygon, box, codeolc
-    - row, field, tab, ntv
+    - ndarray, xndarray, field, tab, ntv
 - interface:
     - astropy.NDData
     - scipp.Dataset
