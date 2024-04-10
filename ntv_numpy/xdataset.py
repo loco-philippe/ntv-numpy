@@ -4,20 +4,254 @@ Created on Thu Mar  7 09:56:11 2024
 
 @author: a lab in the Air
 """
+from abc import ABC, abstractmethod
 
 import json
+from json_ntv import Ntv
 from ntv_numpy.ndarray import Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyNDDataConnec
-from json_ntv import Ntv
 
 
-class Xdataset:
+class XdatasetCategory(ABC):
+    ''' category of Xndarray (dynamic tuple of full_name) - see Xdataset docstring'''
+
+    xnd: list = NotImplemented
+    names: list = NotImplemented
+
+    @abstractmethod
+    def dims(self, var, json_name=False):
+        '''method defined in Xdataset class'''
+
+    @property
+    def global_vars(self):
+        '''return a tuple of namedarrays or variable Xndarray full_name'''
+        return tuple(sorted(nda for nda in self.namedarrays + self.variables))
+
+    @property
+    def data_arrays(self):
+        '''return a tuple of data_arrays Xndarray full_name'''
+        return tuple(sorted(nda for nda in self.namedarrays if not nda in self.dimensions))
+
+    @property
+    def dimensions(self):
+        '''return a tuple of dimensions Xndarray full_name'''
+        dimable = []
+        for var in self.variables:
+            dimable += self.dims(var)
+        return tuple(sorted(set(nda for nda in dimable if nda in self.namedarrays)))
+
+    @property
+    def coordinates(self):
+        '''return a tuple of coordinates Xndarray full_name'''
+        dims = set(self.dimensions)
+        if not dims:
+            return ()
+        return tuple(sorted(set(xnda.name for xnda in self.xnd
+                                if xnda.xtype == 'variable' and set(xnda.links) != dims)))
+
+    @property
+    def data_vars(self):
+        '''return a tuple of data_vars Xndarray full_name'''
+        dims = set(self.dimensions)
+        if not dims:
+            return self.variables
+        return tuple(sorted(xnda.name for xnda in self.xnd
+                            if xnda.xtype == 'variable' and set(xnda.links) == dims))
+
+    @property
+    def namedarrays(self):
+        '''return a tuple of namedarray Xndarray full_name'''
+        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'namedarray'))
+
+    @property
+    def variables(self):
+        '''return a tuple of variables Xndarray full_name'''
+        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'variable'))
+
+    @property
+    def undef_vars(self):
+        '''return a tuple of variables Xndarray full_name with inconsistent shape'''
+        return tuple(sorted([var for var in self.variables if self[var].shape !=
+                             [len(self[dim]) for dim in self.dims(var)]]))
+
+    @property
+    def undef_links(self):
+        '''return a tuple of variables Xndarray full_name with inconsistent links'''
+        return tuple(sorted([link for var in self.variables for link in self[var].links
+                             if not link in self.names]))
+
+    @property
+    def masks(self):
+        '''return a tuple of additional Xndarray full_name with boolean ntv_type'''
+        return tuple(sorted([xnda.full_name for xnda in self.xnd
+                             if xnda.xtype == 'additional' and xnda.ntv_type == 'boolean']))
+
+    @property
+    def data_add(self):
+        '''return a tuple of additional Xndarray full_name with not boolean ntv_type'''
+        return tuple(sorted([xnda.full_name for xnda in self.xnd
+                             if xnda.xtype == 'additional' and xnda.ntv_type != 'boolean']))
+
+    @property
+    def metadata(self):
+        '''return a tuple of metadata Xndarray full_name'''
+        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'metadata'))
+
+    @property
+    def additionals(self):
+        '''return a tuple of additionals Xndarray full_name'''
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional'))
+
+    def var_group(self, name):
+        '''return a tuple of Xndarray full_name with the same name'''
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.name == name))
+
+    def add_group(self, add_name):
+        '''return a tuple of Xndarray full_name with the same add_name'''
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.add_name == add_name))
+
+
+class XdatasetInterface(ABC):
+    ''' Xdataset interface - see Xdataset docstring'''
+
+    name: str = NotImplemented
+    xnd: list = NotImplemented
+
+    @staticmethod
+    def read_json(jsn, **kwargs):
+        ''' convert json data into a Xdataset.
+
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with
+        non Numpy ntv_type into Xndarray with python type
+        '''
+        option = {'convert': True} | kwargs
+        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
+        value, name = Ntv.decode_json(jso)[:2]
+
+        xnd = [Xndarray.read_json({key: val}, **option)
+               for key, val in value.items()]
+        return Xdataset(xnd, name)
+
+    def to_json(self, **kwargs):
+        ''' convert a Xdataset into json-value.
+
+        *Parameters*
+
+        - **encoded** : Boolean (default False) - json value if False else json text
+        - **header** : Boolean (default True) - including 'xdataset' type
+        - **notype** : list of Boolean (default list of None) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
+        - **format** : list of string (default list of 'full') - representation
+        format of the ndarray,
+        '''
+        notype = kwargs['notype'] if ('notype' in kwargs and isinstance(kwargs['notype'], list) and
+                                      len(kwargs['notype']) == len(self)) else [False] * len(self)
+        forma = kwargs['format'] if ('format' in kwargs and isinstance(kwargs['format'], list) and
+                                     len(kwargs['format']) == len(self)) else ['full'] * len(self)
+        noshape = kwargs.get('noshape', True)
+        dic_xnd = {}
+        for xna, notyp, forma in zip(self.xnd, notype, forma):
+            # not_shape = True if len(xna.links) == 1 else noshape
+            dic_xnd |= xna.to_json(notype=notyp, novalue=kwargs.get('novalue', False),
+                                   noshape=noshape, format=forma, header=False)
+        return Nutil.json_ntv(self.name, 'xdataset', dic_xnd,
+                              header=kwargs.get('header', True),
+                              encoded=kwargs.get('encoded', False))
+
+    def to_xarray(self, **kwargs):
+        '''return a DataArray or a Dataset from a Xdataset
+
+        *Parameters*
+
+        - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
+        '''
+        return XarrayConnec.xexport(self, **kwargs)
+
+    @staticmethod
+    def from_xarray(xar, **kwargs):
+        '''return a Xdataset from a DataArray or a Dataset'''
+        return XarrayConnec.ximport(xar, Xdataset, **kwargs)
+
+    def to_scipp(self, **kwargs):
+        '''return a sc.DataArray or a sc.Dataset from a Xdataset
+
+        *Parameters*
+
+        - **dataset** : Boolean (default True) - if False and a single data_var,
+        return a DataArray
+        - **datagroup** : Boolean (default True) - if True return a DataGroup with
+        metadata and data_arrays
+        - **ntv_type** : Boolean (default True) - if True add ntv-type to the name
+        '''
+        return ScippConnec.xexport(self, **kwargs)
+
+    @staticmethod
+    def from_scipp(sci, **kwargs):
+        '''return a Xdataset from a scipp object DataArray, Dataset or DataGroup'''
+        return ScippConnec.ximport(sci, Xdataset, **kwargs)
+
+    def to_nddata(self, **kwargs):
+        '''return a NDData from a Xdataset'''
+        return AstropyNDDataConnec.xexport(self, **kwargs)
+
+    @staticmethod
+    def from_nddata(ndd, **kwargs):
+        '''return a Xdataset from a NDData'''
+        return AstropyNDDataConnec.ximport(ndd, Xdataset, **kwargs)
+
+
+class Xdataset(XdatasetCategory, XdatasetInterface):
     ''' Representation of a multidimensional Dataset
 
     *Attributes :*
     - **name** :  String - name of the Xdataset
     - **xnd**:   list of Xndarray
+
+    *dynamic values (@property)*
+    - `xtype`
+    - `validity`
+    - `dic_xnd`
+    - `partition`
+    - `info`
+
+    *methods*
+    - `parent`
+    - `dims`
+    - `shape_dims`
+    - `to_canonical`
+    - `to_ndarray`
+
+    *XdatasetCategory (@property)*
+    - `names`
+    - `global_vars`
+    - `data_arrays`
+    - `dimensions`
+    - `coordinates`
+    - `data_vars`
+    - `namedarrays`
+    - `variables`
+    - `undef_vars`
+    - `undef_links`
+    - `masks`
+    - `data_add`
+    - `metadata`
+    - `additionals`
+    - `var_group`
+    - `add_group`
+
+    *XdatasetInterface methods *
+    - `read_json` (static)
+    - `to_json`
+    - `from_xarray` (static)
+    - `to_xarray`
+    - `from_scipp` (static)
+    - `to_scipp`
+    - `from_nddata` (static)
+    - `to_nddata`
     '''
 
     def __init__(self, xnd=None, name=None):
@@ -100,11 +334,19 @@ class Xdataset:
         return self.__class__(self)
 
     def parent(self, var):
+        '''return the Xndarray parent (where the full_name is equal to the name)'''
         if var.name in self.names:
             return self[var.name]
         return var
 
     def dims(self, var, json_name=False):
+        '''return the list of parent namedarrays of the links of a Xndarray
+
+        *parameters*
+
+        - **var**: string - full_name of the Xndarray
+        - **json_name**: boolean (defaut False) - if True return json_name else full_name
+        '''
         if not var in self.names:
             return None
         if self[var].add_name and not self[var].links:
@@ -120,11 +362,13 @@ class Xdataset:
         return list_dims
 
     def shape_dims(self, var):
+        '''return a shape with the dimensions associated to the var full_name'''
         return [len(self[dim]) for dim in self.dims(var)
                 ] if set(self.dims(var)) <= set(self.names) else None
 
     @property
     def validity(self):
+        '''return the validity state: 'inconsistent', 'undifined' or 'valid' '''
         for xnda in self:
             if xnda.mode in ['relative', 'inconsistent']:
                 return 'undefined'
@@ -134,7 +378,7 @@ class Xdataset:
 
     @property
     def xtype(self):
-        '''Xdataset type'''
+        '''return the Xdataset type: 'meta', 'group', 'mono', 'multi' '''
         if self.metadata and not (self.additionals or self.variables or
                                   self.namedarrays):
             return 'meta'
@@ -150,102 +394,17 @@ class Xdataset:
 
     @property
     def dic_xnd(self):
-        '''dict of Xndarray'''
+        '''return a dict of Xndarray where key is the full_name'''
         return {xnda.full_name: xnda for xnda in self.xnd}
 
     @property
     def names(self):
-        '''tuple of Xndarray names'''
+        '''return a tuple with the Xndarray full_name'''
         return tuple(xnda.full_name for xnda in self.xnd)
 
     @property
-    def global_vars(self):
-        '''tuple of namedarrays or variable Xndarray names'''
-        return tuple(sorted(nda for nda in self.namedarrays + self.variables))
-
-    @property
-    def data_arrays(self):
-        '''tuple of data_arrays Xndarray names'''
-        return tuple(sorted(nda for nda in self.namedarrays if not nda in self.dimensions))
-
-    @property
-    def dimensions(self):
-        '''tuple of dimensions Xndarray names'''
-        dimable = []
-        for var in self.variables:
-            dimable += self.dims(var)
-        return tuple(sorted(set(nda for nda in dimable if nda in self.namedarrays)))
-
-    @property
-    def coordinates(self):
-        '''tuple of coordinates Xndarray name'''
-        dims = set(self.dimensions)
-        if not dims:
-            return ()
-        return tuple(sorted(set(xnda.name for xnda in self.xnd
-                                if xnda.xtype == 'variable' and set(xnda.links) != dims)))
-
-    @property
-    def data_vars(self):
-        '''tuple of data_vars Xndarray name'''
-        dims = set(self.dimensions)
-        if not dims:
-            return self.variables
-        return tuple(sorted(xnda.name for xnda in self.xnd
-                            if xnda.xtype == 'variable' and set(xnda.links) == dims))
-
-    @property
-    def namedarrays(self):
-        '''tuple of namedarray Xndarray name'''
-        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'namedarray'))
-
-    @property
-    def variables(self):
-        '''tuple of variables Xndarray name'''
-        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'variable'))
-
-    @property
-    def undef_vars(self):
-        '''tuple of variables Xndarray name with inconsistent shape'''
-        return tuple(sorted([var for var in self.variables if self[var].shape !=
-                             [len(self[dim]) for dim in self.dims(var)]]))
-
-    @property
-    def undef_links(self):
-        '''tuple of variables Xndarray name with inconsistent links'''
-        return tuple(sorted([link for var in self.variables for link in self[var].links
-                             if not link in self.names]))
-
-    @property
-    def masks(self):
-        '''tuple of additional Xndarray name with boolean ntv_type'''
-        return tuple(sorted([xnda.full_name for xnda in self.xnd
-                             if xnda.xtype == 'additional' and xnda.ntv_type == 'boolean']))
-
-    @property
-    def data_add(self):
-        '''tuple of additional Xndarray name with not boolean ntv_type'''
-        return tuple(sorted([xnda.full_name for xnda in self.xnd
-                             if xnda.xtype == 'additional' and xnda.ntv_type != 'boolean']))
-
-    @property
-    def metadata(self):
-        '''tuple of metadata name'''
-        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'metadata'))
-
-    @property
-    def additionals(self):
-        '''tuple of additionals Xndarray name'''
-        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional'))
-
-    def var_group(self, name):
-        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.name == name))
-
-    def add_group(self, name):
-        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.add_name == name))
-
-    @property
     def partition(self):
+        '''return a dict of Xndarray grouped with category'''
         dic = {}
         dic |= {'data_vars': list(self.data_vars)} if self.data_vars else {}
         dic |= {'data_arrays': list(self.data_arrays)
@@ -260,31 +419,15 @@ class Xdataset:
 
     @property
     def info(self):
+        '''return a dict with Xdataset information '''
         inf = {'name': self.name, 'xtype': self.xtype} | self.partition
         inf['validity'] = self.validity
         inf['length'] = len(self[self.data_vars[0]]) if self.data_vars else 0
         inf['width'] = len(self)
         return {key: val for key, val in inf.items() if val}
 
-    @staticmethod
-    def read_json(jsn, **kwargs):
-        ''' convert json data into a Xdataset.
-
-        *Parameters*
-
-        - **convert** : boolean (default True) - If True, convert json data with
-        non Numpy ntv_type into Xndarray with python type
-        '''
-        option = {'convert': True} | kwargs
-        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
-        value, name = Ntv.decode_json(jso)[:2]
-
-        xnd = [Xndarray.read_json({key: val}, **option)
-               for key, val in value.items()]
-        return Xdataset(xnd, name)
-
     def to_canonical(self):
-        '''remove optional dims'''
+        '''remove optional links of the included Xndarray'''
         for name in self.names:
             if self[name].links in ([self[name].name], [name]):
                 self[name].links = None
@@ -294,81 +437,12 @@ class Xdataset:
                 self[add].links = None
         return self
 
-    def to_ndarray(self, name):
+    def to_ndarray(self, full_name):
         '''convert a Xndarray from a Xdataset in a np.ndarray'''
-        if self.shape_dims(name) is None:
-            data = self[name].ndarray
+        if self.shape_dims(full_name) is None:
+            data = self[full_name].ndarray
         else:
-            data = self[name].darray.reshape(self.shape_dims(name))
+            data = self[full_name].darray.reshape(self.shape_dims(full_name))
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
         return data
-
-    def to_json(self, **kwargs):
-        ''' convert a Xdataset into json-value.
-
-        *Parameters*
-
-        - **encoded** : Boolean (default False) - json value if False else json text
-        - **header** : Boolean (default True) - including 'xdataset' type
-        - **notype** : list of Boolean (default list of None) - including data type if False
-        - **novalue** : Boolean (default False) - including value if False
-        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
-        - **format** : list of string (default list of 'full') - representation
-        format of the ndarray,
-        '''
-        notype = kwargs['notype'] if ('notype' in kwargs and isinstance(kwargs['notype'], list) and
-                                      len(kwargs['notype']) == len(self)) else [False] * len(self)
-        forma = kwargs['format'] if ('format' in kwargs and isinstance(kwargs['format'], list) and
-                                     len(kwargs['format']) == len(self)) else ['full'] * len(self)
-        noshape = kwargs.get('noshape', True)
-        dic_xnd = {}
-        for xna, notyp, forma in zip(self.xnd, notype, forma):
-            # not_shape = True if len(xna.links) == 1 else noshape
-            dic_xnd |= xna.to_json(notype=notyp, novalue=kwargs.get('novalue', False),
-                                   noshape=noshape, format=forma, header=False)
-        return Nutil.json_ntv(self.name, 'xdataset', dic_xnd,
-                              header=kwargs.get('header', True),
-                              encoded=kwargs.get('encoded', False))
-
-    def to_xarray(self, **kwargs):
-        '''return a DataArray or a Dataset from a Xdataset
-
-        *Parameters*
-
-        - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
-        '''
-        return XarrayConnec.xexport(self, **kwargs)
-
-    @staticmethod
-    def from_xarray(xar, **kwargs):
-        '''return a Xdataset from a DataArray or a Dataset'''
-        return XarrayConnec.ximport(xar, Xdataset, **kwargs)
-
-    def to_scipp(self, **kwargs):
-        '''return a sc.DataArray or a sc.Dataset from a Xdataset
-
-        *Parameters*
-
-        - **dataset** : Boolean (default True) - if False and a single data_var,
-        return a DataArray
-        - **datagroup** : Boolean (default True) - if True return a DataGroup with
-        metadata and data_arrays
-        - **ntv_type** : Boolean (default True) - if True add ntv-type to the name
-        '''
-        return ScippConnec.xexport(self, **kwargs)
-
-    @staticmethod
-    def from_scipp(sci, **kwargs):
-        '''return a Xdataset from a scipp object DataArray, Dataset or DataGroup'''
-        return ScippConnec.ximport(sci, Xdataset, **kwargs)
-
-    def to_nddata(self, **kwargs):
-        '''return a NDData from a Xdataset
-        '''
-        return AstropyNDDataConnec.xexport(self, **kwargs)
-
-    @staticmethod
-    def from_nddata(ndd, **kwargs):
-        '''return a Xdataset from a NDData'''
-        return AstropyNDDataConnec.ximport(ndd, Xdataset, **kwargs)

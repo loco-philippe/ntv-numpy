@@ -30,6 +30,7 @@ class Xndarray:
     *dynamic values (@property)*
     - `darray`
     - `ndarray`
+    - `uri`
     - `shape`
     - `ntv_type`
     - `info`
@@ -41,8 +42,7 @@ class Xndarray:
     *methods*
     - `to_json`
     - `read_json (static method)`
-    - `set_array`
-    - `set_uri`
+    - `set_ndarray`
     '''
 
     def __init__(self, full_name, nda=None, links=None,
@@ -82,11 +82,9 @@ class Xndarray:
 
     def __eq__(self, other):
         ''' equal if attributes are equal'''
-        if self.name != other.name:
+        if self.name != other.name or self.add_name != other.add_name:
             return False
-        if self.links != other.links:
-            return False
-        if self.meta != other.meta:
+        if self.links != other.links or self.meta != other.meta:
             return False
         if self.nda is None and other.nda is None:
             return True
@@ -259,5 +257,6 @@ class Xndarray:
                               header=option['header'], encoded=option['encoded'])
 
     def _to_json(self):
+        '''return dict of attributes'''
         return {'name': self.name, 'ntv_type': self.ntv_type, 'uri': self.uri,
                 'nda': self.nda, 'meta': self.meta, 'links': self.links}
