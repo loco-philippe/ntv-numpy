@@ -27,7 +27,7 @@ flowchart LR
         class other attributes
     end
     class xdataset dataset
-    classDef attributes fill:#bbf,stroke:#f6,stroke-width:1px,color:#fff,stroke-dasharray: 0 5
+    classDef attributes fill:#bbf,stroke:#f6,stroke-width:1px,color:#000,stroke-dasharray: 0 5
     classDef xnda fill:#99d,stroke:#009,stroke-width:2px,color:#808
     classDef nda  fill:#77b,stroke:#00e,stroke-width:2px,color:#808
     classDef da  stroke:#00e,stroke-width:2px,color:#333
