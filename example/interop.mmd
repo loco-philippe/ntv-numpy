@@ -1,0 +1,8 @@
+---
+title: Example of interoperability
+---
+flowchart LR
+    A[Xarray] <--lossless--> B[Neutral\nXdataset]
+    B <--lossless--> C[NDData]
+    D[Scipp] <--lossless--> B
+    B <--lossless--> E[JSON]
