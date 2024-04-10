@@ -13,14 +13,15 @@ For more information, see the
  or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 """
 
-from ntv_numpy.ndarray import Nutil, Ndarray
-from ntv_numpy.xndarray import Xndarray
+
 import xarray as xr
 import scipp as sc
 from astropy import wcs
 from astropy.nddata import NDData
 from astropy.nddata.nduncertainty import StdDevUncertainty, VarianceUncertainty
 from astropy.nddata.nduncertainty import InverseVariance
+from ntv_numpy.ndarray import Nutil, Ndarray
+from ntv_numpy.xndarray import Xndarray
 
 
 class AstropyNDDataConnec:
@@ -59,7 +60,7 @@ class AstropyNDDataConnec:
         xnd += [Xndarray('data', nda=Ndarray(ndd.data, ntv_type=ntv_type))]
         if ndd.meta:
             meta = {key: val for key, val in ndd.meta.items() if key != 'name'}
-            name = meta.get('name', 'no_name')
+            name = ndd.meta.get('name', 'no_name')
             xnd += [Xndarray('meta', meta=meta)]
         if ndd.wcs:
             xnd += [Xndarray('wcs', meta=dict(ndd.wcs.to_header()))]

@@ -5,7 +5,6 @@ Created on Thu Mar  7 09:56:11 2024
 @author: a lab in the Air
 """
 from abc import ABC, abstractmethod
-
 import json
 from json_ntv import Ntv
 from ntv_numpy.ndarray import Nutil
