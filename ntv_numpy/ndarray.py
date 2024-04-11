@@ -22,7 +22,7 @@ from decimal import Decimal
 import numpy as np
 from json_ntv import Ntv, ShapelyConnec, Datatype, NtvConnector
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
-
+from ntv_numpy.ndtype import Ndtype
 
 class Ndarray:
     ''' The Ndarray class is the JSON interface of numpy.ndarrays.
@@ -53,18 +53,17 @@ class Ndarray:
         if isinstance(dar, str):
             self.uri = dar
             self.is_json = True
-            self.ntvtype = Datatype(ntv_type) if ntv_type else None
+            #self.ntvtype = Datatype(ntv_type) if ntv_type else None
+            self.ntvtype = Ndtype(ntv_type) if ntv_type else None
             self.shape = shape
             self.darray = None
             return
         if shape:
             dar = Dfull(dar, dtype=Nutil.dtype(ntv_type), unidim=True).data
         else:
-            # dar = np.array(dar if isinstance(dar, (list, np.ndarray)) else [dar],
             dar = np.array(dar, dtype=Nutil.dtype(ntv_type))
             shape = list(dar.shape)
         dar = np.array(dar).reshape(-1)
-        # ntv_type = Nutil.nda_ntv_type(dar) if not (ntv_type or dar is None) else ntv_type
         ntv_type = Nutil.nda_ntv_type(dar, ntv_type)
         self.uri = None
         self.is_json = Nutil.is_json(dar[0])
