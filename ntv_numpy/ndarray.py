@@ -20,7 +20,7 @@ import json
 
 from decimal import Decimal
 import numpy as np
-from json_ntv import Ntv, ShapelyConnec, Datatype, NtvConnector
+from json_ntv import Ntv, ShapelyConnec, NtvConnector #, Datatype
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
 from ntv_numpy.ndtype import Ndtype
 
@@ -67,7 +67,8 @@ class Ndarray:
         ntv_type = Nutil.nda_ntv_type(dar, ntv_type)
         self.uri = None
         self.is_json = Nutil.is_json(dar[0])
-        self.ntvtype = Datatype(ntv_type)
+        #self.ntvtype = Datatype(ntv_type)
+        self.ntvtype = Ndtype(ntv_type)
         self.shape = shape
         self.darray = dar.astype(Nutil.dtype(str(self.ntvtype)))
 
@@ -177,7 +178,8 @@ class Ndarray:
             return False
         self.uri = None
         self.darray = darray
-        self.ntvtype = Datatype(new_ntv_type)
+        #self.ntvtype = Datatype(new_ntv_type)
+        self.ntvtype = Ndtype(new_ntv_type)
         self.shape = new_shape
         return True
 
@@ -488,7 +490,7 @@ class Nutil:
 
     @staticmethod
     def add_ext(typ, ext):
-        '''return extended type : "typ[ext]"'''
+        '''return extended type string: "typ[ext]"'''
         ext = '[' + ext + ']' if ext else ''
         return '' if not typ else typ + ext
 
@@ -525,7 +527,7 @@ class Nutil:
 
     @staticmethod
     def ntv_type(dtype, ntv_type=None, ext=None):
-        ''' return NTVtype from dtype, additional type and extension.
+        ''' return ntv_type string from dtype, additional type and extension.
 
         *Parameters*
 
@@ -548,7 +550,7 @@ class Nutil:
 
     @staticmethod
     def nda_ntv_type(nda, ntv_type=None, ext=None):
-        '''return ntv_type from an ndarray, additional type and extension.
+        '''return ntv_type string from an ndarray, additional type and extension.
 
         *Parameters*
 
@@ -573,15 +575,9 @@ class Nutil:
 
         - **convert** : boolean (default True) - if True, dtype if from converted data
         '''
-        DTYPE = (Nutil.DATATION_DT | Nutil.NUMBER_DT | Nutil.OTHER_DT |
-                 Nutil.STRING_DT)
-        OBJECT = Nutil.LOCATION_DT | Nutil.CONNECTOR_DT | Nutil.PYTHON_DT
-        type_base = Nutil.split_type(ntv_type)[0]
         if convert:
-            if type_base in OBJECT:
-                return 'object'
-            return DTYPE.get(ntv_type, DTYPE.get(type_base, type_base))
-        return Datatype(ntv_type).json_type
+            return Ndtype(ntv_type).dtype if ntv_type else None
+        return Ndtype(ntv_type).json_type
 
     @staticmethod
     def json_ntv(ntv_name, ntv_type, ntv_value, **kwargs):

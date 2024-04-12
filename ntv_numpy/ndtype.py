@@ -47,7 +47,8 @@ class Ndtype(Datatype):
         - **force** : boolean (default False) - if True, no Namespace control
         - **validate** : function (default None) - validate function to include'''        
         super().__init__(full_name, module=module, force=force, validate=validate)
-        self.dtype = None
-        self.add_type = None
+        np_type = NP_TYPES.get(self.base_name)      
+        self.dtype = np_type['dtype'] if np_type else None
+        self.add_type = np_type['add_type'] if np_type else None
 
-        
+NP_TYPES = Ndtype.read_ini()        
