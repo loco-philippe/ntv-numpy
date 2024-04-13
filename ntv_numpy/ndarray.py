@@ -365,6 +365,8 @@ class Nutil:
     STRUCT_DT = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
 
     DT_NTVTYPE = DT_DATATION | DT_LOCATION | DT_OTHER | DT_CONNECTOR | DT_PYTHON
+    JSON_TYPE = {'number': float, 'boolean': bool, 'string': str, 'object': dict, 
+                 'integer': int, 'array': list, 'json': dict, 'null': None}
 
     @staticmethod
     def is_json(obj):
@@ -405,11 +407,13 @@ class Nutil:
         non Numpy ntv_type into data with python type
         '''
         if tojson:
+            dtype = Ndtype(ntv_type).dtype
+            jtype = Nutil.JSON_TYPE[Ndtype(ntv_type).json_type]
             match ntv_type:
                 case dat if dat in Nutil.DATATION_DT:
                     return nda.astype(Nutil.DATATION_DT[dat]).astype(str)
-                case 'bytes':
-                    return nda.astype('bytes').astype(str)
+                case 'base16':
+                    return nda.astype(dtype)
                 case 'time':
                     return nda.astype(str)
                 case 'decimal64':
