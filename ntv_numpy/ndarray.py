@@ -317,53 +317,23 @@ class Nutil:
     - `split_json_name`
 
     '''
-
-    DATATION_DT = {'date': 'datetime64[D]', 'year': 'datetime64[Y]',
-                   'yearmonth': 'datetime64[M]',
-                   'datetime': 'datetime64[s]', 'datetime[ms]': 'datetime64[ms]',
-                   'datetime[us]': 'datetime64[us]', 'datetime[ns]': 'datetime64[ns]',
-                   'datetime[ps]': 'datetime64[ps]', 'datetime[fs]': 'datetime64[fs]',
-                   'timedelta': 'timedelta64[s]', 'timedelta[ms]': 'timedelta64[ms]',
-                   'timedelta[us]': 'timedelta64[us]', 'timedelta[ns]': 'timedelta64[ns]',
-                   'timedelta[ps]': 'timedelta64[ps]', 'timedelta[fs]': 'timedelta64[fs]',
-                   'timedelta[D]': 'timedelta64[D]', 'timedelta[Y]': 'timedelta64[Y]',
-                   'timedelta[M]': 'timedelta64[M]'}
-    DT_DATATION = {val: key for key, val in DATATION_DT.items()}
-
     CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
+    PYTHON_DT    = {'array': 'list', 'time': 'datetime.time',
+                    'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
+                    'ndarray': 'ndarray', 'narray': 'narray'}
+    LOCATION_DT  = {'point': 'Point',
+                    'line': 'LineString', 'polygon': 'Polygon'}
     DT_CONNECTOR = {val: key for key, val in CONNECTOR_DT.items()}
+    DT_PYTHON    = {val: key for key, val in PYTHON_DT.items()}
+    DT_LOCATION  = {val: key for key, val in LOCATION_DT.items()}
+    DT_NTVTYPE   = DT_LOCATION | DT_CONNECTOR | DT_PYTHON
 
-    PYTHON_DT = {'array': 'list', 'time': 'datetime.time',
-                 'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
-                 'ndarray': 'ndarray', 'narray': 'narray'}
-    DT_PYTHON = {val: key for key, val in PYTHON_DT.items()}
 
-    OTHER_DT = {'boolean': 'bool', 'string': 'str', 'base16': 'bytes'}
-    DT_OTHER = {val: key for key, val in OTHER_DT.items()}
-
-    LOCATION_DT = {'point': 'Point',
-                   'line': 'LineString', 'polygon': 'Polygon'}
-    DT_LOCATION = {val: key for key, val in LOCATION_DT.items()}
-
-    NUMBER_DT = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
-                 'wday': 'int', 'yday': 'int', 'week': 'hour', 'minute': 'int',
-                 'second': 'int'}
-    STRING_DT = {'base32': 'str', 'base64': 'str',
-                 'period': 'str', 'duration': 'str', 'jpointer': 'str',
-                 'uri': 'str', 'uriref': 'str', 'iri': 'str', 'iriref': 'str',
-                 'email': 'str', 'regex': 'str', 'hostname': 'str', 'ipv4': 'str',
-                 'ipv6': 'str', 'file': 'str', 'geojson': 'str', }
-    STRUCT_DT = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
-    #DT_NTVTYPE = DT_DATATION | DT_LOCATION | DT_OTHER | DT_CONNECTOR | DT_PYTHON
-    DT_NTVTYPE = DT_LOCATION | DT_CONNECTOR | DT_PYTHON
-
-    FORMAT_CLS = {'full': Dfull, 'complete': Dcomplete}
-    CONVERT_DT = {'object': 'object', 'array': 'object', 'json': 'object',
-                  'number': 'float', 'boolean': 'bool', 'null': 'object',
-                  'string': 'str', 'integer': 'int'}
-    #JSON_TYPE = {'number': float, 'boolean': bool, 'string': str, 'object': dict, 
-    #             'integer': int, 'array': list, 'json': dict, 'null': None}
-
+    FORMAT_CLS   = {'full': Dfull, 'complete': Dcomplete}
+    STRUCT_DT    = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
+    CONVERT_DT   = {'object': 'object', 'array': 'object', 'json': 'object',
+                    'number': 'float', 'boolean': 'bool', 'null': 'object',
+                    'string': 'str', 'integer': 'int'}
     @staticmethod
     def is_json(obj):
         ''' check if obj is a json structure and return True if obj is a json-value
@@ -466,7 +436,6 @@ class Nutil:
                 data = [Ndarray(nd).to_json(header=False)
                         for nd in darray.data]
             case 'ndarray':
-                # data = [Ndarray.to_json(nd) for nd in darray.data]
                 data = [Ndarray(nd).to_json(header=False)
                         for nd in darray.data]
             case connec if connec in Nutil.CONNECTOR_DT:
@@ -527,7 +496,6 @@ class Nutil:
         - **ntv_type** : string - additional type
         - **ext** : string - type extension
         '''
-        #np_ntype = NP_NTYPE | {'int': 'int', 'object': 'object', 'NoneType': 'null'}
         np_ntype = NP_NTYPE | Nutil.DT_NTVTYPE | {'int': 'int', 'object': 'object'}
         if ntv_type:
             return Nutil.add_ext(ntv_type, ext)
