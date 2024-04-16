@@ -41,7 +41,7 @@ class Ndtype(Datatype):
 
         *Parameters*
 
-        - **long_name** : String - absolut name of the Datatype
+        - **full_name** : String - absolut name of the Datatype
         - **module** : boolean (default False) - if True search data in the
         local .ini file, else in the distant repository
         - **force** : boolean (default False) - if True, no Namespace control
@@ -51,4 +51,5 @@ class Ndtype(Datatype):
         self.dtype = np_type['dtype'] if np_type else None
         self.add_type = np_type['add_type'] if np_type else None
 
-NP_TYPES = Ndtype.read_ini()        
+NP_TYPES = Ndtype.read_ini()   
+NP_NTYPE = {val['dtype']: key for key, val in NP_TYPES.items()}     

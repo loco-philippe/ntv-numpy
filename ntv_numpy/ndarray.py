@@ -22,7 +22,7 @@ from decimal import Decimal
 import numpy as np
 from json_ntv import Ntv, ShapelyConnec, NtvConnector #, Datatype
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
-from ntv_numpy.ndtype import Ndtype
+from ntv_numpy.ndtype import Ndtype, NP_NTYPE
 
 class Ndarray:
     ''' The Ndarray class is the JSON interface of numpy.ndarrays.
@@ -53,7 +53,6 @@ class Ndarray:
         if isinstance(dar, str):
             self.uri = dar
             self.is_json = True
-            #self.ntvtype = Datatype(ntv_type) if ntv_type else None
             self.ntvtype = Ndtype(ntv_type) if ntv_type else None
             self.shape = shape
             self.darray = None
@@ -67,7 +66,6 @@ class Ndarray:
         ntv_type = Nutil.nda_ntv_type(dar, ntv_type)
         self.uri = None
         self.is_json = Nutil.is_json(dar[0])
-        #self.ntvtype = Datatype(ntv_type)
         self.ntvtype = Ndtype(ntv_type)
         self.shape = shape
         self.darray = dar.astype(Nutil.dtype(str(self.ntvtype)))
@@ -319,53 +317,23 @@ class Nutil:
     - `split_json_name`
 
     '''
-
-    DATATION_DT = {'date': 'datetime64[D]', 'year': 'datetime64[Y]',
-                   'yearmonth': 'datetime64[M]',
-                   'datetime': 'datetime64[s]', 'datetime[ms]': 'datetime64[ms]',
-                   'datetime[us]': 'datetime64[us]', 'datetime[ns]': 'datetime64[ns]',
-                   'datetime[ps]': 'datetime64[ps]', 'datetime[fs]': 'datetime64[fs]',
-                   'timedelta': 'timedelta64[s]', 'timedelta[ms]': 'timedelta64[ms]',
-                   'timedelta[us]': 'timedelta64[us]', 'timedelta[ns]': 'timedelta64[ns]',
-                   'timedelta[ps]': 'timedelta64[ps]', 'timedelta[fs]': 'timedelta64[fs]',
-                   'timedelta[D]': 'timedelta64[D]', 'timedelta[Y]': 'timedelta64[Y]',
-                   'timedelta[M]': 'timedelta64[M]'}
-    DT_DATATION = {val: key for key, val in DATATION_DT.items()}
-
-    # CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
     CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
+    PYTHON_DT    = {'array': 'list', 'time': 'datetime.time',
+                    'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
+                    'ndarray': 'ndarray', 'narray': 'narray'}
+    LOCATION_DT  = {'point': 'Point',
+                    'line': 'LineString', 'polygon': 'Polygon'}
     DT_CONNECTOR = {val: key for key, val in CONNECTOR_DT.items()}
+    DT_PYTHON    = {val: key for key, val in PYTHON_DT.items()}
+    DT_LOCATION  = {val: key for key, val in LOCATION_DT.items()}
+    DT_NTVTYPE   = DT_LOCATION | DT_CONNECTOR | DT_PYTHON
 
-    PYTHON_DT = {'array': 'list', 'time': 'datetime.time',
-                 'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
-                 'ndarray': 'ndarray', 'narray': 'narray'}
-    DT_PYTHON = {val: key for key, val in PYTHON_DT.items()}
 
-    # OTHER_DT = {'boolean': 'bool', 'string': 'str'}
-    OTHER_DT = {'boolean': 'bool', 'string': 'str', 'base16': 'bytes'}
-    DT_OTHER = {val: key for key, val in OTHER_DT.items()}
-
-    LOCATION_DT = {'point': 'Point',
-                   'line': 'LineString', 'polygon': 'Polygon'}
-    DT_LOCATION = {val: key for key, val in LOCATION_DT.items()}
-
-    NUMBER_DT = {'json': 'object', 'number': None, 'month': 'int', 'day': 'int',
-                 'wday': 'int', 'yday': 'int', 'week': 'hour', 'minute': 'int',
-                 'second': 'int'}
-    # STRING_DT = {'base16': 'str', 'base32': 'str', 'base64': 'str',
-    STRING_DT = {'base32': 'str', 'base64': 'str',
-                 'period': 'str', 'duration': 'str', 'jpointer': 'str',
-                 'uri': 'str', 'uriref': 'str', 'iri': 'str', 'iriref': 'str',
-                 'email': 'str', 'regex': 'str', 'hostname': 'str', 'ipv4': 'str',
-                 'ipv6': 'str', 'file': 'str', 'geojson': 'str', }
-    FORMAT_CLS = {'full': Dfull, 'complete': Dcomplete}
-    CONVERT_DT = {'object': 'object', 'array': 'object', 'json': 'object',
-                  'number': 'float', 'boolean': 'bool', 'null': 'object',
-                  'string': 'str', 'integer': 'int'}
-    STRUCT_DT = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
-
-    DT_NTVTYPE = DT_DATATION | DT_LOCATION | DT_OTHER | DT_CONNECTOR | DT_PYTHON
-
+    FORMAT_CLS   = {'full': Dfull, 'complete': Dcomplete}
+    STRUCT_DT    = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
+    CONVERT_DT   = {'object': 'object', 'array': 'object', 'json': 'object',
+                    'number': 'float', 'boolean': 'bool', 'null': 'object',
+                    'string': 'str', 'integer': 'int'}
     @staticmethod
     def is_json(obj):
         ''' check if obj is a json structure and return True if obj is a json-value
@@ -404,16 +372,17 @@ class Nutil:
         - **convert** : boolean (default True) - If True, convert json data with
         non Numpy ntv_type into data with python type
         '''
+
+        dtype = Nutil.dtype(ntv_type)
+        jtype = Nutil.dtype(ntv_type, convert=False)
         if tojson:
             match ntv_type:
-                case dat if dat in Nutil.DATATION_DT:
-                    return nda.astype(Nutil.DATATION_DT[dat]).astype(str)
-                case 'bytes':
-                    return nda.astype('bytes').astype(str)
-                case 'time':
-                    return nda.astype(str)
-                case 'decimal64':
-                    return nda.astype(float)
+                case dat if Ndtype(dat).category == 'datation':
+                    return nda.astype(dtype).astype(jtype)
+                case 'base16':
+                    return nda.astype(dtype)
+                case 'time' | 'decimal64':
+                    return nda.astype(jtype)
                 case 'geojson':
                     return np.frompyfunc(ShapelyConnec.to_geojson, 1, 1)(nda)
                 case _:
@@ -422,31 +391,24 @@ class Nutil:
             match [ntv_type, convert]:
                 case [None, _]:
                     return nda
-                case [dat, _] if dat in Nutil.DATATION_DT:
-                    return nda.astype(Nutil.DATATION_DT[dat])
-                case [std, _] if std in Nutil.OTHER_DT:
-                    return nda.astype(Nutil.OTHER_DT[std])
-                case ['time', True]:
+                case [_, False]:
+                    return nda.astype(jtype)
+                case ['time', _]:
                     return np.frompyfunc(datetime.time.fromisoformat, 1, 1)(nda)
-                case ['decimal64', True]:
+                case ['decimal64', _]:
                     return np.frompyfunc(Decimal, 1, 1)(nda)
-                case ['narray', True]:
+                case ['narray', _]:
                     nar = np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
                     return np.frompyfunc(Ndarray.to_ndarray, 1, 1)(nar)
-                case ['ndarray', True]:
+                case ['ndarray', _]:
                     return np.frompyfunc(Ndarray.read_json, 1, 1)(nda)
-                case [python, _] if python in Nutil.PYTHON_DT:
-                    return nda.astype('object')
-                case [connec, True] if connec in Nutil.CONNECTOR_DT:
+                case [('point' | 'line' | 'polygon' | 'geometry'), _]:
+                    return np.frompyfunc(ShapelyConnec.to_geometry, 1, 1)(nda)
+                case [connec, _] if connec in Nutil.CONNECTOR_DT:
                     return np.fromiter([NtvConnector.uncast(nd, None, connec)[0]
                                         for nd in nda], dtype='object')
-                case [('point' | 'line' | 'polygon' | 'geometry'), True]:
-                    return np.frompyfunc(ShapelyConnec.to_geometry, 1, 1)(nda)
-                case [_, False]:
-                    return nda.astype(Nutil.CONVERT_DT[
-                        Nutil.dtype(ntv_type, convert=False)])
                 case _:
-                    return nda.astype(Nutil.dtype(ntv_type))
+                    return nda.astype(dtype)
 
         # float.fromhex(x.hex()) == x, bytes(bytearray.fromhex(x.hex())) == x
     @staticmethod
@@ -474,7 +436,6 @@ class Nutil:
                 data = [Ndarray(nd).to_json(header=False)
                         for nd in darray.data]
             case 'ndarray':
-                # data = [Ndarray.to_json(nd) for nd in darray.data]
                 data = [Ndarray(nd).to_json(header=False)
                         for nd in darray.data]
             case connec if connec in Nutil.CONNECTOR_DT:
@@ -535,16 +496,18 @@ class Nutil:
         - **ntv_type** : string - additional type
         - **ext** : string - type extension
         '''
+        np_ntype = NP_NTYPE | Nutil.DT_NTVTYPE | {'int': 'int', 'object': 'object'}
         if ntv_type:
             return Nutil.add_ext(ntv_type, ext)
         match dtype:
-            case dat if dat in Nutil.DT_NTVTYPE:
-                return Nutil.add_ext(Nutil.DT_NTVTYPE[dat], ext)
             case string if string[:3] == 'str':
                 return Nutil.add_ext('string', ext)
-            case byte if byte[:5] == 'bytes':
-                # return Nutil.add_ext('bytes', ext)
-                return Nutil.add_ext('base16', ext)
+            case dtyp if dtyp in np_ntype:
+                return Nutil.add_ext(np_ntype[dtyp], ext)
+            case date if date[:10] == 'datetime64':
+                return 'datetime' + date[10:]
+            case delta if delta[:11] == 'timedelta64':
+                return 'timedelta' + delta[11:]
             case _:
                 return Nutil.add_ext(dtype, ext)
 
@@ -563,8 +526,6 @@ class Nutil:
         dtype = nda.dtype.name
         pytype = nda.flat[0].__class__.__name__
         dtype = pytype if dtype == 'object' and not pytype in Nutil.STRUCT_DT else dtype
-        # dtype = pytype if dtype == 'object' and pytype in Nutil.DT_NTVTYPE else dtype
-        # dtype = nda.flat[0].__class__.__name__ if dtype == 'object' else dtype
         return Nutil.ntv_type(dtype, ntv_type, ext)
 
     @staticmethod
@@ -575,9 +536,13 @@ class Nutil:
 
         - **convert** : boolean (default True) - if True, dtype if from converted data
         '''
+        if not ntv_type:
+            return None
         if convert:
-            return Ndtype(ntv_type).dtype if ntv_type else None
-        return Ndtype(ntv_type).json_type
+            if ntv_type[:8] == 'datetime' and ntv_type[8:]:
+                return 'datetime64' +ntv_type[8:]
+            return Ndtype(ntv_type).dtype
+        return Nutil.CONVERT_DT[Ndtype(ntv_type).json_type]
 
     @staticmethod
     def json_ntv(ntv_name, ntv_type, ntv_value, **kwargs):
