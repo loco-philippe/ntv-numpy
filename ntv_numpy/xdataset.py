@@ -38,8 +38,14 @@ class XdatasetCategory(ABC):
         dimable = []
         for var in self.variables:
             dimable += self.dims(var)
+        #return tuple(set(nda for nda in dimable if nda in self.namedarrays))
         return tuple(sorted(set(nda for nda in dimable if nda in self.namedarrays)))
 
+    @property
+    def shape(self):
+        '''return an array with the length of dimensions'''
+        return [len(self[dim]) for dim in self.dimensions]
+    
     @property
     def coordinates(self):
         '''return a tuple of coordinates Xndarray full_name'''
