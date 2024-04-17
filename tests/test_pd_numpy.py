@@ -16,57 +16,45 @@ ds = xr.Dataset(
         "along_x": ("x", np.random.randn(2)),
         "scalar": 123,
     })
-'''ds = xr.Dataset(
-    {"foo": (("x", "y", "year"), np.random.randn(2, 3, 2))},
-    coords={
-        "x": [10, 20],
-        "y": ["a", "b", "c"],
-        "year": [2020, 2021],
-        "point": (("x", "y"), np.array(["pt1", "pt2", "pt3", "pt4", "pt5", "pt6"]).reshape(2,3)),
-        "along_x": ("x", np.random.randn(2)),
-        "scalar": 123,
-    })'''
 xdt = Xdataset.from_xarray(ds)
 df = ds.to_dataframe().reset_index()
 
-def tab_array(xdt, name, names=None): 
-    '''return a field np.array from a dimension Xndarray defined by idx_name
+def to_tab_array(xdt, name, dims=None): 
+    '''return a field np.array from a Xndarray defined by name
     
     parameters:
     
-    - xdt: Xdataset 
+    - xdt: Xdataset to convert
+    - name: string - name of the Xndarray to convert
+    - dims: list of string (default None) - order of dimensions to apply
     '''
-    #names = list(dts.dims)
-    names = xdt.dimensions if not names else names
-    #shape = xdt.shape
-    #shape = [len(xdt[dim]) for dim in names]
-    #n_shape = {key: val for key, val in zip(names, shape)}
-    n_shape = {nam: len(xdt[nam]) for nam in names}
-    #idx = names.index(idx_name)
+    dims = xdt.dimensions if not dims else dims
+    n_shape = {nam: len(xdt[nam]) for nam in dims}
     dim_name = xdt.dims(name)
-    if not set(dim_name) <= set(names):
+    if not set(dim_name) <= set(dims):
         return None
-    add_name = [nam for nam in names if not nam in dim_name]
+    add_name = [nam for nam in dims if not nam in dim_name]
     tab_name = add_name + dim_name
-    arr = np.array(xdt[name])
+    
     til = 1 
     for nam in add_name:
         til *= n_shape[nam]
     shap = [n_shape[nam] for nam in tab_name]
-    print(til, shap)
+    order = [dims.index(nam) for nam in tab_name]
+    
+    arr = xdt[name].darray
+    
+    old_order = list(range(len(order)))
     arr_tab = np.tile(arr, til).reshape(shap)
-    #order = [tab_name.index(nam) for nam in names]
-    order = [names.index(nam) for nam in tab_name]
-    print(order)
-    return np.moveaxis(arr_tab, list(range(len(names))),order).flatten()
+    return np.moveaxis(arr_tab, old_order, order).flatten()
 
 #for name in xdt.dimensions[:]:
-names = ['x', 'y', 'z', 'year']
+dimensions = ['x', 'y', 'z', 'year']
 for name in xdt.names[:]:
-    tab = tab_array(xdt, name, names)
+    tab = to_tab_array(xdt, name, dimensions)
     if not tab is None: 
         print(np.all(np.array(df[name]) == tab), name)
-        print(tab)
+        #print(tab)
     
 """x = np.array([10,20])
 x_tab = np.tile(x, 3*2).reshape(3,2,2)

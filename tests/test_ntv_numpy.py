@@ -516,6 +516,21 @@ class Test_Xdataset(unittest.TestCase):
             xd_xr = Xdataset.from_xarray(xd.to_xarray())
             self.assertTrue(xd == xd_sc == xd_xr)
 
+    def test_xdataset_dataframe(self):    
+
+        ds = xr.Dataset({"foo": (("x", "y", "z", "year"), np.random.randn(2, 3, 3, 2))},
+            coords={
+                "x": [10, 20], "y": ["a", "b", "c"], "z": [1,2,3], "year": [2020, 2021],
+                "point": (("x", "y"), np.array(["pt1", "pt2", "pt3", "pt4", "pt5", "pt6"]).reshape(2,3)),
+                "along_x": ("x", np.random.randn(2)), "scalar": 123})
+        xdt = Xdataset.from_xarray(ds)
+        df = ds.to_dataframe().reset_index()        
+        dimensions = ['x', 'y', 'z', 'year']
+        for name in xdt.names[:]:
+            tab = xdt.to_tab_array(name, dimensions)
+            if not tab is None: 
+                self.assertTrue(np.all(np.array(df[name]) == tab), name)
+                
 if __name__ == '__main__':    
     unittest.main(verbosity=2)
                                     

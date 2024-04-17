@@ -67,7 +67,8 @@ class Xndarray:
             return
         self.name, self.add_name = Nutil.split_name(full_name)
         self.nda = Ndarray(nda) if not nda is None else None
-        self.links = sorted(links) if links else None
+        #self.links = sorted(links) if links else None
+        self.links = links if links else None
         self.meta = meta if meta else None
         if self.meta is None and self.nda is None:
             raise NdarrayError('A Xndarray has to have metadata or Ndarray')

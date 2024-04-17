@@ -229,6 +229,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     - `shape_dims`
     - `to_canonical`
     - `to_ndarray`
+    - `to_tab_array`
 
     *XdatasetCategory (@property)*
     - `names`
@@ -451,3 +452,30 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
         return data
+
+    def to_tab_array(self, name, dims=None): 
+        '''return a field np.array from a Xndarray defined by name
+        
+        parameters:
+        
+        - name: string - name of the Xndarray to convert
+        - dims: list of string (default None) - order of dimensions to apply
+        '''
+        dims = self.dimensions if not dims else dims
+        n_shape = {nam: len(self[nam]) for nam in dims}
+        dim_name = self.dims(name)
+        if not set(dim_name) <= set(dims):
+            return None
+        add_name = [nam for nam in dims if not nam in dim_name]
+        tab_name = add_name + dim_name
+        
+        til = 1 
+        for nam in add_name:
+            til *= n_shape[nam]
+        shap = [n_shape[nam] for nam in tab_name]
+        order = [dims.index(nam) for nam in tab_name]
+        arr = self[name].darray
+        return Nutil.extend_array(arr, til, shap, order)
+        #old_order = list(range(len(dims)))
+        #arr_tab = np.tile(arr, til).reshape(shap)
+        #return np.moveaxis(arr_tab, old_order, order).flatten()

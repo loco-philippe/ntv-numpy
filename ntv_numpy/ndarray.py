@@ -360,6 +360,21 @@ class Nutil:
             case _:
                 return False
 
+    @staticmethod 
+    def extend_array(arr, til, shap, order):
+        '''return a field np.array from a Xndarray defined by name
+        
+        parameters:
+        
+        - arr: np.array to convert
+        - til: integer - parameter to apply to np.tile function
+        - shap: list of integer - shape of the array 
+        - order: list of integer - order of dimensions to apply
+        '''
+        old_order = list(range(len(order)))
+        arr_tab = np.tile(arr, til).reshape(shap)
+        return np.moveaxis(arr_tab, old_order, order).flatten()
+    
     @staticmethod
     def convert(ntv_type, nda, tojson=True, convert=True):
         ''' convert np.ndarray with external NTVtype.
