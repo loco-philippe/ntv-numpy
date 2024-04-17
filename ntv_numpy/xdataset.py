@@ -430,7 +430,10 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         inf['validity'] = self.validity
         inf['length'] = len(self[self.data_vars[0]]) if self.data_vars else 0
         inf['width'] = len(self)
-        return {key: val for key, val in inf.items() if val}
+        struc = {name: {key: val for key, val in self[name].info.items() if key != 'name'} 
+                 for name in self.names}
+        return {'structure': {key: val for key, val in inf.items() if val},
+                'data': {key: val for key, val in struc.items() if val}}
 
     def to_canonical(self):
         '''remove optional links of the included Xndarray'''

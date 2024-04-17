@@ -86,23 +86,60 @@ class DataFrameConnec:
 
         *Parameters*
 
-        - **json_name** : Boolean (default True) - if False use full_name else json_name      
+        - **json_name**: Boolean (default True) - if False use full_name else json_name  
+        - **info**: Boolean (default True) - if True add xdt.info in DataFrame.attrs
         '''
-        opt = {'json_name': True} | kwargs
+        opt = {'json_name': True, 'info': True} | kwargs
         dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name 
                     for name in xdt.names}
         dic_series = {dic_name[name]: DataFrameConnec.to_series(xdt, name) 
                       for name in xdt.dimensions + xdt.coordinates + xdt.data_vars}
         dfr = pd.DataFrame(dic_series)
-        dfr = dfr.set_index(xdt.dimensions + xdt.coordinates) 
-        #for name in xdt.dimensions + xdt.coordinates:
-        #   dfr = dfr.set_index(dic_name[name]) 
+        dfr = dfr.set_index([dic_name[name] for name in xdt.dimensions + xdt.coordinates]) 
+        dfr.attrs |= {'meta': {name: xdt[name].meta for name in xdt.metadata}}
+        if xdt.name:
+            dfr.attrs |= {'name': xdt.name}
+        if opt['info']:
+            dfr.attrs |= {'info': xdt.info}            
         return dfr
 
     @staticmethod 
     def to_series(xdt, name):
         return xdt.to_tab_array(name)
-    
+
+    @staticmethod
+    def ximport(dfr, Xclass, **kwargs):
+        '''return a Xdataset from a pd.DataFrame'''
+        xnd = []
+        if dfr.attrs.get('meta'):
+            attrs = {k: v for k, v in dfr.attrs['meta'].items() if not k in [
+                'name']}
+            for name, meta in attrs.items():
+                if isinstance(meta, list):
+                    xnd += [Xndarray.read_json({name: meta})]
+                else:
+                    xnd += [Xndarray(name, meta=meta)]
+        if dfr.attrs.get('info'):
+            struc = dfr.attrs['info']['structure']
+            data = dfr.attrs['info']['data']
+
+        for coord in xar.coords:
+            xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
+            if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
+                xnd[-1].links = [list(xar.data_vars)[0]]
+        if isinstance(xar, xr.DataArray):
+            var = XarrayConnec._var_xr_to_xnd(
+                xar, name='data', add_attrs=False)
+            xnd += [XarrayConnec._var_xr_to_xnd(xar,
+                                                name='data', add_attrs=False)]
+            xdt = Xclass(xnd, xar.attrs.get('name'))
+            for var in xdt.data_vars:
+                if var != xar.name and xar.name:
+                    xdt[var].links = [xar.name]
+            return xdt.to_canonical()
+        for var in xar.data_vars:
+            xnd += [XarrayConnec._var_xr_to_xnd(xar.data_vars[var])]
+        return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 class XarrayConnec:
     ''' Xarray interface with two static methods ximport and xexport'''
 
