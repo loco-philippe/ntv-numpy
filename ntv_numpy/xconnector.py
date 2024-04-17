@@ -16,6 +16,7 @@ For more information, see the
 
 import xarray as xr
 import scipp as sc
+import pandas as pd
 from astropy import wcs
 from astropy.nddata import NDData
 from astropy.nddata.nduncertainty import StdDevUncertainty, VarianceUncertainty
@@ -76,7 +77,32 @@ class AstropyNDDataConnec:
             xnd += [Xndarray('data.uncertainty', nda=nda)]
         return Xclass(xnd, name).to_canonical()
 
+class DataFrameConnec:
+    ''' pandas.DataFrame interface with two static methods ximport and xexport'''
 
+    @staticmethod
+    def xexport(xdt, **kwargs):
+        '''return a pd.DataFrame from a Xdataset
+
+        *Parameters*
+
+        - **json_name** : Boolean (default True) - if False use full_name else json_name      
+        '''
+        opt = {'json_name': True} | kwargs
+        dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name 
+                    for name in xdt.names}
+        dic_series = {dic_name[name]: DataFrameConnec.to_series(xdt, name) 
+                      for name in xdt.dimensions + xdt.coordinates + xdt.data_vars}
+        dfr = pd.DataFrame(dic_series)
+        dfr = dfr.set_index(xdt.dimensions + xdt.coordinates) 
+        #for name in xdt.dimensions + xdt.coordinates:
+        #   dfr = dfr.set_index(dic_name[name]) 
+        return dfr
+
+    @staticmethod 
+    def to_series(xdt, name):
+        return xdt.to_tab_array(name)
+    
 class XarrayConnec:
     ''' Xarray interface with two static methods ximport and xexport'''
 
