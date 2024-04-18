@@ -67,7 +67,6 @@ class Xndarray:
             return
         self.name, self.add_name = Nutil.split_name(full_name)
         self.nda = Ndarray(nda) if not nda is None else None
-        #self.links = sorted(links) if links else None
         self.links = links if links else None
         self.meta = meta if meta else None
         if self.meta is None and self.nda is None:
@@ -154,6 +153,8 @@ class Xndarray:
             inf['mode'] = self.mode
             inf['ntvtype'] = self.ntv_type
             inf['shape'] = self.shape
+        inf['uri'] = self.uri
+        inf['meta'] = self.meta
         inf['xtype'] = self.xtype
         inf['links'] = self.links
         return {key: val for key, val in inf.items() if val}
@@ -161,12 +162,12 @@ class Xndarray:
     @property
     def xtype(self):
         '''nature of the Xndarray (undefined, namedarray, variable, additional,
-        inconsistent)'''
+        meta, inconsistent)'''
         match [self.links, self.add_name, self.mode]:
             case [_, _, 'inconsistent']:
                 return 'inconsistent'
             case [_, _, 'undefined']:
-                return 'metadata'
+                return 'meta'
             case [None, '', _]:
                 return 'namedarray'
             case [_, '', _]:

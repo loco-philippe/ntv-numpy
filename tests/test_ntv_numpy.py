@@ -20,6 +20,7 @@ import ntv_pandas as npd
 #from ntv_numpy.numpy_ntv_connector import read_json_tab, to_json_tab
 from ntv_numpy import NdarrayConnec, XndarrayConnec
 from ntv_numpy import Darray, Dfull, Dcomplete, Ndarray, Xndarray, Nutil, Xdataset, Dutil
+from ntv_numpy.xconnector import PandasConnec
  
 from json_ntv import NtvConnector, Ntv, NtvSingle, NtvList
 SeriesConnec = NtvConnector.connector()['SeriesConnec']
@@ -260,8 +261,8 @@ class Test_Xndarray(unittest.TestCase):
                   [{'x.mask': [['boolean', [True, False]]]}, 'absolute', 'additional'],
                   [{'x.variance': [['float64', [0.1, 0.2]]]}, 'absolute', 'additional'],
                   [{'z.variance': [['float64', [0.1, 0.2]]]}, 'absolute', 'additional'],
-                  [{'unit': 'kg'}, 'undefined', 'metadata'],
-                  [{'info': {'example': 'everything'}}, 'undefined', 'metadata'],
+                  [{'unit': 'kg'}, 'undefined', 'meta'],
+                  [{'info': {'example': 'everything'}}, 'undefined', 'meta'],
                 ]
         
         for ex, mode, xtype in example:
@@ -315,7 +316,7 @@ class Test_Xdataset(unittest.TestCase):
         self.assertEqual(xds.to_json(notype=notype, noshape=True, header=False), example)                                          
         self.assertEqual(xds.dimensions, ('x', 'y'))
         self.assertEqual(xds.partition, {'coordinates': ['ranking', 'z'],
-         'data_vars': ['var1', 'var2'], 'metadata': ['info', 'unit'],
+         'data_vars': ['var1', 'var2'], 'uniques': ['unit'], 'metadata': ['info'],
          'additionals': ['x.mask1', 'x.variance', 'z.variance'], 'dimensions': ['x', 'y']})
         
         xdim = Xdataset(xds[xds.dimensions])
@@ -326,8 +327,10 @@ class Test_Xdataset(unittest.TestCase):
     def test_xdataset_info(self):    
         
         xd = Xdataset([Xndarray('example', np.array(['x1', 'x2']))], 'test')
-        self.assertEqual(xd.info, {'name': 'test', 'xtype': 'group', 'validity': 'valid',
-                                   'data_arrays': ['example'], 'width': 1})
+        self.assertEqual(xd.info, {'structure': {'name': 'test', 'xtype': 'group', 
+                'validity': 'valid', 'data_arrays': ['example'], 'width': 1},
+                                   'data': {'example': {'length': 2, 'mode': 'absolute',
+                'ntvtype': 'string', 'shape': [2], 'xtype': 'namedarray'}}})
 
         example = {'test': {
             'var1': [['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], ['x', 'y']],
@@ -343,23 +346,25 @@ class Test_Xdataset(unittest.TestCase):
             'unit': 'kg',
             'info': {'example': 'everything'}}}
         xd = Xdataset.read_json(example)
-        self.assertEqual(xd.info, { 'name': 'test', 'xtype': 'group',
+        self.assertEqual(xd.info['structure'], { 'name': 'test', 'xtype': 'group',
                                     'data_vars': ['var1', 'var2'],
                                     'data_arrays': ['z_bis'],
                                     'dimensions': ['x', 'y'],
                                     'coordinates': ['ranking', 'z'],
                                     'additionals': ['x.mask1', 'x.variance', 'z.variance'],
-                                    'metadata': ['info', 'unit'],
+                                    'metadata': ['info'],
+                                    'uniques': ['unit'],
                                     'validity': 'undefined', 'width': 12})
 
         del(xd[('var1', 'z_bis')])
-        self.assertEqual(xd.info, { 'name': 'test', 'xtype': 'mono',
+        self.assertEqual(xd.info['structure'], { 'name': 'test', 'xtype': 'mono',
                                     'data_vars': ['var2'],
                                     'dimensions': ['x', 'y'],
                                     'length' : 4,
                                     'coordinates': ['ranking', 'z'],
                                     'additionals': ['x.mask1', 'x.variance', 'z.variance'],
-                                    'metadata': ['info', 'unit'],
+                                    'metadata': ['info'],
+                                    'uniques': ['unit'],
                                     'validity': 'valid', 'width': 10})        
 
         example = {'test': {
@@ -376,7 +381,7 @@ class Test_Xdataset(unittest.TestCase):
             'info': {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/'}}}
        
         xd = Xdataset.read_json(example)
-        self.assertEqual(xd.info, { 'name': 'test', 'xtype': 'group',
+        self.assertEqual(xd.info['structure'], { 'name': 'test', 'xtype': 'group',
                                     'data_vars': ['var1', 'var2'],
                                     'data_arrays': ['z_bis'],
                                     'dimensions': ['x', 'y'],
@@ -527,10 +532,14 @@ class Test_Xdataset(unittest.TestCase):
         df = ds.to_dataframe().reset_index()        
         dimensions = ['x', 'y', 'z', 'year']
         for name in xdt.names[:]:
-            tab = xdt.to_tab_array(name, dimensions)
+            #tab = xdt.to_tab_array(name, dimensions)
+            tab = PandasConnec.to_np_series(xdt, name, dimensions)
             if not tab is None: 
                 self.assertTrue(np.all(np.array(df[name]) == tab), name)
-                
+
+        dfr = xdt.to_dataframe(json_name=False)
+        xds = Xdataset.from_dataframe(dfr)
+        
 if __name__ == '__main__':    
     unittest.main(verbosity=2)
                                     

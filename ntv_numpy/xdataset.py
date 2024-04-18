@@ -10,6 +10,7 @@ from json_ntv import Ntv
 from ntv_numpy.ndarray import Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyNDDataConnec
+from ntv_numpy.xconnector import PandasConnec
 
 
 class XdatasetCategory(ABC):
@@ -38,14 +39,14 @@ class XdatasetCategory(ABC):
         dimable = []
         for var in self.variables:
             dimable += self.dims(var)
-        #return tuple(set(nda for nda in dimable if nda in self.namedarrays))
+        # return tuple(set(nda for nda in dimable if nda in self.namedarrays))
         return tuple(sorted(set(nda for nda in dimable if nda in self.namedarrays)))
 
     @property
     def shape(self):
         '''return an array with the length of dimensions'''
         return [len(self[dim]) for dim in self.dimensions]
-    
+
     @property
     def coordinates(self):
         '''return a tuple of coordinates Xndarray full_name'''
@@ -77,32 +78,43 @@ class XdatasetCategory(ABC):
     @property
     def undef_vars(self):
         '''return a tuple of variables Xndarray full_name with inconsistent shape'''
-        return tuple(sorted([var for var in self.variables if self[var].shape !=
-                             [len(self[dim]) for dim in self.dims(var)]]))
+        return tuple(sorted(var for var in self.variables if self[var].shape !=
+                             [len(self[dim]) for dim in self.dims(var)]))
 
     @property
     def undef_links(self):
         '''return a tuple of variables Xndarray full_name with inconsistent links'''
-        return tuple(sorted([link for var in self.variables for link in self[var].links
-                             if not link in self.names]))
+        return tuple(sorted(link for var in self.variables for link in self[var].links
+                             if not link in self.names))
 
     @property
     def masks(self):
         '''return a tuple of additional Xndarray full_name with boolean ntv_type'''
-        return tuple(sorted([xnda.full_name for xnda in self.xnd
-                             if xnda.xtype == 'additional' and xnda.ntv_type == 'boolean']))
+        return tuple(sorted(xnda.full_name for xnda in self.xnd
+                             if xnda.xtype == 'additional' and xnda.ntv_type == 'boolean'))
 
     @property
     def data_add(self):
         '''return a tuple of additional Xndarray full_name with not boolean ntv_type'''
-        return tuple(sorted([xnda.full_name for xnda in self.xnd
-                             if xnda.xtype == 'additional' and xnda.ntv_type != 'boolean']))
+        return tuple(sorted(xnda.full_name for xnda in self.xnd
+                             if xnda.xtype == 'additional' and xnda.ntv_type != 'boolean'))
+
+    @property
+    def meta(self):
+        '''return a tuple of meta Xndarray full_name'''
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'meta'))
 
     @property
     def metadata(self):
         '''return a tuple of metadata Xndarray full_name'''
-        return tuple(sorted(xnda.name for xnda in self.xnd if xnda.xtype == 'metadata'))
+        return tuple(sorted(xnda.full_name for xnda in self.xnd
+                            if xnda.xtype == 'meta' and isinstance(xnda.meta, (list, dict))))
 
+    @property
+    def uniques(self):
+        '''return a tuple of unique Xndarray full_name'''
+        return tuple(sorted(xnda.full_name for xnda in self.xnd
+                            if xnda.xtype == 'meta' and not xnda.full_name in self.metadata))
     @property
     def additionals(self):
         '''return a tuple of additionals Xndarray full_name'''
@@ -208,6 +220,15 @@ class XdatasetInterface(ABC):
         '''return a Xdataset from a NDData'''
         return AstropyNDDataConnec.ximport(ndd, Xdataset, **kwargs)
 
+    def to_dataframe(self, **kwargs):
+        '''return a pd.DataFrame from a Xdataset'''
+        return PandasConnec.xexport(self, **kwargs)
+
+    @staticmethod
+    def from_dataframe(dfr, **kwargs):
+        '''return a Xdataset from a pd.DataFrame'''
+        return PandasConnec.ximport(dfr, Xdataset, **kwargs)
+
 
 class Xdataset(XdatasetCategory, XdatasetInterface):
     ''' Representation of a multidimensional Dataset
@@ -221,6 +242,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     - `validity`
     - `dic_xnd`
     - `partition`
+    - `length`
     - `info`
 
     *methods*
@@ -229,7 +251,6 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     - `shape_dims`
     - `to_canonical`
     - `to_ndarray`
-    - `to_tab_array`
 
     *XdatasetCategory (@property)*
     - `names`
@@ -244,7 +265,9 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     - `undef_links`
     - `masks`
     - `data_add`
+    - `meta`
     - `metadata`
+    - `uniques`
     - `additionals`
     - `var_group`
     - `add_group`
@@ -258,6 +281,8 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     - `to_scipp`
     - `from_nddata` (static)
     - `to_nddata`
+    - `from_dataframe` (static)
+    - `to_dataframe`
     '''
 
     def __init__(self, xnd=None, name=None):
@@ -385,7 +410,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     @property
     def xtype(self):
         '''return the Xdataset type: 'meta', 'group', 'mono', 'multi' '''
-        if self.metadata and not (self.additionals or self.variables or
+        if self.meta and not (self.additionals or self.variables or
                                   self.namedarrays):
             return 'meta'
         if self.validity != 'valid':
@@ -404,6 +429,11 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         return {xnda.full_name: xnda for xnda in self.xnd}
 
     @property
+    def length(self):
+        '''return the max length of Xndarray'''
+        return max(len(xnda) for xnda in self.xnd)
+    
+    @property
     def names(self):
         '''return a tuple with the Xndarray full_name'''
         return tuple(xnda.full_name for xnda in self.xnd)
@@ -421,6 +451,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         dic |= {'additionals': list(self.additionals)
                 } if self.additionals else {}
         dic |= {'metadata': list(self.metadata)} if self.metadata else {}
+        dic |= {'uniques': list(self.uniques)} if self.uniques else {}
         return dic
 
     @property
@@ -430,7 +461,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         inf['validity'] = self.validity
         inf['length'] = len(self[self.data_vars[0]]) if self.data_vars else 0
         inf['width'] = len(self)
-        struc = {name: {key: val for key, val in self[name].info.items() if key != 'name'} 
+        struc = {name: {key: val for key, val in self[name].info.items() if key != 'name'}
                  for name in self.names}
         return {'structure': {key: val for key, val in inf.items() if val},
                 'data': {key: val for key, val in struc.items() if val}}
@@ -455,30 +486,3 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
         return data
-
-    def to_tab_array(self, name, dims=None): 
-        '''return a field np.array from a Xndarray defined by name
-        
-        parameters:
-        
-        - name: string - name of the Xndarray to convert
-        - dims: list of string (default None) - order of dimensions to apply
-        '''
-        dims = self.dimensions if not dims else dims
-        n_shape = {nam: len(self[nam]) for nam in dims}
-        dim_name = self.dims(name)
-        if not set(dim_name) <= set(dims):
-            return None
-        add_name = [nam for nam in dims if not nam in dim_name]
-        tab_name = add_name + dim_name
-        
-        til = 1 
-        for nam in add_name:
-            til *= n_shape[nam]
-        shap = [n_shape[nam] for nam in tab_name]
-        order = [dims.index(nam) for nam in tab_name]
-        arr = self[name].darray
-        return Nutil.extend_array(arr, til, shap, order)
-        #old_order = list(range(len(dims)))
-        #arr_tab = np.tile(arr, til).reshape(shap)
-        #return np.moveaxis(arr_tab, old_order, order).flatten()

@@ -78,7 +78,7 @@ class AstropyNDDataConnec:
             xnd += [Xndarray('data.uncertainty', nda=nda)]
         return Xclass(xnd, name).to_canonical()
 
-class DataFrameConnec:
+class PandasConnec:
     ''' pandas.DataFrame interface with two static methods ximport and xexport'''
 
     @staticmethod
@@ -93,26 +93,74 @@ class DataFrameConnec:
         opt = {'json_name': True, 'info': True} | kwargs
         dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name 
                     for name in xdt.names}
-        dic_series = {dic_name[name]: DataFrameConnec.to_series(xdt, name) 
-                      for name in xdt.dimensions + xdt.coordinates + xdt.data_vars}
+        dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name) 
+                      for name in xdt.dimensions + xdt.coordinates + xdt.data_vars + xdt.uniques}
         dfr = pd.DataFrame(dic_series)
         dfr = dfr.set_index([dic_name[name] for name in xdt.dimensions + xdt.coordinates]) 
-        dfr.attrs |= {'meta': {name: xdt[name].meta for name in xdt.metadata}}
+        dfr.attrs |= {'metadata': {name: xdt[name].meta for name in xdt.metadata}}
         if xdt.name:
             dfr.attrs |= {'name': xdt.name}
         if opt['info']:
             dfr.attrs |= {'info': xdt.info}            
         return dfr
 
+    @staticmethod
+    def ximport(df, Xclass, **kwargs):
+        '''return a Xdataset from a pd.DataFrame
+
+        *Parameters*
+        
+        - dims: list of string (default None) - order of dimensions to apply
+        '''
+        opt = {'dims': None} | kwargs
+        xnd = []
+        dfr = df.reset_index()
+        if dfr.attrs.get('meta'):
+            attrs = {k: v for k, v in dfr.attrs['meta'].items() 
+                     if not k in ['name']}
+            for name, meta in attrs.items():
+                if isinstance(meta, list):
+                    xnd += [Xndarray.read_json({name: meta})]
+                else:
+                    xnd += [Xndarray(name, meta=meta)]
+        if dfr.attrs.get('info'):
+            struc = dfr.attrs['info']['structure']
+            data = dfr.attrs['info']['data']
+        dimensions = struc['dimensions']
+        shape = [data[dim]['shape'][0] for dim in dimensions]
+        for name in dfr.columns:
+            links = []
+            PandasConnec.get_dims(links, name, data, dimensions)
+            nda = PandasConnec.from_series(dfr, name, shape, dimensions, links, opt['dims'])
+            xnd += [Xndarray(name, nda=nda, links=links)]
+        return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
+
     @staticmethod 
-    def to_series(xdt, name):
-        '''return a pd.Series from the Xndarray of xdt defined by his name
+    def to_np_series(xdt, name, dims=None):
+        '''return a np.ndarray from the Xndarray of xdt defined by his name
         
         *parameters*
         
         - xdt: Xdataset - data to convert in a pd.DataFrame
-        - name: string - full_name of the Xndarray'''
-        return xdt.to_tab_array(name, dims=None)
+        - name: string - full_name of the Xndarray to convert
+        - dims: list of string (default None) - order of dimensions to apply'''
+        if name in xdt.uniques:
+            return np.repeat(xdt[name].darray, xdt.length)
+        dims = xdt.dimensions if not dims else dims
+        n_shape = {nam: len(xdt[nam]) for nam in dims}
+        dim_name = xdt.dims(name)
+        if not set(dim_name) <= set(dims):
+            return None
+        add_name = [nam for nam in dims if not nam in dim_name]
+        tab_name = add_name + dim_name
+
+        til = 1
+        for nam in add_name:
+            til *= n_shape[nam]
+        shap = [n_shape[nam] for nam in tab_name]
+        order = [dims.index(nam) for nam in tab_name]
+        arr = xdt[name].darray
+        return Nutil.extend_array(arr, til, shap, order)
 
     @staticmethod 
     def from_series(dfr, name, shape, dims, links, new_dims=None):
@@ -147,40 +195,6 @@ class DataFrameConnec:
         order = [lnk.index(dim) for dim in links]
         #print(lnk, shape_lnk, old_order, order, links)
         return np.moveaxis(xar, old_order, order)
-    
-    @staticmethod
-    def ximport(df, Xclass, **kwargs):
-        '''return a Xdataset from a pd.DataFrame
-
-        *Parameters*
-        
-        - dims: list of string (default None) - order of dimensions to apply
-        '''
-        opt = {'dims': None} | kwargs
-        xnd = []
-        dfr = df.reset_index()
-        if dfr.attrs.get('meta'):
-            attrs = {k: v for k, v in dfr.attrs['meta'].items() 
-                     if not k in ['name']}
-            for name, meta in attrs.items():
-                if isinstance(meta, list):
-                    xnd += [Xndarray.read_json({name: meta})]
-                else:
-                    xnd += [Xndarray(name, meta=meta)]
-        if dfr.attrs.get('info'):
-            struc = dfr.attrs['info']['structure']
-            data = dfr.attrs['info']['data']
-        dimensions = struc['dimensions']
-        shape = [data[dim]['shape'][0] for dim in dimensions]
-        for name in dfr.columns:
-            links = []
-            DataFrameConnec.get_dims(links, name, data, dimensions)
-            nda = DataFrameConnec.from_series(dfr, name, shape, dimensions, links, opt['dims'])
-            xnd += [Xndarray(name, nda=nda, links=links)]
-        #print(dfr.attrs.get('name'))
-        #print(xnd)
-        #print(Xclass(xnd, dfr.attrs.get('name')))
-        return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
     @staticmethod 
     def get_dims(dims, name, data, dimensions):
@@ -194,7 +208,7 @@ class DataFrameConnec:
             if not links:
                 return
             for nam in links:
-                DataFrameConnec.get_dims(dims, nam, data, dimensions)
+                PandasConnec.get_dims(dims, nam, data, dimensions)
     
 class XarrayConnec:
     ''' Xarray interface with two static methods ximport and xexport'''
