@@ -17,6 +17,7 @@ For more information, see the
 import xarray as xr
 import scipp as sc
 import pandas as pd
+import numpy as np
 from astropy import wcs
 from astropy.nddata import NDData
 from astropy.nddata.nduncertainty import StdDevUncertainty, VarianceUncertainty
@@ -107,9 +108,27 @@ class DataFrameConnec:
     def to_series(xdt, name):
         return xdt.to_tab_array(name)
 
+    @staticmethod 
+    def from_series(dfr, name, shape, new_dims, dims, links):
+        old_order = list(range(dims))
+        #order = order if order else old_order
+        order = [dims.index(dim) for dim in new_dims] if new_dims else old_order
+
+        index = [0] * len(dims)
+        for name in links:
+            index[new_dims.index(name)] = slice(shape[dims.index(name)])
+        return np.moveaxis(np.array(dfr[name]).reshape(shape),
+                        old_order, order)[*index].flatten()
+    
     @staticmethod
     def ximport(dfr, Xclass, **kwargs):
-        '''return a Xdataset from a pd.DataFrame'''
+        '''return a Xdataset from a pd.DataFrame
+
+        *Parameters*
+        
+        - dims: list of string (default None) - order of dimensions to apply
+        '''
+        opt = {'dims': None} | kwargs
         xnd = []
         if dfr.attrs.get('meta'):
             attrs = {k: v for k, v in dfr.attrs['meta'].items() if not k in [
@@ -122,24 +141,23 @@ class DataFrameConnec:
         if dfr.attrs.get('info'):
             struc = dfr.attrs['info']['structure']
             data = dfr.attrs['info']['data']
-
-        for coord in xar.coords:
-            xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
-            if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
-                xnd[-1].links = [list(xar.data_vars)[0]]
-        if isinstance(xar, xr.DataArray):
-            var = XarrayConnec._var_xr_to_xnd(
-                xar, name='data', add_attrs=False)
-            xnd += [XarrayConnec._var_xr_to_xnd(xar,
-                                                name='data', add_attrs=False)]
-            xdt = Xclass(xnd, xar.attrs.get('name'))
-            for var in xdt.data_vars:
-                if var != xar.name and xar.name:
-                    xdt[var].links = [xar.name]
-            return xdt.to_canonical()
-        for var in xar.data_vars:
-            xnd += [XarrayConnec._var_xr_to_xnd(xar.data_vars[var])]
+        dimensions = struc['dimensions']
+        shape = [data[dim]['shape'][0] for dim in dimensions]
+        for name in dfr.columns:
+            links = DataFrameConnec.get_dims(data[name].get('links'), data, dimensions)
+            nda = DataFrameConnec.from_series(dfr, name, shape, opt['dims'], dimensions, links)
+            xnd += Xndarray(name, nda=nda, links=links)
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
+
+    @staticmethod 
+    def get_dims(links, data, dimensions):
+        dims = []
+        for name in links:
+            if name in dimensions:
+                dims += [name]
+            else:
+                dims += DataFrameConnec.get_dims(data[name]['links'], data, dimensions)
+        return dims
 class XarrayConnec:
     ''' Xarray interface with two static methods ximport and xexport'''
 

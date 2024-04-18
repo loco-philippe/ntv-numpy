@@ -19,18 +19,24 @@ ds = xr.Dataset(
     })
 xdt = Xdataset.from_xarray(ds)
 df = ds.to_dataframe().reset_index()
-dfr = DataFrameConnec.xexport(xdt)
+dfr = DataFrameConnec.xexport(xdt, json_name=False)
+
+dfr = dfr.reset_index()
 print(dfr.attrs['info']['structure'])
-y = np.array(df['y']).reshape(2,3,2,3)[0, :, 0, 0].flatten()
+x = np.moveaxis(np.array(dfr['x']).reshape(2,3,2,3),
+                [0,1,2,3], [0,1,3,2])[:, 0, 0, 0].flatten()
+print(x)
+y = np.moveaxis(np.array(dfr['y']).reshape(2,3,2,3),
+                [0,1,2,3], [0,1,3,2])[0, :, 0, 0].flatten()
 print(y)
-point = np.array(df['point']).reshape(2,3,2,3)[:, :, 0, 0].flatten()
+z = np.moveaxis(np.array(dfr['z']).reshape(2,3,2,3),
+                [0,1,2,3], [0,1,3,2])[0, 0, :, 0].flatten()
+print(z)
+point = np.moveaxis(np.array(dfr['point']).reshape(2,3,2,3),
+                    [0,1,2,3], [0,1,3,2])[:, :, 0, 0].flatten()
 print(point)
-foo = np.moveaxis(np.array(df['foo']).reshape(2,3,2,3), 
-                [0,1,2,3], [1,0,2,3]).flatten()
-                #[0,1,2,3], [0,1,3,2]).flatten()
-
-print(np.array(df['foo']).reshape(2,3,2,3).flatten())
-print(df['foo'])
-
+foo = np.moveaxis(np.array(dfr['foo']).reshape(2,3,2,3), 
+                  [0,1,2,3], [0,1,3,2])[:, :, :, :].flatten()
 print(foo)
 print(xdt['foo'].darray)
+
