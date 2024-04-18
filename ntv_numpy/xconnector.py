@@ -144,20 +144,25 @@ class DataFrameConnec:
         dimensions = struc['dimensions']
         shape = [data[dim]['shape'][0] for dim in dimensions]
         for name in dfr.columns:
-            links = DataFrameConnec.get_dims(data[name].get('links'), data, dimensions)
+            links = []
+            DataFrameConnec.get_dims(links, name, data, dimensions)
             nda = DataFrameConnec.from_series(dfr, name, shape, opt['dims'], dimensions, links)
             xnd += Xndarray(name, nda=nda, links=links)
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
     @staticmethod 
-    def get_dims(links, data, dimensions):
-        dims = []
-        for name in links:
-            if name in dimensions:
-                dims += [name]
-            else:
-                dims += DataFrameConnec.get_dims(data[name]['links'], data, dimensions)
-        return dims
+    def get_dims(dims, name, data, dimensions):
+        if not name:
+            return
+        if name in dimensions:
+            dims += [name]
+        else:
+            links = data[name]['links']
+            if not links:
+                return
+            for nam in links:
+                DataFrameConnec.get_dims(dims, nam, data, dimensions)
+    
 class XarrayConnec:
     ''' Xarray interface with two static methods ximport and xexport'''
 
