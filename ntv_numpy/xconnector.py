@@ -106,22 +106,50 @@ class DataFrameConnec:
 
     @staticmethod 
     def to_series(xdt, name):
-        return xdt.to_tab_array(name)
+        '''return a pd.Series from the Xndarray of xdt defined by his name
+        
+        *parameters*
+        
+        - xdt: Xdataset - data to convert in a pd.DataFrame
+        - name: string - full_name of the Xndarray'''
+        return xdt.to_tab_array(name, dims=None)
 
     @staticmethod 
-    def from_series(dfr, name, shape, new_dims, dims, links):
-        old_order = list(range(dims))
-        #order = order if order else old_order
+    def from_series(dfr, name, shape, dims, links, new_dims=None):
+        '''return a np.ndarray from the pd.Series of dfr defined by his name
+        
+        *parameters*
+        
+        - dfr: DataFrame - data to convert in Xdataset
+        - name: string - name of the Series (full_name or json_name)
+        - shape: shape of the Xdataset
+        - dims: list of string - list of name of dimensions 
+        - links: list of string - list of linked Series
+        - new_dims: list of string (default None) - new order of dims       
+        '''
+        old_order = list(range(len(dims)))
+        new_dims = new_dims if new_dims else dims
+        #print(links, dims, new_dims)
         order = [dims.index(dim) for dim in new_dims] if new_dims else old_order
-
-        index = [0] * len(dims)
-        for name in links:
-            index[new_dims.index(name)] = slice(shape[dims.index(name)])
-        return np.moveaxis(np.array(dfr[name]).reshape(shape),
-                        old_order, order)[*index].flatten()
+        #print(old_order, order)
+        idx = [0] * len(dims)
+        shape_lnk = []
+        for nam in links:
+            idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
+        #print(dims, shape, idx, name)
+        xar = np.moveaxis(np.array(dfr[name]).reshape(shape), old_order, order)[*idx]
+        if not links:
+            return xar
+        lnk = [nam for nam in new_dims if nam in links]
+        shape_lnk =[shape[dims.index(nam)] for nam in lnk]
+        xar = xar.reshape(shape_lnk)
+        old_order = list(range(len(links)))
+        order = [lnk.index(dim) for dim in links]
+        #print(lnk, shape_lnk, old_order, order, links)
+        return np.moveaxis(xar, old_order, order)
     
     @staticmethod
-    def ximport(dfr, Xclass, **kwargs):
+    def ximport(df, Xclass, **kwargs):
         '''return a Xdataset from a pd.DataFrame
 
         *Parameters*
@@ -130,9 +158,10 @@ class DataFrameConnec:
         '''
         opt = {'dims': None} | kwargs
         xnd = []
+        dfr = df.reset_index()
         if dfr.attrs.get('meta'):
-            attrs = {k: v for k, v in dfr.attrs['meta'].items() if not k in [
-                'name']}
+            attrs = {k: v for k, v in dfr.attrs['meta'].items() 
+                     if not k in ['name']}
             for name, meta in attrs.items():
                 if isinstance(meta, list):
                     xnd += [Xndarray.read_json({name: meta})]
@@ -146,12 +175,16 @@ class DataFrameConnec:
         for name in dfr.columns:
             links = []
             DataFrameConnec.get_dims(links, name, data, dimensions)
-            nda = DataFrameConnec.from_series(dfr, name, shape, opt['dims'], dimensions, links)
-            xnd += Xndarray(name, nda=nda, links=links)
+            nda = DataFrameConnec.from_series(dfr, name, shape, dimensions, links, opt['dims'])
+            xnd += [Xndarray(name, nda=nda, links=links)]
+        #print(dfr.attrs.get('name'))
+        #print(xnd)
+        #print(Xclass(xnd, dfr.attrs.get('name')))
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
     @staticmethod 
     def get_dims(dims, name, data, dimensions):
+        '''add names of dimensions into dims''' 
         if not name:
             return
         if name in dimensions:
