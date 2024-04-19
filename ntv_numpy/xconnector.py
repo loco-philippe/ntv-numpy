@@ -93,11 +93,16 @@ class PandasConnec:
         opt = {'json_name': True, 'info': True} | kwargs
         dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name 
                     for name in xdt.names}
+        fields = xdt.dimensions + xdt.coordinates + xdt.uniques
+        fields += tuple(var for var in xdt.data_vars if not xdt[var].uri)
         dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name) 
-                      for name in xdt.dimensions + xdt.coordinates + xdt.data_vars + xdt.uniques}
+                      for name in fields}
         dfr = pd.DataFrame(dic_series)
         dfr = dfr.set_index([dic_name[name] for name in xdt.dimensions + xdt.coordinates]) 
         dfr.attrs |= {'metadata': {name: xdt[name].meta for name in xdt.metadata}}
+        var_uri = [var for var in xdt.data_vars if xdt[var].uri]
+        for var in var_uri:
+            dfr.attrs |= xdt[var].to_json()
         if xdt.name:
             dfr.attrs |= {'name': xdt.name}
         if opt['info']:
@@ -144,8 +149,9 @@ class PandasConnec:
         - xdt: Xdataset - data to convert in a pd.DataFrame
         - name: string - full_name of the Xndarray to convert
         - dims: list of string (default None) - order of dimensions to apply'''
+        print(name)
         if name in xdt.uniques:
-            return np.repeat(xdt[name].darray, xdt.length)
+            return np.array([xdt[name].meta] * xdt.length)
         dims = xdt.dimensions if not dims else dims
         n_shape = {nam: len(xdt[nam]) for nam in dims}
         dim_name = xdt.dims(name)

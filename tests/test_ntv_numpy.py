@@ -509,7 +509,8 @@ class Test_Xdataset(unittest.TestCase):
             'z.uncertainty': [[[0.1, 0.2]]],
             'z.variance': [['float', [0.1, 0.2]]],
 
-            'info': {'example': 'everything'}
+            'info': {'example': 'everything'},
+            'location': 'paris'
             } }
             ]
         for example in examples:
