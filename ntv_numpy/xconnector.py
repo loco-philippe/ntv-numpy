@@ -126,6 +126,11 @@ class PandasConnec:
         opt = {'dims': None} | kwargs
         xnd = []
         dfr = df.reset_index()
+        df_names = {Nutil.split_json_name(j_name)[0]: j_name
+                    for j_name in dfr.columns}
+        df_ntv_types = {Nutil.split_json_name(j_name)[0]: 
+                        Nutil.split_json_name(j_name)[1] for j_name in dfr.columns}
+        dfr.columns = [Nutil.split_json_name(name)[0] for name in dfr.columns] 
         if dfr.attrs.get('metadata'):
             for name, meta in dfr.attrs['metadata'].items():
                 xnd += [Xndarray.read_json({name: meta})]
@@ -136,13 +141,18 @@ class PandasConnec:
             struc = dfr.attrs['info']['structure']
             data = dfr.attrs['info']['data']
         dimensions = struc['dimensions']
-        shape = [data[dim]['shape'][0] for dim in dimensions]
-        df_names = [Nutil.split_json_name(name)[0] for name in dfr.columns]
+        shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
+        #df_names = [Nutil.split_json_name(name)[0] for name in dfr.columns]
         for name in df_names:
             links = []
             PandasConnec.get_dims(links, name, data, dimensions)
-            nda = PandasConnec.from_series(dfr, name, shape, dimensions, links, opt['dims'])
-            xnd += [Xndarray(name, nda=nda, links=links)]
+            links = [Nutil.split_json_name(name)[0] for name in links]
+            shape = data[name]['shape']
+            ntv_type = df_ntv_types[name]
+            np_array = PandasConnec.from_series(dfr, name, shape_dfr, dimensions, 
+                                                links, opt['dims'])            
+            print(name, np_array, ntv_type, shape)
+            xnd += [Xndarray(name, nda=Ndarray(np_array, ntv_type, shape), links=links)]
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
     @staticmethod 
@@ -186,8 +196,6 @@ class PandasConnec:
         - links: list of string - list of linked Series
         - new_dims: list of string (default None) - new order of dims       
         '''
-        df_names = {Nutil.split_json_name(json_name)[0]: json_name
-                    for json_name in dfr.columns}
 
         old_order = list(range(len(dims)))
         new_dims = new_dims if new_dims else dims
@@ -218,10 +226,12 @@ class PandasConnec:
         if name in dimensions:
             dims += [name]
         else:
-            links = data[name]['links']
-            if not links:
+            #links = data[name]['links']
+            #if not links:
+            if not 'links' in data[name]:
                 return
-            for nam in links:
+            #for nam in links:
+            for nam in data[name]['links']:
                 PandasConnec.get_dims(dims, nam, data, dimensions)
     
 class XarrayConnec:
