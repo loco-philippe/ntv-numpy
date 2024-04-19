@@ -93,16 +93,22 @@ class PandasConnec:
         opt = {'json_name': True, 'info': True} | kwargs
         dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name 
                     for name in xdt.names}
-        fields = xdt.dimensions + xdt.coordinates + xdt.uniques
-        fields += tuple(var for var in xdt.data_vars if not xdt[var].uri)
+        fields = xdt.group(xdt.dimensions) + xdt.group(xdt.coordinates) + xdt.group(xdt.data_vars) + xdt.uniques
+        fields += tuple(nam for nam in xdt.group(xdt.data_arrays) 
+                        if len(xdt[nam]) == xdt.length)
+        fields_array = tuple(var for var in fields if not xdt[var].uri)
         dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name) 
-                      for name in fields}
+                      for name in fields_array}
         dfr = pd.DataFrame(dic_series)
-        dfr = dfr.set_index([dic_name[name] for name in xdt.dimensions + xdt.coordinates]) 
+        index = [dic_name[name] for name in xdt.dimensions + xdt.coordinates]
+        dfr = dfr.set_index(index) 
         dfr.attrs |= {'metadata': {name: xdt[name].meta for name in xdt.metadata}}
-        var_uri = [var for var in xdt.data_vars if xdt[var].uri]
-        for var in var_uri:
-            dfr.attrs |= xdt[var].to_json()
+        fields_uri = [var for var in fields if not var in fields_array]
+        fields_other = [nam for nam in xdt.group(xdt.data_arrays) 
+                        if len(xdt[nam]) != xdt.length]
+        if fields_uri:
+            dfr.attrs |= {'fields': {nam: xdt[nam].to_json(noname=True) 
+                                     for nam in fields_uri + fields_other}}
         if xdt.name:
             dfr.attrs |= {'name': xdt.name}
         if opt['info']:
@@ -120,20 +126,19 @@ class PandasConnec:
         opt = {'dims': None} | kwargs
         xnd = []
         dfr = df.reset_index()
-        if dfr.attrs.get('meta'):
-            attrs = {k: v for k, v in dfr.attrs['meta'].items() 
-                     if not k in ['name']}
-            for name, meta in attrs.items():
-                if isinstance(meta, list):
-                    xnd += [Xndarray.read_json({name: meta})]
-                else:
-                    xnd += [Xndarray(name, meta=meta)]
+        if dfr.attrs.get('metadata'):
+            for name, meta in dfr.attrs['metadata'].items():
+                xnd += [Xndarray.read_json({name: meta})]
+        if dfr.attrs.get('fields'):
+            for name, jsn in dfr.attrs['fields'].items():
+                xnd += [Xndarray.read_json({name: jsn})]                    
         if dfr.attrs.get('info'):
             struc = dfr.attrs['info']['structure']
             data = dfr.attrs['info']['data']
         dimensions = struc['dimensions']
         shape = [data[dim]['shape'][0] for dim in dimensions]
-        for name in dfr.columns:
+        df_names = [Nutil.split_json_name(name)[0] for name in dfr.columns]
+        for name in df_names:
             links = []
             PandasConnec.get_dims(links, name, data, dimensions)
             nda = PandasConnec.from_series(dfr, name, shape, dimensions, links, opt['dims'])
@@ -149,7 +154,7 @@ class PandasConnec:
         - xdt: Xdataset - data to convert in a pd.DataFrame
         - name: string - full_name of the Xndarray to convert
         - dims: list of string (default None) - order of dimensions to apply'''
-        print(name)
+        #print(name)
         if name in xdt.uniques:
             return np.array([xdt[name].meta] * xdt.length)
         dims = xdt.dimensions if not dims else dims
@@ -181,6 +186,9 @@ class PandasConnec:
         - links: list of string - list of linked Series
         - new_dims: list of string (default None) - new order of dims       
         '''
+        df_names = {Nutil.split_json_name(json_name)[0]: json_name
+                    for json_name in dfr.columns}
+
         old_order = list(range(len(dims)))
         new_dims = new_dims if new_dims else dims
         #print(links, dims, new_dims)
@@ -464,7 +472,7 @@ class ScippConnec:
         '''return a scipp.DataArray from a xdataset.global_var defined by his name'''
         scipp_name, data = ScippConnec._to_scipp_var(xdt, name, **option)
         masks = dict([ScippConnec._to_scipp_var(xdt, nam, **option)
-                     for nam in set(xdt.var_group(name)) & set(xdt.masks)])
+                     for nam in set(xdt.group(name)) & set(xdt.masks)])
         return (scipp_name, sc.DataArray(data, coords=coords, masks=masks))
 
     @staticmethod

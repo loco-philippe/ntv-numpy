@@ -120,9 +120,12 @@ class XdatasetCategory(ABC):
         '''return a tuple of additionals Xndarray full_name'''
         return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'additional'))
 
-    def var_group(self, name):
+    def group(self, grp):
         '''return a tuple of Xndarray full_name with the same name'''
-        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.name == name))
+        if isinstance(grp, str):
+            return tuple(sorted(xnda.full_name for xnda in self.xnd 
+                                if xnda.name == grp or xnda.full_name == grp))
+        return tuple(sorted(nam for gr_nam in grp for nam in self.group(gr_nam)))
 
     def add_group(self, add_name):
         '''return a tuple of Xndarray full_name with the same add_name'''
@@ -269,7 +272,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     - `metadata`
     - `uniques`
     - `additionals`
-    - `var_group`
+    - `group`
     - `add_group`
 
     *XdatasetInterface methods *
