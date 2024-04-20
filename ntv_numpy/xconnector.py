@@ -144,15 +144,25 @@ class PandasConnec:
         shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
         #df_names = [Nutil.split_json_name(name)[0] for name in dfr.columns]
         for name in df_names:
-            links = []
-            PandasConnec.get_dims(links, name, data, dimensions)
-            links = [Nutil.split_json_name(name)[0] for name in links]
-            shape = data[name]['shape']
-            ntv_type = df_ntv_types[name]
-            np_array = PandasConnec.from_series(dfr, name, shape_dfr, dimensions, 
-                                                links, opt['dims'])            
-            print(name, np_array, ntv_type, shape)
-            xnd += [Xndarray(name, nda=Ndarray(np_array, ntv_type, shape), links=links)]
+            if data[name]['xtype'] == 'meta':
+                xnd += [Xndarray(name, meta=dfr[name].iloc[0])]
+            else:
+                links = []
+                PandasConnec.get_dims(links, name, data, dimensions)
+                links = [Nutil.split_json_name(nam)[0] for nam in links]
+                if not links:
+                    p_name = Nutil.split_name(Nutil.split_json_name(name)[0])[1]
+                    if p_name:
+                        PandasConnec.get_dims(links, p_name, data, dimensions)
+                        links = [Nutil.split_json_name(nam)[0] for nam in links]
+                print('name-links: ', name, links)
+                np_array = PandasConnec.from_series(dfr, name, shape_dfr,  
+                                                    dimensions, links, opt['dims'])            
+                shape = data[name].get('shape', [len(dfr)])
+                ntv_type = df_ntv_types[name]
+                print(name, np_array, ntv_type, shape)
+                nda=Ndarray(np_array, ntv_type, shape)
+                xnd += [Xndarray(name, nda=nda, links=links)]
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
     @staticmethod 
@@ -185,7 +195,7 @@ class PandasConnec:
 
     @staticmethod 
     def from_series(dfr, name, shape, dims, links, new_dims=None):
-        '''return a np.ndarray from the pd.Series of dfr defined by his name
+        '''return a flattened np.ndarray from the pd.Series of dfr defined by his name
         
         *parameters*
         
@@ -202,21 +212,21 @@ class PandasConnec:
         #print(links, dims, new_dims)
         order = [dims.index(dim) for dim in new_dims] if new_dims else old_order
         #print(old_order, order)
-        idx = [0] * len(dims)
-        shape_lnk = []
+
+        idx = [0] * len(dims)        
         for nam in links:
             idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
-        #print(dims, shape, idx, name)
+        print('from_series : ', dims, links, shape, idx, name)
         xar = np.moveaxis(np.array(dfr[name]).reshape(shape), old_order, order)[*idx]
         if not links:
-            return xar
+            return xar.flatten()
         lnk = [nam for nam in new_dims if nam in links]
         shape_lnk =[shape[dims.index(nam)] for nam in lnk]
         xar = xar.reshape(shape_lnk)
         old_order = list(range(len(links)))
         order = [lnk.index(dim) for dim in links]
         #print(lnk, shape_lnk, old_order, order, links)
-        return np.moveaxis(xar, old_order, order)
+        return np.moveaxis(xar, old_order, order).flatten()
 
     @staticmethod 
     def get_dims(dims, name, data, dimensions):
