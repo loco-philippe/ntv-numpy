@@ -138,31 +138,30 @@ class PandasConnec:
             for name, jsn in dfr.attrs['fields'].items():
                 xnd += [Xndarray.read_json({name: jsn})]                    
         if dfr.attrs.get('info'):
-            struc = dfr.attrs['info']['structure']
+            dimensions = dfr.attrs['info']['structure']['dimensions']
             data = dfr.attrs['info']['data']
-        dimensions = struc['dimensions']
+        else:
+            ...
         shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
-        #df_names = [Nutil.split_json_name(name)[0] for name in dfr.columns]
         for name in df_names:
-            if data[name]['xtype'] == 'meta':
+            if data[name].get('xtype') == 'meta' or len(dfr[name].unique())==1:
                 xnd += [Xndarray(name, meta=dfr[name].iloc[0])]
             else:
-                links = []
-                PandasConnec.get_dims(links, name, data, dimensions)
-                links = [Nutil.split_json_name(nam)[0] for nam in links]
-                if not links:
-                    p_name = Nutil.split_name(Nutil.split_json_name(name)[0])[1]
-                    if p_name:
-                        PandasConnec.get_dims(links, p_name, data, dimensions)
-                        links = [Nutil.split_json_name(nam)[0] for nam in links]
-                print('name-links: ', name, links)
+                dims = []
+                PandasConnec.get_dims(dims, name, data, dimensions)
+                if not dims:
+                    p_name, add_name = Nutil.split_name(name)
+                    if add_name:
+                        PandasConnec.get_dims(dims, p_name, data, dimensions)
+                #print('name-dims: ', name, dims)
                 np_array = PandasConnec.from_series(dfr, name, shape_dfr,  
-                                                    dimensions, links, opt['dims'])            
+                                                    dimensions, dims, opt['dims'])            
                 shape = data[name].get('shape', [len(dfr)])
                 ntv_type = df_ntv_types[name]
-                print(name, np_array, ntv_type, shape)
+                #print(name, np_array, ntv_type, shape)
                 nda=Ndarray(np_array, ntv_type, shape)
-                xnd += [Xndarray(name, nda=nda, links=links)]
+                links = data[name].get('links')
+                xnd += [Xndarray(name, nda=nda, links=links if links else dims)]
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
     @staticmethod 
@@ -216,7 +215,7 @@ class PandasConnec:
         idx = [0] * len(dims)        
         for nam in links:
             idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
-        print('from_series : ', dims, links, shape, idx, name)
+        #print('from_series : ', dims, links, shape, idx, name)
         xar = np.moveaxis(np.array(dfr[name]).reshape(shape), old_order, order)[*idx]
         if not links:
             return xar.flatten()
@@ -261,7 +260,7 @@ class XarrayConnec:
         '''
         option = {'dataset': True, 'datagroup': True} | kwargs
         coords = XarrayConnec._to_xr_vars(
-            xdt, xdt.dimensions + xdt.coordinates)
+            xdt, xdt.dimensions + xdt.coordinates + xdt.uniques)
         coords |= XarrayConnec._to_xr_vars(xdt, xdt.additionals)
         attrs = XarrayConnec._to_xr_attrs(xdt, **option)
         if len(xdt.data_vars) == 1 and not option['dataset']:
@@ -290,7 +289,10 @@ class XarrayConnec:
                 else:
                     xnd += [Xndarray(name, meta=meta)]
         for coord in xar.coords:
-            xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
+            if xar[coord].size == 1:
+                xnd += [Xndarray(xar[coord].name, meta=xar[coord].values.tolist())]
+            else:
+                xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
             if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
                 xnd[-1].links = [list(xar.data_vars)[0]]
         if isinstance(xar, xr.DataArray):
@@ -366,6 +368,9 @@ class XarrayConnec:
             name for name in list_names if xdt[name].mode == 'absolute']
         for xnd_name in valid_names:
             arg_vars |= XarrayConnec._to_xr_coord(xdt, xnd_name)
+        for name in list_names:
+            if xdt[name].xtype == 'meta':
+                arg_vars |= {name: xdt[name].meta}
         return arg_vars
 
     @staticmethod
