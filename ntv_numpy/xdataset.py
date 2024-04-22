@@ -6,6 +6,7 @@ Created on Thu Mar  7 09:56:11 2024
 """
 from abc import ABC, abstractmethod
 import json
+import pprint
 from json_ntv import Ntv
 from ntv_numpy.ndarray import Nutil
 from ntv_numpy.xndarray import Xndarray
@@ -254,6 +255,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     - `shape_dims`
     - `to_canonical`
     - `to_ndarray`
+    - `to_darray`
 
     *XdatasetCategory (@property)*
     - `names`
@@ -310,7 +312,8 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
 
     def __repr__(self):
         '''return classname and number of value'''
-        return self.__class__.__name__ + '[' + str(len(self)) + ']'
+        return (self.__class__.__name__ + '[' + str(len(self)) + ']\n' +
+                pprint.pformat(self.to_json(novalue=True, header=False, noshape=False)))
 
     def __str__(self):
         '''return json string format'''
@@ -486,6 +489,13 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
             data = self[full_name].ndarray
         else:
             data = self[full_name].darray.reshape(self.shape_dims(full_name))
+        if data.dtype.name[:8] == 'datetime':
+            data = data.astype('datetime64[ns]')
+        return data
+
+    def to_darray(self, full_name):
+        '''convert a Xndarray from a Xdataset in a flattened np.ndarray'''
+        data = self[full_name].darray
         if data.dtype.name[:8] == 'datetime':
             data = data.astype('datetime64[ns]')
         return data

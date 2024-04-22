@@ -362,11 +362,11 @@ class Nutil:
 
     @staticmethod 
     def extend_array(arr, til, shap, order):
-        '''return a field np.array from a Xndarray defined by name
+        '''return a flattened np.ndarray extended in additional dimensions 
         
         parameters:
         
-        - arr: np.array to convert
+        - arr: np.array to extend
         - til: integer - parameter to apply to np.tile function
         - shap: list of integer - shape of the array 
         - order: list of integer - order of dimensions to apply

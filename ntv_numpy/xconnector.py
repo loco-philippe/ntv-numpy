@@ -89,18 +89,24 @@ class PandasConnec:
 
         - **json_name**: Boolean (default True) - if False use full_name else json_name  
         - **info**: Boolean (default True) - if True add xdt.info in DataFrame.attrs
+        - **dims**: list of string (default None) - order of dimensions full_name to apply
         '''
-        opt = {'json_name': True, 'info': True} | kwargs
+        opt = {'json_name': True, 'info': True, 'dims': None} | kwargs
         dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name 
                     for name in xdt.names}
-        fields = xdt.group(xdt.dimensions) + xdt.group(xdt.coordinates) + xdt.group(xdt.data_vars) + xdt.uniques
+        dims = xdt.dimensions if not opt['dims'] else tuple(opt['dims'])
+        #fields = (xdt.group(xdt.dimensions) + xdt.group(xdt.coordinates) + 
+        fields = (xdt.group(dims) + xdt.group(xdt.coordinates) + 
+                  xdt.group(xdt.data_vars) + xdt.uniques)
         fields += tuple(nam for nam in xdt.group(xdt.data_arrays) 
                         if len(xdt[nam]) == xdt.length)
         fields_array = tuple(var for var in fields if not xdt[var].uri)
-        dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name) 
+        #dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name, opt['dims']) 
+        dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name, dims) 
                       for name in fields_array}
         dfr = pd.DataFrame(dic_series)
-        index = [dic_name[name] for name in xdt.dimensions + xdt.coordinates]
+        #index = [dic_name[name] for name in xdt.dimensions + xdt.coordinates]
+        index = [dic_name[name] for name in dims + xdt.coordinates]
         dfr = dfr.set_index(index) 
         dfr.attrs |= {'metadata': {name: xdt[name].meta for name in xdt.metadata}}
         fields_uri = [var for var in fields if not var in fields_array]
@@ -165,18 +171,18 @@ class PandasConnec:
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
     @staticmethod 
-    def to_np_series(xdt, name, dims=None):
+    def to_np_series(xdt, name, dims):
         '''return a np.ndarray from the Xndarray of xdt defined by his name
         
         *parameters*
         
-        - xdt: Xdataset - data to convert in a pd.DataFrame
-        - name: string - full_name of the Xndarray to convert
-        - dims: list of string (default None) - order of dimensions to apply'''
+        - **xdt**: Xdataset - data to convert in a pd.DataFrame
+        - **name**: string - full_name of the Xndarray to convert
+        - **dims**: list of string - order of dimensions full_name to apply'''
         #print(name)
         if name in xdt.uniques:
             return np.array([xdt[name].meta] * xdt.length)
-        dims = xdt.dimensions if not dims else dims
+        #dims = xdt.dimensions if not dims else dims
         n_shape = {nam: len(xdt[nam]) for nam in dims}
         dim_name = xdt.dims(name)
         if not set(dim_name) <= set(dims):
@@ -525,15 +531,22 @@ class ScippConnec:
         add_name = Nutil.split_name(name)[1]
         new_n = add_name if name in xdt.masks and not option['grp_mask'] else name
         opt_n = option['ntv_type']
-        values = xdt.to_ndarray(name)
+        
+        #values = xdt.to_ndarray(name)
+        
         vari_name = name + '.variance'
         variances = xdt[vari_name].darray if vari_name in xdt.names else None
-        if not variances is None:
-            variances = variances.reshape(xdt.shape_dims(vari_name))
-        dims = xdt.dims(name, opt_n) if xdt.dims(
-            name, opt_n) else [xdt[name].name]
+        #if not variances is None:
+        #    variances = variances.reshape(xdt.shape_dims(vari_name))
+        
+        dims = xdt.dims(name, opt_n) if xdt.dims(name, opt_n) else [xdt[name].name]
         simple_type, unit = Nutil.split_type(xdt[name].ntv_type)
         scipp_name = new_n + (':' + simple_type if opt_n else '')
         unit = unit if unit else ''
-        return (scipp_name, sc.array(dims=dims, values=values,
-                                     variances=variances, unit=unit))
+        
+        #var = sc.array(dims=['flat'], values=xdt[name].darray, variances=variances, unit=unit)
+        var = sc.array(dims=['flat'], values=xdt.to_darray(name), variances=variances, unit=unit)
+        var = sc.fold(var, dim='flat', sizes=dict(zip(dims, xdt[name].shape)))
+        return (scipp_name, var)
+        #return (scipp_name, sc.array(dims=dims, values=values,
+        #                             variances=variances, unit=unit))
