@@ -477,15 +477,13 @@ class Test_Xdataset(unittest.TestCase):
             #'unit': 'kg',
             #'info': {'example': 'everything'}
             }, #},
-            {'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
-             'var2.variance': [['float', [2, 2], [0.1, 0.2, 0.3, 0.4]]],
-             'var2.mask1': [['boolean', [True, False]], ['x']],
-             'var2.mask2': [['boolean', [2, 2], [True, False, False, True]]],
-             'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']],
-             'x': [['string', ['23F0AE', '578B98']]],
-             'y': [['date', ['2021-01-01', '2022-02-02']]],
-             'z': [['float', [10.0, 20.0]], ['x']],
-             'z.variance': [['float', [0.1, 0.2]]]}
+            { 'x': [['int32', [10, 20]]],
+              'y': [['string', ['a', 'b', 'c']]],
+              'z': [['int32', [1, 2, 3]]],
+              'year': [['int32', [2020, 2021]]],
+              'point': [['string', [3, 2], ['pt1', 'pt2', 'pt3', 'pt4', 'pt5', 'pt6']], ['y', 'x']],
+              'along_x': [['float64', [-1.18, -0.74]], ['x']],
+              'foo': [['float64',  [2, 3, 3, 2], list(range(36))], ['x', 'y', 'z', 'year']]}
             ]
         for example in examples:
             xd = Xdataset.read_json(example) 
@@ -495,7 +493,8 @@ class Test_Xdataset(unittest.TestCase):
             self.assertEqual(xd, xd2)
             xd2 = Xdataset.from_scipp(xd.to_scipp())
             self.assertEqual(xd, xd2)        
-
+            xd2 = Xdataset.from_scipp(xd.to_scipp(datagroup=False))
+            self.assertEqual(xd, xd2)        
 
     def test_xdataset_mixte(self):    
         

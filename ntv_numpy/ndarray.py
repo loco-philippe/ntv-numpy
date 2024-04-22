@@ -30,7 +30,7 @@ class Ndarray:
     *static methods*
     - `read_json`
     - `to_json`
-    - `equals`
+    - `set_shape`
     '''
 
     def __init__(self, dar, ntv_type=None, shape=None):
@@ -132,6 +132,12 @@ class Ndarray:
         '''representation with a np.ndarray not flattened'''
         return self.darray.reshape(self.shape) if not self.darray is None else None
 
+    def set_shape(self, shape):
+        '''update the shape'''
+        if Ndarray.len_shape(shape) != len(self.darray):
+            raise NdarrayError("shape is not consistent with the ndarray length")
+        self.shape = list(shape)
+    
     def update(self, nda, nda_uri=True):
         '''update uri and darray and return the result (True, False)
 

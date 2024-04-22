@@ -476,6 +476,8 @@ class ScippConnec:
     @staticmethod
     def _var_sc_to_xnd(scv, scd=None, sc_name='', var=None):
         '''return a list of Xndarray from a scipp variable
+        - scd : scipp dataset
+        - scv : scipp variable
         - var : name
         - sc_name : scipp name'''
         l_xnda = []
@@ -495,6 +497,7 @@ class ScippConnec:
             nda = Ndarray(scv.variances, ntv_type_base)
             l_xnda.append(Xndarray(full_name + '.variance', nda, links))
         nda = Ndarray(scv.values, ntv_type)
+        nda.set_shape(scv.shape)
         l_xnda.append(Xndarray(full_name, nda, links))
         return l_xnda
 
@@ -531,22 +534,12 @@ class ScippConnec:
         add_name = Nutil.split_name(name)[1]
         new_n = add_name if name in xdt.masks and not option['grp_mask'] else name
         opt_n = option['ntv_type']
-        
-        #values = xdt.to_ndarray(name)
-        
         vari_name = name + '.variance'
         variances = xdt[vari_name].darray if vari_name in xdt.names else None
-        #if not variances is None:
-        #    variances = variances.reshape(xdt.shape_dims(vari_name))
-        
         dims = xdt.dims(name, opt_n) if xdt.dims(name, opt_n) else [xdt[name].name]
         simple_type, unit = Nutil.split_type(xdt[name].ntv_type)
-        scipp_name = new_n + (':' + simple_type if opt_n else '')
         unit = unit if unit else ''
-        
-        #var = sc.array(dims=['flat'], values=xdt[name].darray, variances=variances, unit=unit)
         var = sc.array(dims=['flat'], values=xdt.to_darray(name), variances=variances, unit=unit)
         var = sc.fold(var, dim='flat', sizes=dict(zip(dims, xdt[name].shape)))
+        scipp_name = new_n + (':' + simple_type if opt_n else '')
         return (scipp_name, var)
-        #return (scipp_name, sc.array(dims=dims, values=values,
-        #                             variances=variances, unit=unit))
