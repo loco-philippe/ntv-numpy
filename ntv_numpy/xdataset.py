@@ -13,7 +13,6 @@ from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyNDDataConnec
 from ntv_numpy.xconnector import PandasConnec
 
-
 class XdatasetCategory(ABC):
     ''' category of Xndarray (dynamic tuple of full_name) - see Xdataset docstring'''
 
@@ -40,14 +39,14 @@ class XdatasetCategory(ABC):
         dimable = []
         for var in self.variables:
             dimable += self.dims(var)
-        # return tuple(set(nda for nda in dimable if nda in self.namedarrays))
+        #return tuple(set(nda for nda in dimable if nda in self.namedarrays))
         return tuple(sorted(set(nda for nda in dimable if nda in self.namedarrays)))
 
     @property
     def shape(self):
         '''return an array with the length of dimensions'''
         return [len(self[dim]) for dim in self.dimensions]
-
+    
     @property
     def coordinates(self):
         '''return a tuple of coordinates Xndarray full_name'''
@@ -108,14 +107,14 @@ class XdatasetCategory(ABC):
     @property
     def metadata(self):
         '''return a tuple of metadata Xndarray full_name'''
-        return tuple(sorted(xnda.full_name for xnda in self.xnd
+        return tuple(sorted(xnda.full_name for xnda in self.xnd 
                             if xnda.xtype == 'meta' and isinstance(xnda.meta, (list, dict))))
-
     @property
     def uniques(self):
         '''return a tuple of unique Xndarray full_name'''
         return tuple(sorted(xnda.full_name for xnda in self.xnd
                             if xnda.xtype == 'meta' and not xnda.full_name in self.metadata))
+
     @property
     def additionals(self):
         '''return a tuple of additionals Xndarray full_name'''
@@ -467,7 +466,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         inf['validity'] = self.validity
         inf['length'] = len(self[self.data_vars[0]]) if self.data_vars else 0
         inf['width'] = len(self)
-        struc = {name: {key: val for key, val in self[name].info.items() if key != 'name'}
+        struc = {name: {key: val for key, val in self[name].info.items() if key != 'name'} 
                  for name in self.names}
         return {'structure': {key: val for key, val in inf.items() if val},
                 'data': {key: val for key, val in struc.items() if val}}
