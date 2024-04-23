@@ -147,7 +147,10 @@ class PandasConnec:
             dimensions = dfr.attrs['info']['structure']['dimensions']
             data = dfr.attrs['info']['data']
         else:
-            ...
+            ana = dfr.npd.analysis(distr=True)
+            partition = ana.field_partition(partition=opt['dims'], mode='id')
+            relation = ana.field_partition(partition=opt['dims'])
+            dimensions = partition['primary']
         shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
         for name in df_names:
             xnd += [PandasConnec.ximport_series(data, name, dfr, dimensions, 
