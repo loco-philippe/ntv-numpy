@@ -523,6 +523,8 @@ class Nutil:
         match dtype:
             case string if string[:3] == 'str':
                 return Nutil.add_ext('string', ext)
+            case bytesxx if bytesxx[:5] == 'bytes':
+                return Nutil.add_ext('base16', ext)
             case dtyp if dtyp in np_ntype:
                 return Nutil.add_ext(np_ntype[dtyp], ext)
             case date if date[:10] == 'datetime64':

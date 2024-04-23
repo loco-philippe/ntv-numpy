@@ -150,26 +150,38 @@ class PandasConnec:
             ...
         shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
         for name in df_names:
-            if data[name].get('xtype') == 'meta' or len(dfr[name].unique())==1:
-                xnd += [Xndarray(name, meta=dfr[name].iloc[0])]
-            else:
-                dims = []
-                PandasConnec.get_dims(dims, name, data, dimensions)
-                if not dims:
-                    p_name, add_name = Nutil.split_name(name)
-                    if add_name:
-                        PandasConnec.get_dims(dims, p_name, data, dimensions)
-                #print('name-dims: ', name, dims)
-                np_array = PandasConnec.from_series(dfr, name, shape_dfr,  
-                                                    dimensions, dims, opt['dims'])            
-                shape = data[name].get('shape', [len(dfr)])
-                ntv_type = df_ntv_types[name]
-                #print(name, np_array, ntv_type, shape)
-                nda=Ndarray(np_array, ntv_type, shape)
-                links = data[name].get('links')
-                xnd += [Xndarray(name, nda=nda, links=links if links else dims)]
+            xnd += [PandasConnec.ximport_series(data, name, dfr, dimensions, 
+                                                shape_dfr, df_ntv_types, **opt)]
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
+    @staticmethod
+    def ximport_series(data, name, dfr, dimensions, shape_dfr, df_ntv_types, **opt):
+        '''return a Xndarray from a Series of a pd.DataFrame
+
+        *Parameters*
+        
+        - **data**: 
+        '''
+        if data[name].get('xtype') == 'meta' or len(dfr[name].unique())==1:
+            return Xndarray(name, meta=dfr[name].iloc[0])
+        else:
+            meta = data[name].get('meta')
+            dims = []
+            PandasConnec.get_dims(dims, name, data, dimensions)
+            if not dims:
+                p_name, add_name = Nutil.split_name(name)
+                if add_name:
+                    PandasConnec.get_dims(dims, p_name, data, dimensions)
+            #print('name-dims: ', name, dims)
+            np_array = PandasConnec.from_series(dfr, name, shape_dfr,  
+                                                dimensions, dims, opt['dims'])            
+            shape = data[name].get('shape', [len(dfr)])
+            ntv_type = df_ntv_types[name]
+            #print(name, np_array, ntv_type, shape)
+            nda=Ndarray(np_array, ntv_type, shape)
+            links = data[name].get('links')
+            return Xndarray(name, nda=nda, links=links if links else dims, meta=meta)  
+            
     @staticmethod 
     def to_np_series(xdt, name, dims):
         '''return a np.ndarray from the Xndarray of xdt defined by his name
