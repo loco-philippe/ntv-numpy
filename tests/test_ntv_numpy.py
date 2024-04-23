@@ -578,6 +578,34 @@ class Test_Xdataset(unittest.TestCase):
         df = xd.to_dataframe()
         xd2 = Xdataset.from_dataframe(df)
         self.assertEqual(xd, xd2)
+
+        example = { ':xdataset': {
+            'var2': [['float[kg]', [2, 2], [10.1, 0.4, 3.4, 8.2]], ['x', 'y']],
+            'var2.variance': [[[2, 2], [0.1, 0.2, 0.3, 0.4]]],
+            'var2.mask1': [[[True, False]], ['x']],
+            'var2.mask2': [[[2, 2], [True, False, False, True]]],
+        
+            'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']],
+        
+        
+            'x': [['string', ['23F0AE', '578B98']]], #, {'test': 21}],
+            'x.mask1': [[[True, False]]],
+        
+            'y': [['date', ['2021-01-01', '2022-02-02']]],
+        
+            'z': [['float', [10, 20]], ['x']],
+            'z.uncertainty': [[[0.1, 0.2]]],
+            'z.variance': [['float', [0.1, 0.2]]],
+        
+            'location': 'paris'
+            } }
+        xd = Xdataset.read_json(example) 
+        df = xd.to_dataframe()
+        xd2 = Xdataset.from_dataframe(df)
+        self.assertEqual(xd, xd2)
+        df3 = xd.to_dataframe(info=False)
+        xd3 = Xdataset.from_dataframe(df3)        
+        self.assertEqual(xd2, xd3)
         
 if __name__ == '__main__':    
     unittest.main(verbosity=2)

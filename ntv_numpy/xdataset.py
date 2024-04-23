@@ -459,6 +459,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         dic |= {'uniques': list(self.uniques)} if self.uniques else {}
         return dic
 
+
     @property
     def info(self):
         '''return a dict with Xdataset information '''
@@ -466,11 +467,24 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         inf['validity'] = self.validity
         inf['length'] = len(self[self.data_vars[0]]) if self.data_vars else 0
         inf['width'] = len(self)
-        struc = {name: {key: val for key, val in self[name].info.items() if key != 'name'} 
+        data = {name: {key: val for key, val in self[name].info.items() if key != 'name'} 
                  for name in self.names}
         return {'structure': {key: val for key, val in inf.items() if val},
-                'data': {key: val for key, val in struc.items() if val}}
+                'data': {key: val for key, val in data.items() if val}}
 
+    @property
+    def tab_info(self):
+        '''return a dict with Xdataset information for tabular interface'''
+        info = self.info
+        data = info['data']
+        t_info = {}
+        if 'dimensions' in info['structure']:
+            t_info['dimensions'] = info['structure']['dimensions']
+        t_info['data'] = {name: {key: val for key, val in data[name].items() 
+                                 if key in ['shape', 'xtype', 'meta', 'links']} 
+                          for name in data}
+        return t_info
+        
     def to_canonical(self):
         '''remove optional links of the included Xndarray'''
         for name in self.names:

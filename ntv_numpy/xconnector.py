@@ -95,17 +95,14 @@ class PandasConnec:
         dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name 
                     for name in xdt.names}
         dims = xdt.dimensions if not opt['dims'] else tuple(opt['dims'])
-        #fields = (xdt.group(xdt.dimensions) + xdt.group(xdt.coordinates) + 
         fields = (xdt.group(dims) + xdt.group(xdt.coordinates) + 
                   xdt.group(xdt.data_vars) + xdt.uniques)
         fields += tuple(nam for nam in xdt.group(xdt.data_arrays) 
                         if len(xdt[nam]) == xdt.length)
         fields_array = tuple(var for var in fields if not xdt[var].uri)
-        #dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name, opt['dims']) 
         dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name, dims) 
                       for name in fields_array}
         dfr = pd.DataFrame(dic_series)
-        #index = [dic_name[name] for name in xdt.dimensions + xdt.coordinates]
         index = [dic_name[name] for name in dims + xdt.coordinates]
         dfr = dfr.set_index(index) 
         dfr.attrs |= {'metadata': {name: xdt[name].meta for name in xdt.metadata}}
@@ -113,12 +110,13 @@ class PandasConnec:
         fields_other = [nam for nam in xdt.group(xdt.data_arrays) 
                         if len(xdt[nam]) != xdt.length]
         if fields_uri:
-            dfr.attrs |= {'fields': {nam: xdt[nam].to_json(noname=True) 
+            dfr.attrs |= {'fields': {nam: xdt[nam].to_json(noname=True,) 
                                      for nam in fields_uri + fields_other}}
         if xdt.name:
             dfr.attrs |= {'name': xdt.name}
         if opt['info']:
-            dfr.attrs |= {'info': xdt.info}            
+            #dfr.attrs |= {'info': xdt.info}            
+            dfr.attrs |= {'info': xdt.tab_info}            
         return dfr
 
     @staticmethod
@@ -132,6 +130,8 @@ class PandasConnec:
         opt = {'dims': None} | kwargs
         xnd = []
         dfr = df.reset_index()
+        if 'index' in dfr.columns and not 'index' in df.columns:
+            del(dfr['index'])
         df_names = {Nutil.split_json_name(j_name)[0]: j_name
                     for j_name in dfr.columns}
         df_ntv_types = {Nutil.split_json_name(j_name)[0]: 
@@ -144,19 +144,30 @@ class PandasConnec:
             for name, jsn in dfr.attrs['fields'].items():
                 xnd += [Xndarray.read_json({name: jsn})]                    
         if dfr.attrs.get('info'):
-            dimensions = dfr.attrs['info']['structure']['dimensions']
+            dimensions = dfr.attrs['info']['dimensions']
             data = dfr.attrs['info']['data']
         else:
-            ana = dfr.npd.analysis(distr=True)
-            partition = ana.field_partition(partition=opt['dims'], mode='id')
-            relation = ana.field_partition(partition=opt['dims'])
-            dimensions = partition['primary']
+            dimensions, data = PandasConnec.ximport_analysis(dfr, opt['dims'])
         shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
         for name in df_names:
             xnd += [PandasConnec.ximport_series(data, name, dfr, dimensions, 
                                                 shape_dfr, df_ntv_types, **opt)]
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
+    @staticmethod
+    def ximport_analysis(dfr, opt_dims):
+        '''return data and dimensions from analysis module'''
+        ana = dfr.npd.analysis(distr=True)
+        partition = ana.field_partition(partition=opt_dims, mode='id')
+        part_rel = ana.relation_partition(partition=opt_dims)
+        part_dim = ana.relation_partition(partition=opt_dims, primary=True)
+        dimensions = partition['primary']
+        len_fields = {fld.idfield: fld.lencodec for fld in ana.fields}
+        data = {fld.idfield: {
+            'shape': [len_fields[dim] for dim in part_dim[fld.idfield]],
+            'links': part_rel[fld.idfield]} for fld in ana.fields}   
+        return (dimensions, data)
+    
     @staticmethod
     def ximport_series(data, name, dfr, dimensions, shape_dfr, df_ntv_types, **opt):
         '''return a Xndarray from a Series of a pd.DataFrame
