@@ -5,8 +5,12 @@
 The `xconnector` module is part of the `ntv-numpy.ntv_numpy` package ([specification document](
 https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
 
-It contains the `XarrayConnec` class for the Xarray interface and the `ScippConnec`
- class for Scipp interface.
+It contains interface classes with to static methods `ximport` and `xexport`:
+- `XarrayConnec` class for Xarray Dataset or DataArray,
+- `AstropyNDDataConnec` class for Astropy NDData,
+- `ScippConnec` class for Scipp Dataset or DataArray,
+- `PandasConnec` class for pandas dataFrame,
+
 
 For more information, see the
 [user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html)
@@ -78,6 +82,7 @@ class AstropyNDDataConnec:
             xnd += [Xndarray('data.uncertainty', nda=nda)]
         return Xclass(xnd, name).to_canonical()
 
+
 class PandasConnec:
     ''' pandas.DataFrame interface with two static methods ximport and xexport'''
 
@@ -87,35 +92,36 @@ class PandasConnec:
 
         *Parameters*
 
-        - **json_name**: Boolean (default True) - if False use full_name else json_name  
+        - **json_name**: Boolean (default True) - if False use full_name else json_name
         - **info**: Boolean (default True) - if True add xdt.info in DataFrame.attrs
         - **dims**: list of string (default None) - order of dimensions full_name to apply
         '''
         opt = {'json_name': True, 'info': True, 'dims': None} | kwargs
-        dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name 
+        dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name
                     for name in xdt.names}
         dims = xdt.dimensions if not opt['dims'] else tuple(opt['dims'])
-        fields = (xdt.group(dims) + xdt.group(xdt.coordinates) + 
+        fields = (xdt.group(dims) + xdt.group(xdt.coordinates) +
                   xdt.group(xdt.data_vars) + xdt.uniques)
-        fields += tuple(nam for nam in xdt.group(xdt.data_arrays) 
+        fields += tuple(nam for nam in xdt.group(xdt.data_arrays)
                         if len(xdt[nam]) == xdt.length)
         fields_array = tuple(var for var in fields if not xdt[var].uri)
-        dic_series = {dic_name[name]: PandasConnec.to_np_series(xdt, name, dims) 
+        dic_series = {dic_name[name]: PandasConnec._to_np_series(xdt, name, dims)
                       for name in fields_array}
         dfr = pd.DataFrame(dic_series)
         index = [dic_name[name] for name in dims + xdt.coordinates]
-        dfr = dfr.set_index(index) 
-        dfr.attrs |= {'metadata': {name: xdt[name].meta for name in xdt.metadata}}
+        dfr = dfr.set_index(index)
+        dfr.attrs |= {'metadata': {
+            name: xdt[name].meta for name in xdt.metadata}}
         fields_uri = [var for var in fields if not var in fields_array]
-        fields_other = [nam for nam in xdt.group(xdt.data_arrays) 
+        fields_other = [nam for nam in xdt.group(xdt.data_arrays)
                         if len(xdt[nam]) != xdt.length]
         if fields_uri:
-            dfr.attrs |= {'fields': {nam: xdt[nam].to_json(noname=True,) 
+            dfr.attrs |= {'fields': {nam: xdt[nam].to_json(noname=True,)
                                      for nam in fields_uri + fields_other}}
         if xdt.name:
             dfr.attrs |= {'name': xdt.name}
         if opt['info']:
-            dfr.attrs |= {'info': xdt.tab_info}            
+            dfr.attrs |= {'info': xdt.tab_info}
         return dfr
 
     @staticmethod
@@ -123,25 +129,25 @@ class PandasConnec:
         '''return a Xdataset from a pd.DataFrame
 
         *Parameters*
-        
+
         - dims: list of string (default None) - order of dimensions to apply
         '''
         opt = {'dims': None} | kwargs
         xnd = []
         dfr = df.reset_index()
         if 'index' in dfr.columns and not 'index' in df.columns:
-            del(dfr['index'])
+            del (dfr['index'])
         df_names = {Nutil.split_json_name(j_name)[0]: j_name
                     for j_name in dfr.columns}
-        df_ntv_types = {Nutil.split_json_name(j_name)[0]: 
+        df_ntv_types = {Nutil.split_json_name(j_name)[0]:
                         Nutil.split_json_name(j_name)[1] for j_name in dfr.columns}
-        dfr.columns = [Nutil.split_json_name(name)[0] for name in dfr.columns] 
+        dfr.columns = [Nutil.split_json_name(name)[0] for name in dfr.columns]
         if dfr.attrs.get('metadata'):
             for name, meta in dfr.attrs['metadata'].items():
                 xnd += [Xndarray.read_json({name: meta})]
         if dfr.attrs.get('fields'):
             for name, jsn in dfr.attrs['fields'].items():
-                xnd += [Xndarray.read_json({name: jsn})]                    
+                xnd += [Xndarray.read_json({name: jsn})]
         if dfr.attrs.get('info'):
             dimensions = dfr.attrs['info']['dimensions']
             data = dfr.attrs['info']['data']
@@ -149,9 +155,9 @@ class PandasConnec:
             dimensions, data = PandasConnec._ximport_analysis(dfr, opt['dims'])
         shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
         for name in df_names:
-            xnd += [PandasConnec._ximport_series(data, name, dfr, dimensions, 
-                                                shape_dfr, df_ntv_types, **opt)]
-        return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
+            xnd += [PandasConnec._ximport_series(data, name, dfr, dimensions,
+                                                 shape_dfr, df_ntv_types, **opt)]
+        return Xclass(xnd, dfr.attrs.get('name')).to_canonical()
 
     @staticmethod
     def _ximport_analysis(dfr, opt_dims):
@@ -163,43 +169,45 @@ class PandasConnec:
         dimensions = partition['primary']
         len_fields = {fld.idfield: fld.lencodec for fld in ana.fields}
         data = {fld.idfield: {
-            'shape': [len_fields[dim] for dim in part_dim[fld.idfield]],
-            'links': part_rel[fld.idfield]} for fld in ana.fields}   
+            'shape': [len_fields[dim] for dim in part_dim[fld.idfield]] if part_dim else [],
+            'links': part_rel[fld.idfield] if part_rel else []} for fld in ana.fields}
         for json_name in data:
             if not data[json_name]['shape']:
                 name = Nutil.split_name(Nutil.split_json_name(json_name)[0])[0]
                 p_name = [js_name for js_name in data
-                          if Nutil.split_json_name(js_name)[0] == name ][0]      
+                          if Nutil.split_json_name(js_name)[0] == name][0]
                 data[json_name]['shape'] = data[p_name]['shape']
         return (dimensions, data)
-    
+
     @staticmethod
     def _ximport_series(data, name, dfr, dimensions, shape_dfr, df_ntv_types, **opt):
         '''return a Xndarray from a Series of a pd.DataFrame'''
-        if data[name].get('xtype') == 'meta' or len(dfr[name].unique())==1:
+        if data[name].get('xtype') == 'meta' or len(dfr[name].unique()) == 1:
             return Xndarray(name, meta=dfr[name].iloc[0])
-        else:
-            meta = data[name].get('meta')
-            dims = []
-            PandasConnec.get_dims(dims, name, data, dimensions)
-            if not dims:
-                p_name, add_name = Nutil.split_name(name)
-                if add_name:
-                    PandasConnec.get_dims(dims, p_name, data, dimensions)
-            np_array = PandasConnec.from_series(dfr, name, shape_dfr,  
-                                                dimensions, dims, opt['dims'])            
-            shape = data[name].get('shape', [len(dfr)])
-            ntv_type = df_ntv_types[name]
-            nda=Ndarray(np_array, ntv_type, shape)
-            links = data[name].get('links')
-            return Xndarray(name, nda=nda, links=links if links else dims, meta=meta)  
-            
-    @staticmethod 
-    def to_np_series(xdt, name, dims):
+        meta = data[name].get('meta')
+        ntv_type = df_ntv_types[name]
+        if not dimensions:
+            nda=Ndarray(np.array(dfr[name]), ntv_type=ntv_type)
+            return Xndarray(name, nda=nda, meta=meta)
+        dims = []
+        PandasConnec._get_dims(dims, name, data, dimensions)
+        if not dims:
+            p_name, add_name = Nutil.split_name(name)
+            if add_name:
+                PandasConnec._get_dims(dims, p_name, data, dimensions)
+        np_array = PandasConnec._from_series(dfr, name, shape_dfr,
+                                             dimensions, dims, opt['dims'])
+        shape = data[name].get('shape', [len(dfr)])
+        nda = Ndarray(np_array, ntv_type, shape)
+        links = data[name].get('links')
+        return Xndarray(name, nda=nda, links=links if links else dims, meta=meta)
+
+    @staticmethod
+    def _to_np_series(xdt, name, dims):
         '''return a np.ndarray from the Xndarray of xdt defined by his name
-        
+
         *parameters*
-        
+
         - **xdt**: Xdataset - data to convert in a pd.DataFrame
         - **name**: string - full_name of the Xndarray to convert
         - **dims**: list of string - order of dimensions full_name to apply'''
@@ -220,40 +228,42 @@ class PandasConnec:
         arr = xdt[name].darray
         return Nutil.extend_array(arr, til, shap, order)
 
-    @staticmethod 
-    def from_series(dfr, name, shape, dims, links, new_dims=None):
+    @staticmethod
+    def _from_series(dfr, name, shape, dims, links, new_dims=None):
         '''return a flattened np.ndarray from the pd.Series of dfr defined by his name
-        
+
         *parameters*
-        
+
         - dfr: DataFrame - data to convert in Xdataset
         - name: string - name of the Series (full_name or json_name)
         - shape: shape of the Xdataset
-        - dims: list of string - list of name of dimensions 
+        - dims: list of string - list of name of dimensions
         - links: list of string - list of linked Series
-        - new_dims: list of string (default None) - new order of dims       
+        - new_dims: list of string (default None) - new order of dims
         '''
 
         old_order = list(range(len(dims)))
         new_dims = new_dims if new_dims else dims
-        order = [dims.index(dim) for dim in new_dims] if new_dims else old_order
+        order = [dims.index(dim)
+                 for dim in new_dims] if new_dims else old_order
 
-        idx = [0] * len(dims)        
+        idx = [0] * len(dims)
         for nam in links:
             idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
-        xar = np.moveaxis(np.array(dfr[name]).reshape(shape), old_order, order)[*idx]
+        xar = np.moveaxis(np.array(dfr[name]).reshape(
+            shape), old_order, order)[*idx]
         if not links:
             return xar.flatten()
         lnk = [nam for nam in new_dims if nam in links]
-        shape_lnk =[shape[dims.index(nam)] for nam in lnk]
+        shape_lnk = [shape[dims.index(nam)] for nam in lnk]
         xar = xar.reshape(shape_lnk)
         old_order = list(range(len(links)))
         order = [lnk.index(dim) for dim in links]
         return np.moveaxis(xar, old_order, order).flatten()
 
-    @staticmethod 
-    def get_dims(dims, name, data, dimensions):
-        '''add names of dimensions into dims''' 
+    @staticmethod
+    def _get_dims(dims, name, data, dimensions):
+        '''add names of dimensions into dims'''
         if not name:
             return
         if name in dimensions:
@@ -262,8 +272,9 @@ class PandasConnec:
             if not 'links' in data[name]:
                 return
             for nam in data[name]['links']:
-                PandasConnec.get_dims(dims, nam, data, dimensions)
-    
+                PandasConnec._get_dims(dims, nam, data, dimensions)
+
+
 class XarrayConnec:
     ''' Xarray interface with two static methods ximport and xexport'''
 
@@ -311,7 +322,8 @@ class XarrayConnec:
                     xnd += [Xndarray(name, meta=meta)]
         for coord in xar.coords:
             if xar[coord].size == 1:
-                xnd += [Xndarray(xar[coord].name, meta=xar[coord].values.tolist())]
+                xnd += [Xndarray(xar[coord].name,
+                                 meta=xar[coord].values.tolist())]
             else:
                 xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
             if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
@@ -551,10 +563,12 @@ class ScippConnec:
         opt_n = option['ntv_type']
         vari_name = name + '.variance'
         variances = xdt[vari_name].darray if vari_name in xdt.names else None
-        dims = xdt.dims(name, opt_n) if xdt.dims(name, opt_n) else [xdt[name].name]
+        dims = xdt.dims(name, opt_n) if xdt.dims(
+            name, opt_n) else [xdt[name].name]
         simple_type, unit = Nutil.split_type(xdt[name].ntv_type)
         unit = unit if unit else ''
-        var = sc.array(dims=['flat'], values=xdt.to_darray(name), variances=variances, unit=unit)
+        var = sc.array(dims=['flat'], values=xdt.to_darray(
+            name), variances=variances, unit=unit)
         var = sc.fold(var, dim='flat', sizes=dict(zip(dims, xdt[name].shape)))
         scipp_name = new_n + (':' + simple_type if opt_n else '')
         return (scipp_name, var)

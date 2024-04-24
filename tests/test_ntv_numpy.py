@@ -543,7 +543,7 @@ class Test_Xdataset(unittest.TestCase):
         dimensions = ['x', 'y', 'z', 'year']
         for name in xdt.names[:]:
             #tab = xdt.to_tab_array(name, dimensions)
-            tab = PandasConnec.to_np_series(xdt, name, dimensions)
+            tab = PandasConnec._to_np_series(xdt, name, dimensions)
             if not tab is None: 
                 self.assertTrue(np.all(np.array(df[name]) == tab), name)
 
