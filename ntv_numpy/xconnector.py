@@ -302,10 +302,14 @@ class XarrayConnec:
             attrs |= {'ntv_type': xdt[var_name].nda.ntv_type}
             attrs |= xdt[var_name].meta if xdt[var_name].meta else {}
             name = var_name if var_name != 'data' else None
-            return xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
+            xrd = xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
                                 name=name)
-        data_vars = XarrayConnec._to_xr_vars(xdt, xdt.data_vars)
-        xrd = xr.Dataset(data_vars, coords=coords, attrs=attrs)
+        else:
+            data_vars = XarrayConnec._to_xr_vars(xdt, xdt.data_vars)
+            xrd = xr.Dataset(data_vars, coords=coords, attrs=attrs)       
+        for unic in xdt.uniques:
+            xrd[unic].attrs |= {'ntv_type': xdt[unic].ntv_type} | (
+                xdt[unic].meta if xdt[unic].meta else {})
         return xrd
 
     @staticmethod
@@ -321,11 +325,12 @@ class XarrayConnec:
                 else:
                     xnd += [Xndarray(name, meta=meta)]
         for coord in xar.coords:
-            if xar[coord].size == 1:
+            """if xar[coord].size == 1:
                 xnd += [Xndarray(xar[coord].name,
                                  meta=xar[coord].values.tolist())]
             else:
-                xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
+                xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]"""
+            xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
             if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
                 xnd[-1].links = [list(xar.data_vars)[0]]
         if isinstance(xar, xr.DataArray):
@@ -343,23 +348,24 @@ class XarrayConnec:
         return Xclass(xnd, xar.attrs.get('name')).to_canonical()
 
     @staticmethod
-    def _var_xr_to_xnd(xar, name=None, add_attrs=True):
+    def _var_xr_to_xnd(var, name=None, add_attrs=True):
         '''return a Xndarray from a Xarray variable
 
         *Parameters*
 
-        - **xar** : Xarray variable to convert in Xndarray,
-        - **name** : string (default None) - default name if xar have non name,
+        - **var** : Xarray variable to convert in Xndarray,
+        - **name** : string (default None) - default name if var have no name,
         - **add_attrs** : boolean (default True) - if False, attrs are not converted
         '''
-        full_name = xar.name if xar.name else name
+        full_name = var.name if var.name else name
         name = Nutil.split_name(full_name)[0]
-        dims = None if xar.dims == (name,) else list(xar.dims)
-        ntv_type = xar.attrs.get('ntv_type')
-        nda = xar.values
+        dims = None if var.dims == (name,) or var.size == 1 else list(var.dims)
+        ntv_type = var.attrs.get('ntv_type')
+        nda = var.values
+        nda = nda.reshape(1) if not nda.shape else nda
         if nda.dtype.name == 'datetime64[ns]' and ntv_type:
             nda = Nutil.convert(ntv_type, nda, tojson=False)
-        attrs = {k: v for k, v in xar.attrs.items()
+        attrs = {k: v for k, v in var.attrs.items()
                  if not k in ['ntv_type', 'name']} if add_attrs else {}
         return Xndarray(full_name, Ndarray(nda, ntv_type), dims, attrs)
 
@@ -386,6 +392,8 @@ class XarrayConnec:
     def _to_xr_coord(xdt, name):
         '''return a dict with Xarray attributes from a Xndarray defined by his name'''
         data = xdt.to_ndarray(name)
+        if name in xdt.uniques:
+            return {name: data[0]}
         if name in xdt.additionals and not xdt[name].links:
             data = data.reshape(xdt.shape_dims(xdt[name].name))
         dims = tuple(xdt.dims(name)) if xdt.dims(name) else (xdt[name].name)
@@ -397,8 +405,7 @@ class XarrayConnec:
     def _to_xr_vars(xdt, list_names):
         '''return a dict with Xarray attributes from a list of Xndarray names'''
         arg_vars = {}
-        valid_names = [
-            name for name in list_names if xdt[name].mode == 'absolute']
+        valid_names = [nam for nam in list_names if xdt[nam].mode == 'absolute']
         for xnd_name in valid_names:
             arg_vars |= XarrayConnec._to_xr_coord(xdt, xnd_name)
         for name in list_names:

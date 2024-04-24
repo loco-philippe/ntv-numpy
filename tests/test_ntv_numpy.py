@@ -308,7 +308,7 @@ class Test_Xdataset(unittest.TestCase):
             'x.mask1': [[[True, False]]],
             'x.variance': [[[0.1, 0.2]]],
             'z.variance': [[[0.1, 0.2]]],
-            'unit': 'kg',
+            'unit': [[['kg']]],
             'info': {'example': 'everything'}}}
         
         notype = [True, False, True, True, True, True, True, True, True, True, True]
@@ -343,7 +343,7 @@ class Test_Xdataset(unittest.TestCase):
             'x.mask1': [[[True, False]], ['x']],
             'x.variance': [[[0.1, 0.2]], ['x']],
             'z.variance': [[[0.1, 0.2]], ['x']],
-            'unit': 'kg',
+            'unit': [[['kg']]],
             'info': {'example': 'everything'}}}
         xd = Xdataset.read_json(example)
         self.assertEqual(xd.info['structure'], { 'name': 'test', 'xtype': 'group',
@@ -423,7 +423,7 @@ class Test_Xdataset(unittest.TestCase):
                 #'z_bis': [[['z1_bis', 'z2_bis']]],
                 'z.variance': [[[0.1, 0.2]]],
 
-                'unit': 'kg',
+                'unit': [[['kg']]],
                 'info': {'example': 'everything'}
             }}]
         for example in examples:
@@ -519,7 +519,7 @@ class Test_Xdataset(unittest.TestCase):
             'z.variance': [['float', [0.1, 0.2]]],
 
             'info': {'example': 'everything'},
-            'location': 'paris'
+            'location': [[['paris']]]
             } }
             ]
         for example in examples:

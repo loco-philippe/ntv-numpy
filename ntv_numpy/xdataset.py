@@ -24,14 +24,10 @@ class XdatasetCategory(ABC):
         '''method defined in Xdataset class'''
 
     @property
-    def global_vars(self):
-        '''return a tuple of namedarrays or variable Xndarray full_name'''
-        return tuple(sorted(nda for nda in self.namedarrays + self.variables))
-
-    @property
     def data_arrays(self):
         '''return a tuple of data_arrays Xndarray full_name'''
-        return tuple(sorted(nda for nda in self.namedarrays if not nda in self.dimensions))
+        return tuple(sorted(nda for nda in self.namedarrays 
+                            if not nda in self.dimensions + self.uniques))
 
     @property
     def dimensions(self):
@@ -39,7 +35,6 @@ class XdatasetCategory(ABC):
         dimable = []
         for var in self.variables:
             dimable += self.dims(var)
-        #return tuple(set(nda for nda in dimable if nda in self.namedarrays))
         return tuple(sorted(set(nda for nda in dimable if nda in self.namedarrays)))
 
     @property
@@ -99,21 +94,24 @@ class XdatasetCategory(ABC):
         return tuple(sorted(xnda.full_name for xnda in self.xnd
                              if xnda.xtype == 'additional' and xnda.ntv_type != 'boolean'))
 
-    @property
+    """@property
     def meta(self):
         '''return a tuple of meta Xndarray full_name'''
-        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'meta'))
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'meta'))"""
 
     @property
     def metadata(self):
         '''return a tuple of metadata Xndarray full_name'''
-        return tuple(sorted(xnda.full_name for xnda in self.xnd 
-                            if xnda.xtype == 'meta' and isinstance(xnda.meta, (list, dict))))
+        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'meta'))
+        #return tuple(sorted(xnda.full_name for xnda in self.xnd 
+        #                    if xnda.xtype == 'meta' and isinstance(xnda.meta, (list, dict))))
+        
     @property
     def uniques(self):
         '''return a tuple of unique Xndarray full_name'''
-        return tuple(sorted(xnda.full_name for xnda in self.xnd
-                            if xnda.xtype == 'meta' and not xnda.full_name in self.metadata))
+        return tuple(full_name for full_name in self.namedarrays if len(self[full_name]) == 1)
+        #return tuple(sorted(xnda.full_name for xnda in self.xnd
+        #                    if xnda.xtype == 'meta' and not xnda.full_name in self.metadata))
 
     @property
     def additionals(self):
@@ -258,7 +256,6 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
 
     *XdatasetCategory (@property)*
     - `names`
-    - `global_vars`
     - `data_arrays`
     - `dimensions`
     - `coordinates`
@@ -415,7 +412,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     @property
     def xtype(self):
         '''return the Xdataset type: 'meta', 'group', 'mono', 'multi' '''
-        if self.meta and not (self.additionals or self.variables or
+        if self.metadata and not (self.additionals or self.variables or
                                   self.namedarrays):
             return 'meta'
         if self.validity != 'valid':
@@ -494,6 +491,8 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
             if self[add].links in [self[self[add].name].links,
                                    [self[add].name]]:
                 self[add].links = None
+        for unic in self.uniques:
+            self[unic].links = None
         return self
 
     def to_ndarray(self, full_name):
