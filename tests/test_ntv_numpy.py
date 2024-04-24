@@ -585,7 +585,7 @@ class Test_Xdataset(unittest.TestCase):
             'var2.mask1': [[[True, False]], ['x']],
             'var2.mask2': [[[2, 2], [True, False, False, True]]],
         
-            'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var2']],
+            'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['x', 'y']],
         
         
             'x': [['string', ['23F0AE', '578B98']]], #, {'test': 21}],
