@@ -166,6 +166,12 @@ class PandasConnec:
         data = {fld.idfield: {
             'shape': [len_fields[dim] for dim in part_dim[fld.idfield]],
             'links': part_rel[fld.idfield]} for fld in ana.fields}   
+        for json_name in data:
+            if not data[json_name]['shape']:
+                name = Nutil.split_name(Nutil.split_json_name(json_name)[0])[0]
+                p_name = [js_name for js_name in data
+                          if Nutil.split_json_name(js_name)[0] == name ][0]      
+                data[json_name]['shape'] = data[p_name]['shape']
         return (dimensions, data)
     
     @staticmethod
