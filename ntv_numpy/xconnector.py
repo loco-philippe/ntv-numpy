@@ -115,7 +115,6 @@ class PandasConnec:
         if xdt.name:
             dfr.attrs |= {'name': xdt.name}
         if opt['info']:
-            #dfr.attrs |= {'info': xdt.info}            
             dfr.attrs |= {'info': xdt.tab_info}            
         return dfr
 
@@ -147,15 +146,15 @@ class PandasConnec:
             dimensions = dfr.attrs['info']['dimensions']
             data = dfr.attrs['info']['data']
         else:
-            dimensions, data = PandasConnec.ximport_analysis(dfr, opt['dims'])
+            dimensions, data = PandasConnec._ximport_analysis(dfr, opt['dims'])
         shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
         for name in df_names:
-            xnd += [PandasConnec.ximport_series(data, name, dfr, dimensions, 
+            xnd += [PandasConnec._ximport_series(data, name, dfr, dimensions, 
                                                 shape_dfr, df_ntv_types, **opt)]
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()    
 
     @staticmethod
-    def ximport_analysis(dfr, opt_dims):
+    def _ximport_analysis(dfr, opt_dims):
         '''return data and dimensions from analysis module'''
         ana = dfr.npd.analysis(distr=True)
         partition = ana.field_partition(partition=opt_dims, mode='id')
@@ -175,13 +174,8 @@ class PandasConnec:
         return (dimensions, data)
     
     @staticmethod
-    def ximport_series(data, name, dfr, dimensions, shape_dfr, df_ntv_types, **opt):
-        '''return a Xndarray from a Series of a pd.DataFrame
-
-        *Parameters*
-        
-        - **data**: 
-        '''
+    def _ximport_series(data, name, dfr, dimensions, shape_dfr, df_ntv_types, **opt):
+        '''return a Xndarray from a Series of a pd.DataFrame'''
         if data[name].get('xtype') == 'meta' or len(dfr[name].unique())==1:
             return Xndarray(name, meta=dfr[name].iloc[0])
         else:
@@ -192,12 +186,10 @@ class PandasConnec:
                 p_name, add_name = Nutil.split_name(name)
                 if add_name:
                     PandasConnec.get_dims(dims, p_name, data, dimensions)
-            #print('name-dims: ', name, dims)
             np_array = PandasConnec.from_series(dfr, name, shape_dfr,  
                                                 dimensions, dims, opt['dims'])            
             shape = data[name].get('shape', [len(dfr)])
             ntv_type = df_ntv_types[name]
-            #print(name, np_array, ntv_type, shape)
             nda=Ndarray(np_array, ntv_type, shape)
             links = data[name].get('links')
             return Xndarray(name, nda=nda, links=links if links else dims, meta=meta)  
@@ -211,10 +203,8 @@ class PandasConnec:
         - **xdt**: Xdataset - data to convert in a pd.DataFrame
         - **name**: string - full_name of the Xndarray to convert
         - **dims**: list of string - order of dimensions full_name to apply'''
-        #print(name)
         if name in xdt.uniques:
             return np.array([xdt[name].meta] * xdt.length)
-        #dims = xdt.dimensions if not dims else dims
         n_shape = {nam: len(xdt[nam]) for nam in dims}
         dim_name = xdt.dims(name)
         if not set(dim_name) <= set(dims):
@@ -246,14 +236,11 @@ class PandasConnec:
 
         old_order = list(range(len(dims)))
         new_dims = new_dims if new_dims else dims
-        #print(links, dims, new_dims)
         order = [dims.index(dim) for dim in new_dims] if new_dims else old_order
-        #print(old_order, order)
 
         idx = [0] * len(dims)        
         for nam in links:
             idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
-        #print('from_series : ', dims, links, shape, idx, name)
         xar = np.moveaxis(np.array(dfr[name]).reshape(shape), old_order, order)[*idx]
         if not links:
             return xar.flatten()
@@ -262,7 +249,6 @@ class PandasConnec:
         xar = xar.reshape(shape_lnk)
         old_order = list(range(len(links)))
         order = [lnk.index(dim) for dim in links]
-        #print(lnk, shape_lnk, old_order, order, links)
         return np.moveaxis(xar, old_order, order).flatten()
 
     @staticmethod 
@@ -273,11 +259,8 @@ class PandasConnec:
         if name in dimensions:
             dims += [name]
         else:
-            #links = data[name]['links']
-            #if not links:
             if not 'links' in data[name]:
                 return
-            #for nam in links:
             for nam in data[name]['links']:
                 PandasConnec.get_dims(dims, nam, data, dimensions)
     
