@@ -198,7 +198,7 @@ class PandasConnec:
         np_array = PandasConnec._from_series(dfr, name, shape_dfr,
                                              dimensions, dims, opt['dims'])
         shape = data[name].get('shape', [len(dfr)])
-        nda = Ndarray(np_array, ntv_type, shape)
+        nda = Ndarray(np_array, ntv_type, shape, str_uri=False)
         links = data[name].get('links')
         return Xndarray(name, nda=nda, links=links if links else dims, meta=meta)
 
@@ -212,7 +212,7 @@ class PandasConnec:
         - **name**: string - full_name of the Xndarray to convert
         - **dims**: list of string - order of dimensions full_name to apply'''
         if name in xdt.uniques:
-            return np.array([xdt[name].meta] * xdt.length)
+            return np.array([xdt[name].darray[0]] * xdt.length)
         n_shape = {nam: len(xdt[nam]) for nam in dims}
         dim_name = xdt.dims(name)
         if not set(dim_name) <= set(dims):
@@ -446,7 +446,7 @@ class ScippConnec:
         option = {'dataset': True, 'datagroup': True,
                   'ntv_type': True} | kwargs
         coords = dict([ScippConnec._to_scipp_var(xdt, name, **option)
-                       for name in xdt.coordinates + xdt.dimensions
+                       for name in xdt.coordinates + xdt.dimensions + xdt.uniques
                        if xdt[name].mode == 'absolute'])
         scd = sc.Dataset(dict([ScippConnec._to_sc_dataarray(xdt, name, coords, **option)
                                for name in xdt.data_vars
@@ -473,8 +473,7 @@ class ScippConnec:
             scd = sc.Dataset({(scd.name if scd.name else 'no_name'): scd})
         if isinstance(scd, sc.Dataset):
             for coord in scd.coords:
-                xnd += ScippConnec._var_sc_to_xnd(
-                    scd.coords[coord], scd, coord)
+                xnd += ScippConnec._var_sc_to_xnd(scd.coords[coord], scd, coord)
             for var in scd:
                 for mask in scd[var].masks:
                     m_var = Nutil.split_json_name(var)[0]
@@ -519,19 +518,18 @@ class ScippConnec:
             'dimensionless', 'ns'] else ''
         ext_name, typ1 = Nutil.split_json_name(sc_name, True)
         var_name, typ2 = Nutil.split_json_name(var, True)
-        full_name = var_name + \
-            ('.' if var_name and ext_name else '') + ext_name
+        full_name = var_name + ('.' if var_name and ext_name else '') + ext_name
         ntv_type_base = typ1 + typ2
         ntv_type = ntv_type_base + ('[' + unit + ']' if unit else '')
-
         links = [Nutil.split_json_name(jsn)[0] for jsn in scv.dims]
         if not scd is None and sc_name in scd.coords and scv.dims == scd.dims:
             links = [Nutil.split_json_name(list(scd)[0])[0]]
         if not scv.variances is None:
             nda = Ndarray(scv.variances, ntv_type_base)
             l_xnda.append(Xndarray(full_name + '.variance', nda, links))
-        nda = Ndarray(scv.values, ntv_type)
-        nda.set_shape(scv.shape)
+        nda = Ndarray(scv.values, ntv_type, str_uri=False)
+        shape = scv.shape if scv.shape else (1,)
+        nda.set_shape(shape)
         l_xnda.append(Xndarray(full_name, nda, links))
         return l_xnda
 
@@ -565,17 +563,19 @@ class ScippConnec:
     def _to_scipp_var(xdt, name, **kwargs):
         '''return a scipp.Variable from a Xndarray defined by his name'''
         option = {'grp_mask': False, 'ntv_type': True} | kwargs
+        simple_type, unit = Nutil.split_type(xdt[name].ntv_type)
+        unit = unit if unit else ''
         add_name = Nutil.split_name(name)[1]
         new_n = add_name if name in xdt.masks and not option['grp_mask'] else name
         opt_n = option['ntv_type']
+        scipp_name = new_n + (':' + simple_type if opt_n else '')
+        if name in xdt.uniques:
+            return (scipp_name, sc.scalar(xdt[name].darray[0], unit=unit))
         vari_name = name + '.variance'
         variances = xdt[vari_name].darray if vari_name in xdt.names else None
         dims = xdt.dims(name, opt_n) if xdt.dims(
             name, opt_n) else [xdt[name].name]
-        simple_type, unit = Nutil.split_type(xdt[name].ntv_type)
-        unit = unit if unit else ''
         var = sc.array(dims=['flat'], values=xdt.to_darray(
             name), variances=variances, unit=unit)
         var = sc.fold(var, dim='flat', sizes=dict(zip(dims, xdt[name].shape)))
-        scipp_name = new_n + (':' + simple_type if opt_n else '')
         return (scipp_name, var)

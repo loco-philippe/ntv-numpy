@@ -33,7 +33,7 @@ class Ndarray:
     - `set_shape`
     '''
 
-    def __init__(self, dar, ntv_type=None, shape=None):
+    def __init__(self, dar, ntv_type=None, shape=None, str_uri=True):
         '''Ndarray constructor.
 
         *Parameters*
@@ -41,6 +41,8 @@ class Ndarray:
         - **dar**: Darray or np.ndarray - data to represent
         - **shape** : list of integer (default None) - length of dimensions
         - **ntv_type**: string (default None) - NTVtype to apply
+        - **str_uri**: boolean(default True) - if True and dar is a string, 
+        dar is an uri else a np.array
         '''
         dar = [None] if isinstance(dar, list) and len(dar) == 0 else dar
         if isinstance(dar, Ndarray):
@@ -50,7 +52,7 @@ class Ndarray:
             self.shape = dar.shape
             self.darray = dar.darray
             return
-        if isinstance(dar, str):
+        if isinstance(dar, str) and str_uri:
             self.uri = dar
             self.is_json = True
             self.ntvtype = Ndtype(ntv_type) if ntv_type else None
