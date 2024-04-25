@@ -182,10 +182,14 @@ class PandasConnec:
     @staticmethod
     def _ximport_series(data, name, dfr, dimensions, shape_dfr, df_ntv_types, **opt):
         '''return a Xndarray from a Series of a pd.DataFrame'''
-        if data[name].get('xtype') == 'meta' or len(dfr[name].unique()) == 1:
+        if data[name].get('xtype') == 'meta': # or len(dfr[name].unique()) == 1:
             return Xndarray(name, meta=dfr[name].iloc[0])
         meta = data[name].get('meta')
         ntv_type = df_ntv_types[name]
+        if len(dfr[name].unique()) == 1:
+            nda=Ndarray(np.array(dfr[name].iloc[0]), ntv_type=ntv_type, str_uri=False)
+            nda.set_shape([1])
+            return Xndarray(name, nda=nda, meta=meta)
         if not dimensions:
             nda=Ndarray(np.array(dfr[name]), ntv_type=ntv_type)
             return Xndarray(name, nda=nda, meta=meta)
@@ -198,7 +202,7 @@ class PandasConnec:
         np_array = PandasConnec._from_series(dfr, name, shape_dfr,
                                              dimensions, dims, opt['dims'])
         shape = data[name].get('shape', [len(dfr)])
-        nda = Ndarray(np_array, ntv_type, shape, str_uri=False)
+        nda = Ndarray(np_array, ntv_type, shape)
         links = data[name].get('links')
         return Xndarray(name, nda=nda, links=links if links else dims, meta=meta)
 
