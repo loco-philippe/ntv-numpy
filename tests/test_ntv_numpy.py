@@ -606,6 +606,26 @@ class Test_Xdataset(unittest.TestCase):
         df3 = xd.to_dataframe(info=False)
         xd3 = Xdataset.from_dataframe(df3)        
         self.assertEqual(xd2, xd3)
+
+        fruits = {'plants':      ['fruit', 'fruit', 'fruit', 'fruit', 'vegetable', 'vegetable', 'vegetable', 'vegetable'],
+          'plts':        ['fr', 'fr', 'fr', 'fr', 've', 've', 've', 've'], 
+          'quantity':    ['1 kg', '10 kg', '1 kg', '10 kg', '1 kg', '10 kg', '1 kg', '10 kg'],
+          'product':     ['apple', 'apple', 'orange', 'orange', 'peppers', 'peppers', 'carrot', 'carrot'],
+          'price':       [1, 10, 2, 20, 1.5, 15, 1.5, 20],
+          'price level': ['low', 'low', 'high', 'high', 'low', 'low', 'high', 'high'],
+          'group':       ['fruit 1', 'fruit 10', 'fruit 1', 'veget', 'veget', 'veget', 'veget', 'veget'],
+          'id':          [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008],
+          'supplier':    ["sup1", "sup1", "sup1", "sup2", "sup2", "sup2", "sup2", "sup1"],
+          'location':    ["fr", "gb", "es", "ch", "gb", "fr", "es", "ch"],
+          'valid':       ["ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"]}
+        df1 = pd.DataFrame(fruits)
+        a_df = df1.npd.analysis(distr=True)
+        xdt = Xdataset.from_dataframe(df1)
+        df3 = xdt.to_dataframe(json_name=False).reset_index()
+        df2 = df1.sort_values(a_df.partitions(mode='id')[0]).reset_index(drop=True)
+        df4 = df3.sort_values(a_df.partitions(mode='id')[0]).reset_index(drop=True)[df2.columns]
+        self.assertTrue(df4.equals(df2))
+        
         
 if __name__ == '__main__':    
     unittest.main(verbosity=2)

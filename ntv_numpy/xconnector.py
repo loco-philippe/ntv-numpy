@@ -154,10 +154,11 @@ class PandasConnec:
         else:
             dimensions, data = PandasConnec._ximport_analysis(dfr, opt['dims'])
         shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
+        dfr = dfr.sort_values(dimensions)
         for name in df_names:
             xnd += [PandasConnec._ximport_series(data, name, dfr, dimensions,
                                                  shape_dfr, df_ntv_types, **opt)]
-            print('_ximport ', name, dimensions, shape_dfr)
+            #print('_ximport ', name, dimensions, shape_dfr)
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()
 
     @staticmethod
@@ -246,7 +247,7 @@ class PandasConnec:
         - links: list of string - list of linked Series
         - new_dims: list of string (default None) - new order of dims
         '''
-        print(name, shape, dims, links)
+        #print(name, shape, dims, links)
         if not links:
             return np.array(dfr[name])
 
