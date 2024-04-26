@@ -157,6 +157,7 @@ class PandasConnec:
         for name in df_names:
             xnd += [PandasConnec._ximport_series(data, name, dfr, dimensions,
                                                  shape_dfr, df_ntv_types, **opt)]
+            print('_ximport ', name, dimensions, shape_dfr)
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()
 
     @staticmethod
@@ -245,12 +246,12 @@ class PandasConnec:
         - links: list of string - list of linked Series
         - new_dims: list of string (default None) - new order of dims
         '''
-
+        print(name, shape, dims, links)
         old_order = list(range(len(dims)))
         new_dims = new_dims if new_dims else dims
         order = [dims.index(dim)
                  for dim in new_dims] if new_dims else old_order
-
+        print('order', old_order, new_dims, order)
         idx = [0] * len(dims)
         for nam in links:
             idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
