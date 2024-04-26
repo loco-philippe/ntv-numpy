@@ -247,11 +247,14 @@ class PandasConnec:
         - new_dims: list of string (default None) - new order of dims
         '''
         print(name, shape, dims, links)
+        if not links:
+            return np.array(dfr[name])
+
         old_order = list(range(len(dims)))
         new_dims = new_dims if new_dims else dims
         order = [dims.index(dim)
                  for dim in new_dims] if new_dims else old_order
-        print('order', old_order, new_dims, order)
+        #print('order', old_order, new_dims, order)
         idx = [0] * len(dims)
         for nam in links:
             idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
