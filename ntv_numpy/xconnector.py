@@ -108,7 +108,6 @@ class PandasConnec:
         dic_series = {dic_name[name]: PandasConnec._to_np_series(xdt, name, dims)
                       for name in fields_array}
         dfr = pd.DataFrame(dic_series)
-        #index = [dic_name[name] for name in dims + xdt.coordinates]
         index = [dic_name[name] for name in dims]
         if index: 
             dfr = dfr.set_index(index)
@@ -160,7 +159,6 @@ class PandasConnec:
         for name in df_names:
             xnd += [PandasConnec._ximport_series(data, name, dfr, dimensions,
                                                  shape_dfr, df_ntv_types, **opt)]
-            #print('_ximport ', name, dimensions, shape_dfr)
         return Xclass(xnd, dfr.attrs.get('name')).to_canonical()
 
     @staticmethod
@@ -263,7 +261,6 @@ class PandasConnec:
         new_dims = new_dims if new_dims else dims
         order = [dims.index(dim)
                  for dim in new_dims] if new_dims else old_order
-        #print('order', old_order, new_dims, order)
         idx = [0] * len(dims)
         for nam in links:
             idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
