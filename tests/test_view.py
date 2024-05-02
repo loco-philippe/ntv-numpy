@@ -7,6 +7,8 @@ Created on Mon Apr 29 07:18:18 2024
 import pandas as pd
 import ntv_pandas as npd
 from tab_analysis import Util
+from ntv_numpy import Xdataset
+
 fruits = {'plants':      ['fruit', 'fruit', 'fruit', 'fruit', 'vegetable', 'vegetable', 'vegetable', 'vegetable'],
   'plts':        ['fr', 'fr', 'fr', 'fr', 've', 've', 've', 've'], 
   'quantity':    ['1 kg', '10 kg', '1 kg', '10 kg', '1 kg', '10 kg', '1 kg', '10 kg'],
@@ -20,6 +22,7 @@ fruits = {'plants':      ['fruit', 'fruit', 'fruit', 'fruit', 'vegetable', 'vege
   'valid':       ["ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"]}
 simple = { 'a': [1,2,3,4,4],
            'b': [10,20,30,40,40],
+           #'b2': [10,20,30,40,40],
            'c': [1,1,3,4,4],
            'd': [1,1,1,4,4],
            'e': [1,1,1,1,1]}
@@ -28,6 +31,8 @@ a_df = df1.npd.analysis(distr=True)
 print(a_df.partitions(mode='id'))
 print(a_df.field_partition(mode='id'))
 print(a_df.relation_partition())
+df2 = Xdataset.from_dataframe(df1).to_dataframe()
+print(df2)
 """
 df1 = pd.DataFrame(fruits)
 a_df = df1.npd.analysis(distr=True)

@@ -108,8 +108,10 @@ class PandasConnec:
         dic_series = {dic_name[name]: PandasConnec._to_np_series(xdt, name, dims)
                       for name in fields_array}
         dfr = pd.DataFrame(dic_series)
-        index = [dic_name[name] for name in dims + xdt.coordinates]
-        dfr = dfr.set_index(index)
+        #index = [dic_name[name] for name in dims + xdt.coordinates]
+        index = [dic_name[name] for name in dims]
+        if index: 
+            dfr = dfr.set_index(index)
         dfr.attrs |= {'metadata': {
             name: xdt[name].meta for name in xdt.metadata}}
         fields_uri = [var for var in fields if not var in fields_array]
@@ -163,11 +165,15 @@ class PandasConnec:
 
     @staticmethod
     def _ximport_analysis(dfr, opt_dims):
-        '''return data and dimensions from analysis module'''
+        '''return data and dimensions from analysis module
+        - opt_dims: partition to apply
+        - dfr: dataframe to analyse'''
+        dfr_idx = list(dfr.index.names)
+        opt_dims = dfr_idx if dfr_idx != [None] else opt_dims
         ana = dfr.npd.analysis(distr=True)
         partition = ana.field_partition(partition=opt_dims, mode='id')
-        part_rel = ana.relation_partition(partition=opt_dims)
-        part_dim = ana.relation_partition(partition=opt_dims, primary=True)
+        part_rel = ana.relation_partition(partition=opt_dims, noroot=True)
+        part_dim = ana.relation_partition(partition=opt_dims, noroot=True, primary=True)
         dimensions = partition['primary']
         len_fields = {fld.idfield: fld.lencodec for fld in ana.fields}
         data = {fld.idfield: {
