@@ -8,6 +8,7 @@ import pandas as pd
 import ntv_pandas as npd
 from tab_analysis import Util
 from ntv_numpy import Xdataset
+from xconnector import PandasConnec
 
 fruits = {'plants':      ['fruit', 'fruit', 'fruit', 'fruit', 'vegetable', 'vegetable', 'vegetable', 'vegetable'],
   'plts':        ['fr', 'fr', 'fr', 'fr', 've', 've', 've', 've'], 
@@ -30,7 +31,8 @@ df1 = pd.DataFrame(simple)
 a_df = df1.npd.analysis(distr=True)
 print(a_df.partitions(mode='id'))
 print(a_df.field_partition(mode='id'))
-print(a_df.relation_partition())
+print(a_df.relation_partition(noroot=True))
+print(PandasConnec._ximport_analysis(df1, None))
 df2 = Xdataset.from_dataframe(df1).to_dataframe()
 print(df2)
 """

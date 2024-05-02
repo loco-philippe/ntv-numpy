@@ -155,7 +155,7 @@ class PandasConnec:
             data = dfr.attrs['info']['data']
         else:
             dimensions, data = PandasConnec._ximport_analysis(dfr, opt['dims'])
-        shape_dfr = [data[dim]['shape'][0] for dim in dimensions]
+        shape_dfr = [data[dim]['shape'][0] for dim in dimensions] if dimensions else len(dfr)
         dfr = dfr.sort_values(dimensions)
         for name in df_names:
             xnd += [PandasConnec._ximport_series(data, name, dfr, dimensions,
@@ -225,6 +225,8 @@ class PandasConnec:
         - **dims**: list of string - order of dimensions full_name to apply'''
         if name in xdt.uniques:
             return np.array([xdt[name].darray[0]] * xdt.length)
+        if xdt[name].shape == [xdt.length]: 
+            return xdt[name].darray
         n_shape = {nam: len(xdt[nam]) for nam in dims}
         dim_name = xdt.dims(name)
         if not set(dim_name) <= set(dims):

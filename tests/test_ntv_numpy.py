@@ -626,7 +626,26 @@ class Test_Xdataset(unittest.TestCase):
         df4 = df3.sort_values(a_df.partitions(mode='id')[0]).reset_index(drop=True)[df2.columns]
         self.assertTrue(df4.equals(df2))
         
-        
+        simple = { 'a': [1,2,3,4,4],
+                   'b': [10,20,30,40,40],
+                   #'b2': [10,20,30,40,40],
+                   'c': [1,1,3,4,4],
+                   'd': [1,1,1,4,4],
+                   'e': [1,1,1,1,1]}
+        df1 = pd.DataFrame(simple)
+        df3 = Xdataset.from_dataframe(df1).to_dataframe(json_name=False)[df1.columns]
+        self.assertTrue(df3.equals(df1))
+
+        simple = { 'a': [1,2,3,4,5],
+                   'b': [10,20,30,40,50],
+                   'b2': [10,20,30,40,40],
+                   'c': [1,1,3,4,4],
+                   'd': [1,1,1,4,4],
+                   'e': [1,1,1,1,1]}
+        df1 = pd.DataFrame(simple)
+        df3 = Xdataset.from_dataframe(df1).to_dataframe(json_name=False).reset_index()[df1.columns]
+        self.assertTrue(df3.equals(df1))
+
 if __name__ == '__main__':    
     unittest.main(verbosity=2)
                                     
