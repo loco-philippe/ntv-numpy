@@ -390,6 +390,8 @@ class Test_Xdataset(unittest.TestCase):
                                     'metadata': ['info'],
                                     'validity': 'undefined', 'width': 11})
 
+class Test_Xdataset_xarray_scipp(unittest.TestCase):    
+
     def test_xdataset_DataArray(self):    
         
         examples = [
@@ -531,6 +533,8 @@ class Test_Xdataset(unittest.TestCase):
             xd_xr = Xdataset.from_xarray(xd.to_xarray())
             self.assertTrue(xd == xd_sc == xd_xr)
 
+class Test_Xdataset_pandas(unittest.TestCase):    
+
     def test_xdataset_dataframe(self):    
 
         ds = xr.Dataset({"foo": (("x", "y", "z", "year"), np.random.randn(2, 3, 3, 2))},
@@ -550,6 +554,8 @@ class Test_Xdataset(unittest.TestCase):
         dfr = xdt.to_dataframe(json_name=True)
         xds = Xdataset.from_dataframe(dfr)
         self.assertEqual(xds, xdt)
+
+    def test_xdataset_multidim(self):    
 
         example = { 'test:xdataset': {
             'var1': [['https://github.com/loco-philippe/ntv-numpy/tree/main/example/ex_ndarray.ntv'], ['x', 'y']],    
@@ -607,6 +613,8 @@ class Test_Xdataset(unittest.TestCase):
         xd3 = Xdataset.from_dataframe(df3)        
         self.assertEqual(xd2, xd3)
 
+    def test_xdataset_multipart(self):    
+
         fruits = {'plants':      ['fruit', 'fruit', 'fruit', 'fruit', 'vegetable', 'vegetable', 'vegetable', 'vegetable'],
           'plts':        ['fr', 'fr', 'fr', 'fr', 've', 've', 've', 've'], 
           'quantity':    ['1 kg', '10 kg', '1 kg', '10 kg', '1 kg', '10 kg', '1 kg', '10 kg'],
@@ -626,6 +634,8 @@ class Test_Xdataset(unittest.TestCase):
         df4 = df3.sort_values(a_df.partitions(mode='id')[0]).reset_index(drop=True)[df2.columns]
         self.assertTrue(df4.equals(df2))
         
+    def test_xdataset_unidim(self):    
+
         simple = { 'a': [1,2,3,4,4],
                    'b': [10,20,30,40,40],
                    #'b2': [10,20,30,40,40],

@@ -56,7 +56,12 @@ class Darray(ABC):
             self.ref = data.ref
             self.coding = data.coding
             return
-        data = data if isinstance(data, (list, np.ndarray)) else [data]
+        if isinstance(data, np.ndarray):
+            self.data = data.reshape(-1)
+            self.ref = ref
+            self.coding = np.array(coding)
+            return
+        data = data if isinstance(data, list) else [data]
         if (len(data) > 0 and isinstance(data[0], (list, np.ndarray))) or unidim:
             self.data = np.fromiter(data, dtype='object')
         else:
