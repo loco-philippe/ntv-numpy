@@ -603,7 +603,7 @@ class Test_Xdataset_pandas(unittest.TestCase):
             'z.uncertainty': [[[0.1, 0.2]]],
             'z.variance': [['float', [0.1, 0.2]]],
         
-            'location': 'paris'
+            'location': [['string', ['paris']]]
             } }
         xd = Xdataset.read_json(example) 
         df = xd.to_dataframe()

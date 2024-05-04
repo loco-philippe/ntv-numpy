@@ -11,18 +11,12 @@ representation of unidimensional arrays.
 For more information, see the
 [user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html)
  or the [github repository](https://github.com/loco-philippe/ntv-numpy).
-
 """
-
-#import datetime
-#from decimal import Decimal
-
 from abc import ABC, abstractmethod
 import json
 import numpy as np
-from json_ntv import Ntv, NtvConnector
-#from json_ntv import Ntv, ShapelyConnec, NtvConnector
 import pandas as pd
+from json_ntv import Ntv, NtvConnector
 
 
 class Darray(ABC):
@@ -56,14 +50,10 @@ class Darray(ABC):
             self.ref = data.ref
             self.coding = data.coding
             return
-        if isinstance(data, np.ndarray):
-            self.data = data.reshape(-1)
-            self.ref = ref
-            self.coding = np.array(coding)
-            return
-        data = data if isinstance(data, list) else [data]
+        data = data if isinstance(data, (list, np.ndarray)) else [data]
         if (len(data) > 0 and isinstance(data[0], (list, np.ndarray))) or unidim:
-            self.data = np.fromiter(data, dtype='object')
+            dtype = data.dtype if isinstance(data, np.ndarray) else 'object' 
+            self.data = np.fromiter(data, dtype=dtype)
         else:
             self.data = np.array(data, dtype=dtype).reshape(-1)
         self.ref = ref
@@ -169,7 +159,6 @@ class Dfull(Darray):
 
     def to_json(self):
         ''' return a JsonValue of the Dfull entity.'''
-        #return self.data.tolist()
         return Dutil.list_json(self.data)
 
     @property
@@ -215,7 +204,6 @@ class Dcomplete(Darray):
 
     def to_json(self):
         ''' return a JsonValue of the Dcomplete entity.'''
-        #return [self.data.tolist(), self.coding.tolist()]
         return [Dutil.list_json(self.data), self.coding.tolist()]
 
     @property
