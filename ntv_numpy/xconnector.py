@@ -111,18 +111,18 @@ class PandasConnec:
         index = [dic_name[name] for name in dims]
         if index: 
             dfr = dfr.set_index(index)
-        dfr.attrs |= {'metadata': {
-            name: xdt[name].meta for name in xdt.metadata}}
-        fields_uri = [var for var in fields if not var in fields_array]
-        fields_other = [nam for nam in xdt.group(xdt.data_arrays)
-                        if len(xdt[nam]) != xdt.length]
-        if fields_uri:
-            dfr.attrs |= {'fields': {nam: xdt[nam].to_json(noname=True,)
-                                     for nam in fields_uri + fields_other}}
-        if xdt.name:
-            dfr.attrs |= {'name': xdt.name}
         if opt['info']:
             dfr.attrs |= {'info': xdt.tab_info}
+            dfr.attrs |= {'metadata': {
+                name: xdt[name].meta for name in xdt.metadata}}
+            fields_uri = [var for var in fields if not var in fields_array]
+            fields_other = [nam for nam in xdt.group(xdt.data_arrays)
+                            if len(xdt[nam]) != xdt.length]
+            if fields_uri:
+                dfr.attrs |= {'fields': {nam: xdt[nam].to_json(noname=True,)
+                                         for nam in fields_uri + fields_other}}
+            if xdt.name:
+                dfr.attrs |= {'name': xdt.name}
         return dfr
 
     @staticmethod
