@@ -13,38 +13,52 @@ This package contains the following classes and functions:
     - `ntv-numpy.ntv_numpy.numpy_ntv_connector.XDatasetConnec`
     - `ntv-numpy.ntv_numpy.numpy_ntv_connector.XndarrayConnec`
     - `ntv-numpy.ntv_numpy.numpy_ntv_connector.NdarrayConnec`
-    - `ntv-numpy.ntv_numpy.numpy_ntv_connector.to_json`
-    - `ntv-numpy.ntv_numpy.numpy_ntv_connector.read_json`
+    - `ntv-numpy.ntv_numpy.numpy_ntv_connector.NarrayConnec`
+
+- `ntv-numpy.ntv_numpy.xconnector` :
+
+    - `ntv-numpy.ntv_numpy.xconnector.PandasConnec`
+    - `ntv-numpy.ntv_numpy.xconnector.XarrayConnec`
+    - `ntv-numpy.ntv_numpy.xconnector.ScippConnec`
+    - `ntv-numpy.ntv_numpy.xconnector.AstropyNDDataConnec`
 
 - `ntv-numpy.ntv_numpy.data_array` :
-    
+
     - `ntv-numpy.ntv_numpy.data_array.Darray`
     - `ntv-numpy.ntv_numpy.data_array.Dfull`
     - `ntv-numpy.ntv_numpy.data_array.Dcomplete`
-    
+    - `ntv-numpy.ntv_numpy.data_array.Dutil`
+
 - `ntv-numpy.ntv_numpy.ndarray` :
-    
+
     - `ntv-numpy.ntv_numpy.ndarray.Ndarray`
     - `ntv-numpy.ntv_numpy.ndarray.Nutil`
     - `ntv-numpy.ntv_numpy.ndarray.NdarrayError`
-    
+
 - `ntv-numpy.ntv_numpy.xndarray` :
-    
+
     - `ntv-numpy.ntv_numpy.xndarray.Xndarray`
-    
+
 - `ntv-numpy.ntv_numpy.xdataset` :
-    
+
     - `ntv-numpy.ntv_numpy.xdataset.Xdataset`
-    
+    - `ntv-numpy.ntv_numpy.xdataset.XdatasetInterface`
+    - `ntv-numpy.ntv_numpy.xdataset.XdatasetCategory`
+
+- `ntv-numpy.ntv_numpy.ndtype` :
+
+    - `ntv-numpy.ntv_numpy.ndtype.Ndtype`
+
 """
-#from pathlib import Path
-from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec #, read_json, to_json
+# from pathlib import Path
+# , read_json, to_json
+from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
 from ntv_numpy.ndarray import Ndarray, Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xdataset import Xdataset
-#import ntv_pandas.pandas_ntv_connector
+# import ntv_pandas.pandas_ntv_connector
 
-#path = Path(ntv_numpy.numpy_ntv_connector.__file__).parent
+# path = Path(ntv_numpy.numpy_ntv_connector.__file__).parent
 
-#print('package :', __package__)
+# print('package :', __package__)

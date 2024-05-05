@@ -20,9 +20,10 @@ import json
 
 from decimal import Decimal
 import numpy as np
-from json_ntv import Ntv, ShapelyConnec, NtvConnector #, Datatype
+from json_ntv import Ntv, ShapelyConnec, NtvConnector  # , Datatype
 from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
 from ntv_numpy.ndtype import Ndtype, NP_NTYPE
+
 
 class Ndarray:
     ''' The Ndarray class is the JSON interface of numpy.ndarrays.
@@ -41,7 +42,7 @@ class Ndarray:
         - **dar**: Darray or np.ndarray - data to represent
         - **shape** : list of integer (default None) - length of dimensions
         - **ntv_type**: string (default None) - NTVtype to apply
-        - **str_uri**: boolean(default True) - if True and dar is a string, 
+        - **str_uri**: boolean(default True) - if True and dar is a string,
         dar is an uri else a np.array
         '''
         dar = [None] if isinstance(dar, list) and len(dar) == 0 else dar
@@ -101,7 +102,6 @@ class Ndarray:
 
     def __len__(self):
         ''' len of ndarray'''
-        # return len(self.darray) if self.darray is not None else Ndarray.len_shape(self.shape)
         return len(self.darray) if self.darray is not None else 0
 
     def __contains__(self, item):
@@ -137,9 +137,10 @@ class Ndarray:
     def set_shape(self, shape):
         '''update the shape'''
         if Ndarray.len_shape(shape) != len(self.darray):
-            raise NdarrayError("shape is not consistent with the ndarray length")
+            raise NdarrayError(
+                "shape is not consistent with the ndarray length")
         self.shape = list(shape)
-    
+
     def update(self, nda, nda_uri=True):
         '''update uri and darray and return the result (True, False)
 
@@ -184,7 +185,6 @@ class Ndarray:
             return False
         self.uri = None
         self.darray = darray
-        #self.ntvtype = Datatype(new_ntv_type)
         self.ntvtype = Ndtype(new_ntv_type)
         self.shape = new_shape
         return True
@@ -326,22 +326,22 @@ class Nutil:
 
     '''
     CONNECTOR_DT = {'field': 'Series', 'tab': 'DataFrame'}
-    PYTHON_DT    = {'array': 'list', 'time': 'datetime.time',
-                    'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
-                    'ndarray': 'ndarray', 'narray': 'narray'}
-    LOCATION_DT  = {'point': 'Point',
-                    'line': 'LineString', 'polygon': 'Polygon'}
+    PYTHON_DT = {'array': 'list', 'time': 'datetime.time',
+                 'object': 'dict', 'null': 'NoneType', 'decimal64': 'Decimal',
+                 'ndarray': 'ndarray', 'narray': 'narray'}
+    LOCATION_DT = {'point': 'Point',
+                   'line': 'LineString', 'polygon': 'Polygon'}
     DT_CONNECTOR = {val: key for key, val in CONNECTOR_DT.items()}
-    DT_PYTHON    = {val: key for key, val in PYTHON_DT.items()}
-    DT_LOCATION  = {val: key for key, val in LOCATION_DT.items()}
-    DT_NTVTYPE   = DT_LOCATION | DT_CONNECTOR | DT_PYTHON
+    DT_PYTHON = {val: key for key, val in PYTHON_DT.items()}
+    DT_LOCATION = {val: key for key, val in LOCATION_DT.items()}
+    DT_NTVTYPE = DT_LOCATION | DT_CONNECTOR | DT_PYTHON
 
+    FORMAT_CLS = {'full': Dfull, 'complete': Dcomplete}
+    STRUCT_DT = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
+    CONVERT_DT = {'object': 'object', 'array': 'object', 'json': 'object',
+                  'number': 'float', 'boolean': 'bool', 'null': 'object',
+                  'string': 'str', 'integer': 'int'}
 
-    FORMAT_CLS   = {'full': Dfull, 'complete': Dcomplete}
-    STRUCT_DT    = {'Ntv': 'object', 'NtvSingle': 'object', 'NtvList': 'object'}
-    CONVERT_DT   = {'object': 'object', 'array': 'object', 'json': 'object',
-                    'number': 'float', 'boolean': 'bool', 'null': 'object',
-                    'string': 'str', 'integer': 'int'}
     @staticmethod
     def is_json(obj):
         ''' check if obj is a json structure and return True if obj is a json-value
@@ -368,21 +368,21 @@ class Nutil:
             case _:
                 return False
 
-    @staticmethod 
+    @staticmethod
     def extend_array(arr, til, shap, order):
-        '''return a flattened np.ndarray extended in additional dimensions 
-        
+        '''return a flattened np.ndarray extended in additional dimensions
+
         parameters:
-        
+
         - arr: np.array to extend
         - til: integer - parameter to apply to np.tile function
-        - shap: list of integer - shape of the array 
+        - shap: list of integer - shape of the array
         - order: list of integer - order of dimensions to apply
         '''
         old_order = list(range(len(order)))
         arr_tab = np.tile(arr, til).reshape(shap)
         return np.moveaxis(arr_tab, old_order, order).flatten()
-    
+
     @staticmethod
     def convert(ntv_type, nda, tojson=True, convert=True):
         ''' convert np.ndarray with external NTVtype.
@@ -519,7 +519,8 @@ class Nutil:
         - **ntv_type** : string - additional type
         - **ext** : string - type extension
         '''
-        np_ntype = NP_NTYPE | Nutil.DT_NTVTYPE | {'int': 'int', 'object': 'object'}
+        np_ntype = NP_NTYPE | Nutil.DT_NTVTYPE | {
+            'int': 'int', 'object': 'object'}
         if ntv_type:
             return Nutil.add_ext(ntv_type, ext)
         match dtype:
@@ -565,7 +566,7 @@ class Nutil:
             return None
         if convert:
             if ntv_type[:8] == 'datetime' and ntv_type[8:]:
-                return 'datetime64' +ntv_type[8:]
+                return 'datetime64' + ntv_type[8:]
             return Ndtype(ntv_type).dtype
         return Nutil.CONVERT_DT[Ndtype(ntv_type).json_type]
 

@@ -37,9 +37,10 @@ title: Example of interoperability
 ---
 flowchart LR
     A[Xarray] <--lossless--> B[Neutral\nXdataset]
-    B <--lossless--> C[NDData]
     D[Scipp] <--lossless--> B
+    C[NDData] <--lossless--> B
     B <--lossless--> E[JSON]
+    B <--lossless--> F[DataFrame]
 ```
 
 ### Data example
@@ -63,14 +64,15 @@ In [1]: example = {
                         
                         'z_bis': [[['z1_bis', 'z2_bis']]],
                 
-                        'info': {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/'}
+                        'info': {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/',
+                        'location': [['string', ['paris']]]}
                 }
         }
 
 In [2]: from ntv_numpy import Xdataset
 
         x_example = Xdataset.read_json(example)
-        x_example.info
+        x_example.info['structure']
 Out[2]: {'name': 'example',
         'xtype': 'group',
         'data_vars': ['var1', 'var2'],
@@ -79,9 +81,10 @@ Out[2]: {'name': 'example',
         'coordinates': ['ranking', 'z'],
         'additionals': ['var1.mask1', 'var1.mask2', 'var1.variance', 'z.uncertainty'],
         'metadata': ['info'],
+        'uniques': ['location'],
         'validity': 'undefined',
         'length': 4,
-        'width': 12}
+        'width': 13}
 ```
 
 The JSON representation is equivalent to the Xdataset entity (Json conversion reversible)
@@ -90,7 +93,7 @@ The JSON representation is equivalent to the Xdataset entity (Json conversion re
 In [3]: x_json = x_example.to_json()
         x_example_json = Xdataset.read_json(x_json)
         x_example_json == x_example
-Out[2]: True
+Out[3]: True
 ```
 
 ### Xarray interoperability
@@ -98,13 +101,14 @@ Out[2]: True
 ```python
 In [4]: x_xarray = x_example.to_xarray()
         print(x_xarray)
-Out[4]: <xarray.Dataset> Size: 182B
+Out[4]: <xarray.Dataset> Size: 202B
         Dimensions:        (x: 2, y: 2)
         Coordinates:
           * x              (x) <U6 48B '23F0AE' '578B98'
           * y              (y) datetime64[ns] 16B 2021-01-01 2022-02-02
             ranking        (x, y) int32 16B 1 2 3 4
             z              (x) float64 16B 10.0 20.0
+            location       <U5 20B 'paris'
             var1.mask1     (x) bool 2B True False
             var1.mask2     (x, y) bool 4B True False False True
             var1.variance  (x, y) float64 32B 0.1 0.2 0.3 0.4
@@ -121,17 +125,47 @@ Out[4]: <xarray.Dataset> Size: 182B
 Reversibility:
 
 ```python
-In [3]: x_example_xr = Xdataset.from_xarray(x_xarray)
+In [5]: x_example_xr = Xdataset.from_xarray(x_xarray)
         x_example_xr == x_example_json == x_example
-Out[2]: True
+Out[5]: True
+```
+
+### Pandas interoperability
+
+```python
+In [6]: x_dataframe = x_example.to_dataframe()
+        print(x_example.to_dataframe(json_name=False))
+        print(x_xarray)
+Out[6]: 
+                   ranking     z  z.uncertainty  var1  var1.mask1  var1.mask2  \
+x      y                                                                        
+23F0AE 2021-01-01        1  10.0            0.1  10.1        True        True   
+       2022-02-02        2  10.0            0.1   0.4        True       False   
+578B98 2021-01-01        3  20.0            0.2   3.4       False       False   
+       2022-02-02        4  20.0            0.2   8.2       False        True   
+
+                   var1.variance location  
+x      y                                   
+23F0AE 2021-01-01            0.1    paris  
+       2022-02-02            0.2    paris  
+578B98 2021-01-01            0.3    paris  
+       2022-02-02            0.4    paris 
+```
+
+Reversibility:
+
+```python
+In [7]: x_example_pd = Xdataset.from_dataframe(x_dataframe)
+        x_example_pd == x_example_xr == x_example_json == x_example
+Out[7]: True
 ```
 
 ### scipp interoperability
 
 ```python
-In [4]: x_scipp = x_example.to_scipp()
+In [8]: x_scipp = x_example.to_scipp()
         print(x_scipp['example'])
-Out[4]: <scipp.Dataset>
+Out[8]: <scipp.Dataset>
 Dimensions: Sizes[x:string:2, y:date:2, ]
 Coordinates:
 * ranking:month           int32  [dimensionless]  (x:string, y:date)  [1, 2, 3, 4]
@@ -148,9 +182,9 @@ Data:
 Reversibility:
 
 ```python
-In [3]: x_example_sc = Xdataset.from_scipp(x_scipp)
-        x_example_sc == x_example_xr == x_example_json == x_example
-Out[2]: True
+In [9]: x_example_sc = Xdataset.from_scipp(x_scipp)
+        x_example_sc == x_example_pd == x_example_xr == x_example_json == x_example
+Out[9]: True
 ```
 
 ### NDData interoperability
@@ -172,7 +206,7 @@ In [1]: example = {
         } 
         n_example = Xdataset.read_json(example)
         n_example.info 
-Out[4]: {'name': 'example',
+Out[1]: {'name': 'example',
         'xtype': 'group',
         'data_arrays': ['data', 'psf'],
         'additionals': ['data.mask', 'data.uncertainty'],
@@ -182,17 +216,17 @@ Out[4]: {'name': 'example',
 ```
 
 ```python
-In [4]: n_nddata = n_example.to_nddata()
+In [2]: n_nddata = n_example.to_nddata()
         n_nddata
-Out[4]: NDData([1., 2., ——, ——], unit='erg / s')
+Out[2]: NDData([1., 2., ——, ——], unit='erg / s')
 ```
 
 Reversibility:
 
 ```python
-In [5]: n_example_ndd = Xdataset.from_nddata(n_nddata)
+In [3]: n_example_ndd = Xdataset.from_nddata(n_nddata)
         n_example_ndd == n_example
-Out[5]: True
+Out[3]: True
 ```
 
 ## URI usage
@@ -226,7 +260,7 @@ In [1]: example = {
 The complete example can be rebuild with loading data (path + file name).
 
 ```python
-In [5]: # simulation of reading files at the indicated "path"
+In [2]: # simulation of reading files at the indicated "path"
         var1          = np.array([10.1, 0.4, 3.4, 8.2])
         var1_variance = Ndarray([0.1, 0.2, 0.3, 0.4], ntv_type='float')
         var1_mask1    = np.array([True, False])
@@ -246,5 +280,5 @@ In [5]: # simulation of reading files at the indicated "path"
         xnda.set_ndarray(Ndarray(data))
 
         x_example_mixte_numpy == x_example_mixte_json == x_example_sc == x_example_xr == x_example_json == x_example
-Out[5]: True
+Out[2]: True
 ```

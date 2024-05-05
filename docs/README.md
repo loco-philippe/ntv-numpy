@@ -11,6 +11,7 @@ The documentation presents :
 
 - API
   - [dev](https://loco-philippe.github.io/ntv-numpy/ntv_numpy.html)
+  - [v0.2.0](https://loco-philippe.github.io/ntv-numpy/v0.2.0/ntv_numpy.html)
   - [v0.1.2](https://loco-philippe.github.io/ntv-numpy/v0.1.2/ntv_numpy.html)
 - Release
   - [all versions](https://github.com/loco-philippe/ntv-numpy/tree/main/docs/release.rst)

@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Mar  7 09:56:11 2024
+@author: Philippe@loco-labs.io
 
-@author: a lab in the Air
+The `xdataset` module is part of the `ntv-numpy.ntv_numpy` package ([specification document](
+https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
+
+It contains the classes `Xdataset`, `XdatasetInterface`, `XdatasetCategory` for 
+the multidimensional dataset.
+
+For more information, see the
+[user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html)
+ or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 """
 from abc import ABC, abstractmethod
 import json
@@ -12,6 +20,7 @@ from ntv_numpy.ndarray import Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyNDDataConnec
 from ntv_numpy.xconnector import PandasConnec
+
 
 class XdatasetCategory(ABC):
     ''' category of Xndarray (dynamic tuple of full_name) - see Xdataset docstring'''
@@ -26,7 +35,7 @@ class XdatasetCategory(ABC):
     @property
     def data_arrays(self):
         '''return a tuple of data_arrays Xndarray full_name'''
-        return tuple(sorted(nda for nda in self.namedarrays 
+        return tuple(sorted(nda for nda in self.namedarrays
                             if not nda in self.dimensions + self.uniques))
 
     @property
@@ -41,7 +50,7 @@ class XdatasetCategory(ABC):
     def shape(self):
         '''return an array with the length of dimensions'''
         return [len(self[dim]) for dim in self.dimensions]
-    
+
     @property
     def coordinates(self):
         '''return a tuple of coordinates Xndarray full_name'''
@@ -74,44 +83,35 @@ class XdatasetCategory(ABC):
     def undef_vars(self):
         '''return a tuple of variables Xndarray full_name with inconsistent shape'''
         return tuple(sorted(var for var in self.variables if self[var].shape !=
-                             [len(self[dim]) for dim in self.dims(var)]))
+                            [len(self[dim]) for dim in self.dims(var)]))
 
     @property
     def undef_links(self):
         '''return a tuple of variables Xndarray full_name with inconsistent links'''
         return tuple(sorted(link for var in self.variables for link in self[var].links
-                             if not link in self.names))
+                            if not link in self.names))
 
     @property
     def masks(self):
         '''return a tuple of additional Xndarray full_name with boolean ntv_type'''
         return tuple(sorted(xnda.full_name for xnda in self.xnd
-                             if xnda.xtype == 'additional' and xnda.ntv_type == 'boolean'))
+                            if xnda.xtype == 'additional' and xnda.ntv_type == 'boolean'))
 
     @property
     def data_add(self):
         '''return a tuple of additional Xndarray full_name with not boolean ntv_type'''
         return tuple(sorted(xnda.full_name for xnda in self.xnd
-                             if xnda.xtype == 'additional' and xnda.ntv_type != 'boolean'))
-
-    """@property
-    def meta(self):
-        '''return a tuple of meta Xndarray full_name'''
-        return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'meta'))"""
+                            if xnda.xtype == 'additional' and xnda.ntv_type != 'boolean'))
 
     @property
     def metadata(self):
         '''return a tuple of metadata Xndarray full_name'''
         return tuple(sorted(xnda.full_name for xnda in self.xnd if xnda.xtype == 'meta'))
-        #return tuple(sorted(xnda.full_name for xnda in self.xnd 
-        #                    if xnda.xtype == 'meta' and isinstance(xnda.meta, (list, dict))))
-        
+
     @property
     def uniques(self):
         '''return a tuple of unique Xndarray full_name'''
         return tuple(full_name for full_name in self.namedarrays if len(self[full_name]) == 1)
-        #return tuple(sorted(xnda.full_name for xnda in self.xnd
-        #                    if xnda.xtype == 'meta' and not xnda.full_name in self.metadata))
 
     @property
     def additionals(self):
@@ -121,8 +121,8 @@ class XdatasetCategory(ABC):
     def group(self, grp):
         '''return a tuple of Xndarray full_name with the same name'''
         if isinstance(grp, str):
-            return tuple(sorted(xnda.full_name for xnda in self.xnd 
-                                if xnda.name == grp or xnda.full_name == grp))
+            return tuple(sorted(xnda.full_name for xnda in self.xnd
+                                if grp in (xnda.name, xnda.full_name)))
         return tuple(sorted(nam for gr_nam in grp for nam in self.group(gr_nam)))
 
     def add_group(self, add_name):
@@ -173,7 +173,6 @@ class XdatasetInterface(ABC):
         noshape = kwargs.get('noshape', True)
         dic_xnd = {}
         for xna, notyp, forma in zip(self.xnd, notype, forma):
-            # not_shape = True if len(xna.links) == 1 else noshape
             dic_xnd |= xna.to_json(notype=notyp, novalue=kwargs.get('novalue', False),
                                    noshape=noshape, format=forma, header=False)
         return Nutil.json_ntv(self.name, 'xdataset', dic_xnd,
@@ -434,7 +433,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     def length(self):
         '''return the max length of Xndarray'''
         return max(len(xnda) for xnda in self.xnd)
-    
+
     @property
     def names(self):
         '''return a tuple with the Xndarray full_name'''
@@ -456,7 +455,6 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         dic |= {'uniques': list(self.uniques)} if self.uniques else {}
         return dic
 
-
     @property
     def info(self):
         '''return a dict with Xdataset information '''
@@ -464,8 +462,8 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         inf['validity'] = self.validity
         inf['length'] = len(self[self.data_vars[0]]) if self.data_vars else 0
         inf['width'] = len(self)
-        data = {name: {key: val for key, val in self[name].info.items() if key != 'name'} 
-                 for name in self.names}
+        data = {name: {key: val for key, val in self[name].info.items() if key != 'name'}
+                for name in self.names}
         return {'structure': {key: val for key, val in inf.items() if val},
                 'data': {key: val for key, val in data.items() if val}}
 
@@ -477,11 +475,11 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         t_info = {}
         if 'dimensions' in info['structure']:
             t_info['dimensions'] = info['structure']['dimensions']
-        t_info['data'] = {name: {key: val for key, val in data[name].items() 
-                                 if key in ['shape', 'xtype', 'meta', 'links']} 
+        t_info['data'] = {name: {key: val for key, val in data[name].items()
+                                 if key in ['shape', 'xtype', 'meta', 'links']}
                           for name in data}
         return t_info
-        
+
     def to_canonical(self):
         '''remove optional links of the included Xndarray'''
         for name in self.names:

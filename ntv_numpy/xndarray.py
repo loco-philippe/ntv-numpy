@@ -57,7 +57,6 @@ class Xndarray:
         - **ntv_type**: string (default None) - ntv_type to apply to data
         - **meta**: dict (default None) - information
         '''
-        # print('init xnd', full_name, nda.to_json(), links, meta)
         if isinstance(full_name, Xndarray):
             self.name = full_name.name
             self.add_name = full_name.add_name
@@ -106,9 +105,7 @@ class Xndarray:
             return None
         if isinstance(ind, tuple):
             return [self.nda[i] for i in ind]
-            # return [copy(self.values[i]) for i in ind]
         return self.nda[ind]
-        # return copy(self.values[ind])
 
     def __copy__(self):
         ''' Copy all the data '''

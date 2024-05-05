@@ -24,6 +24,7 @@ from ntv_numpy.ndarray import Ndarray
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xdataset import Xdataset
 
+
 class NarrayConnec(NtvConnector):
 
     '''NTV connector for Numpy ndarray.'''
@@ -181,7 +182,7 @@ class XdatasetConnec(NtvConnector):
         - **notype** : list of Boolean (default list of None) - including data type if False
         - **novalue** : Boolean (default False) - including value if False
         - **noshape** : Boolean (default False) - if True, without shape if dim < 1
-        - **format** : list of string (default list of 'full') - representation format 
+        - **format** : list of string (default list of 'full') - representation format
         of the np.ndarray,
         '''
         option = {'notype': False, 'extension': None, 'format': 'full',

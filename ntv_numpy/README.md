@@ -6,16 +6,19 @@ The `ntv_numpy` package includes
 
 - `numpy_ntv_connector` module
   - child classes of `NTV.json_ntv.ntv.NtvConnector` abstract class:
-    - `NarrayConnec` class: 'np.ndarray' connector
+    - `NarrayConnec` class: 'numpy.ndarray' connector
     - `NdarrayConnec` class: 'ndarray'   connector
     - `XndarrayConnec` class: 'xndarray' connector
     - `XdatasetConnec` class: 'xdataset' connector
 - `xconnector` module
+  - `PandasConnec` class: interface with `pandas.DataFrame`
   - `XarrayConnec` class: interface with `Xarray`
   - `ScippConnec` class: interface with `scipp`
   - `AstropyNDDataConnec` class: interface with `NDData`
 - `xdataset` module
   - `Xdataset` class
+  - `XdatasetInterface` class: Xdataset interfaces
+  - `XdatasetCategory` class: Category of Xndarray in a Xdataset
 - `xndarray` module
   - `Xndarray` class
 - `ndarray` module
@@ -27,6 +30,8 @@ The `ntv_numpy` package includes
   - `Dfull` class: full format
   - `Dcomplete` class: complete format
   - `Dutil` class: utility functions
+- `ndtype` module
+  - `Ndtype` class: child class of `Datatype` with additional attributes
 - configuration files:
   - `ntv_numpy.ini` (correspondence between ntv_type and numpy dtype)
 

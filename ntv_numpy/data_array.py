@@ -52,7 +52,7 @@ class Darray(ABC):
             return
         data = data if isinstance(data, (list, np.ndarray)) else [data]
         if (len(data) > 0 and isinstance(data[0], (list, np.ndarray))) or unidim:
-            dtype = data.dtype if isinstance(data, np.ndarray) else 'object' 
+            dtype = data.dtype if isinstance(data, np.ndarray) else 'object'
             self.data = np.fromiter(data, dtype=dtype)
         else:
             self.data = np.array(data, dtype=dtype).reshape(-1)
@@ -215,6 +215,7 @@ class Dcomplete(Darray):
     def _len_val(self):
         '''return the length of the Dcomplete entity'''
         return len(self.coding) if self.coding.ndim > 0 else 0
+
 
 class Dutil:
     '''np.ndarray utilities.

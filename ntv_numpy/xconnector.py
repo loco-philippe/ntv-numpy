@@ -5,7 +5,7 @@
 The `xconnector` module is part of the `ntv-numpy.ntv_numpy` package ([specification document](
 https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
 
-It contains interface classes with to static methods `ximport` and `xexport`:
+It contains interface classes with two static methods `ximport` and `xexport`:
 - `XarrayConnec` class for Xarray Dataset or DataArray,
 - `AstropyNDDataConnec` class for Astropy NDData,
 - `ScippConnec` class for Scipp Dataset or DataArray,
@@ -109,7 +109,7 @@ class PandasConnec:
                       for name in fields_array}
         dfr = pd.DataFrame(dic_series)
         index = [dic_name[name] for name in dims]
-        if index: 
+        if index:
             dfr = dfr.set_index(index)
         if opt['info']:
             dfr.attrs |= {'info': xdt.tab_info}
@@ -137,7 +137,7 @@ class PandasConnec:
         xnd = []
         dfr = df.reset_index()
         if 'index' in dfr.columns and not 'index' in df.columns:
-            del (dfr['index'])
+            del dfr['index']
         df_names = {Nutil.split_json_name(j_name)[0]: j_name
                     for j_name in dfr.columns}
         df_ntv_types = {Nutil.split_json_name(j_name)[0]:
@@ -154,7 +154,8 @@ class PandasConnec:
             data = dfr.attrs['info']['data']
         else:
             dimensions, data = PandasConnec._ximport_analysis(dfr, opt['dims'])
-        shape_dfr = [data[dim]['shape'][0] for dim in dimensions] if dimensions else len(dfr)
+        shape_dfr = [data[dim]['shape'][0]
+                     for dim in dimensions] if dimensions else len(dfr)
         dfr = dfr.sort_values(dimensions)
         for name in df_names:
             xnd += [PandasConnec._ximport_series(data, name, dfr, dimensions,
@@ -171,7 +172,8 @@ class PandasConnec:
         ana = dfr.npd.analysis(distr=True)
         partition = ana.field_partition(partition=opt_dims, mode='id')
         part_rel = ana.relation_partition(partition=opt_dims, noroot=True)
-        part_dim = ana.relation_partition(partition=opt_dims, noroot=True, primary=True)
+        part_dim = ana.relation_partition(
+            partition=opt_dims, noroot=True, primary=True)
         dimensions = partition['primary']
         len_fields = {fld.idfield: fld.lencodec for fld in ana.fields}
         data = {fld.idfield: {
@@ -188,16 +190,17 @@ class PandasConnec:
     @staticmethod
     def _ximport_series(data, name, dfr, dimensions, shape_dfr, df_ntv_types, **opt):
         '''return a Xndarray from a Series of a pd.DataFrame'''
-        if data[name].get('xtype') == 'meta': # or len(dfr[name].unique()) == 1:
+        if data[name].get('xtype') == 'meta':  # or len(dfr[name].unique()) == 1:
             return Xndarray(name, meta=dfr[name].iloc[0])
         meta = data[name].get('meta')
         ntv_type = df_ntv_types[name]
         if len(dfr[name].unique()) == 1:
-            nda=Ndarray(np.array(dfr[name].iloc[0]), ntv_type=ntv_type, str_uri=False)
+            nda = Ndarray(np.array(dfr[name].iloc[0]),
+                          ntv_type=ntv_type, str_uri=False)
             nda.set_shape([1])
             return Xndarray(name, nda=nda, meta=meta)
         if not dimensions:
-            nda=Ndarray(np.array(dfr[name]), ntv_type=ntv_type)
+            nda = Ndarray(np.array(dfr[name]), ntv_type=ntv_type)
             return Xndarray(name, nda=nda, meta=meta)
         dims = []
         PandasConnec._get_dims(dims, name, data, dimensions)
@@ -223,7 +226,7 @@ class PandasConnec:
         - **dims**: list of string - order of dimensions full_name to apply'''
         if name in xdt.uniques:
             return np.array([xdt[name].darray[0]] * xdt.length)
-        if xdt[name].shape == [xdt.length]: 
+        if xdt[name].shape == [xdt.length]:
             return xdt[name].darray
         n_shape = {nam: len(xdt[nam]) for nam in dims}
         dim_name = xdt.dims(name)
@@ -253,10 +256,8 @@ class PandasConnec:
         - links: list of string - list of linked Series
         - new_dims: list of string (default None) - new order of dims
         '''
-        #print(name, shape, dims, links)
         if not links:
             return np.array(dfr[name])
-
         old_order = list(range(len(dims)))
         new_dims = new_dims if new_dims else dims
         order = [dims.index(dim)
@@ -317,10 +318,10 @@ class XarrayConnec:
             attrs |= xdt[var_name].meta if xdt[var_name].meta else {}
             name = var_name if var_name != 'data' else None
             xrd = xr.DataArray(data=data, coords=coords, dims=dims, attrs=attrs,
-                                name=name)
+                               name=name)
         else:
             data_vars = XarrayConnec._to_xr_vars(xdt, xdt.data_vars)
-            xrd = xr.Dataset(data_vars, coords=coords, attrs=attrs)       
+            xrd = xr.Dataset(data_vars, coords=coords, attrs=attrs)
         for unic in xdt.uniques:
             xrd[unic].attrs |= {'ntv_type': xdt[unic].ntv_type} | (
                 xdt[unic].meta if xdt[unic].meta else {})
@@ -339,11 +340,6 @@ class XarrayConnec:
                 else:
                     xnd += [Xndarray(name, meta=meta)]
         for coord in xar.coords:
-            """if xar[coord].size == 1:
-                xnd += [Xndarray(xar[coord].name,
-                                 meta=xar[coord].values.tolist())]
-            else:
-                xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]"""
             xnd += [XarrayConnec._var_xr_to_xnd(xar.coords[coord])]
             if list(xar.coords[coord].dims) == list(xar.dims) and isinstance(xar, xr.Dataset):
                 xnd[-1].links = [list(xar.data_vars)[0]]
@@ -419,7 +415,8 @@ class XarrayConnec:
     def _to_xr_vars(xdt, list_names):
         '''return a dict with Xarray attributes from a list of Xndarray names'''
         arg_vars = {}
-        valid_names = [nam for nam in list_names if xdt[nam].mode == 'absolute']
+        valid_names = [
+            nam for nam in list_names if xdt[nam].mode == 'absolute']
         for xnd_name in valid_names:
             arg_vars |= XarrayConnec._to_xr_coord(xdt, xnd_name)
         for name in list_names:
@@ -487,7 +484,8 @@ class ScippConnec:
             scd = sc.Dataset({(scd.name if scd.name else 'no_name'): scd})
         if isinstance(scd, sc.Dataset):
             for coord in scd.coords:
-                xnd += ScippConnec._var_sc_to_xnd(scd.coords[coord], scd, coord)
+                xnd += ScippConnec._var_sc_to_xnd(
+                    scd.coords[coord], scd, coord)
             for var in scd:
                 for mask in scd[var].masks:
                     m_var = Nutil.split_json_name(var)[0]
@@ -532,7 +530,8 @@ class ScippConnec:
             'dimensionless', 'ns'] else ''
         ext_name, typ1 = Nutil.split_json_name(sc_name, True)
         var_name, typ2 = Nutil.split_json_name(var, True)
-        full_name = var_name + ('.' if var_name and ext_name else '') + ext_name
+        full_name = var_name + \
+            ('.' if var_name and ext_name else '') + ext_name
         ntv_type_base = typ1 + typ2
         ntv_type = ntv_type_base + ('[' + unit + ']' if unit else '')
         links = [Nutil.split_json_name(jsn)[0] for jsn in scv.dims]

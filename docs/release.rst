@@ -1,8 +1,15 @@
 Version x.y.z
 =============
 
+0.2.0 RC 1 (2024-05-05)
+------------------------
+- add NTVtype extension (Ndtype class)
+- add 'uniques' xndarray
+- interface:
+    - pandas.DataFrame  
+
 0.1.2 alpha 1 (2024-04-10)
---------------------
+---------------------------
 - First version
 - exchanging via JSON format
 - lightweight format (structure: json, arrays: URI) 
