@@ -184,8 +184,11 @@ class XdatasetInterface(ABC):
 
         *Parameters*
 
-        - **dataset** : Boolean (default True) - if False and a single data_var, return a DataArray
-        '''
+        - **dataset** : Boolean (default True) - if False and a single data_var,
+        return a sc.DataArray
+        - **datagroup** : Boolean (default True) - if True, return a sc.DataGroup
+        which contains the sc.DataArray/sc.Dataset and the other data else only
+        sc.DataArray/sc.Dataset'''
         return XarrayConnec.xexport(self, **kwargs)
 
     @staticmethod

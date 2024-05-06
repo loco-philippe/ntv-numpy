@@ -300,10 +300,9 @@ class XarrayConnec:
         *Parameters*
 
         - **dataset** : Boolean (default True) - if False and a single data_var,
-        return a sc.DataArray
-        - **datagroup** : Boolean (default True) - if True, return a sc.DataGroup
-        which contains the sc.DataArray/sc.Dataset and the other data else only
-        sc.DataArray/sc.Dataset
+        return a xr.DataArray
+        - **datagroup** : Boolean (default True) - if True, add json representation
+        of 'relative' Xndarrays and 'data_arrays' Xndarrays in attrs
         '''
         option = {'dataset': True, 'datagroup': True} | kwargs
         coords = XarrayConnec._to_xr_vars(
@@ -386,7 +385,7 @@ class XarrayConnec:
         *Parameters*
 
         - **datagroup** : Boolean  if True, add json representation of 'relative'
-        Xndarrays and 'data_arrays' Xndarrays
+        Xndarrays and 'data_arrays' Xndarrays in attrs 
         '''
         attrs = {meta: xdt[meta].meta for meta in xdt.metadata}
         attrs |= {'name': xdt.name} if xdt.name else {}
