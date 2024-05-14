@@ -265,8 +265,8 @@ class PandasConnec:
         idx = [0] * len(dims)
         for nam in links:
             idx[new_dims.index(nam)] = slice(shape[dims.index(nam)])
-        xar = np.moveaxis(np.array(dfr[name]).reshape(
-            shape), old_order, order)[*idx]
+        xar = np.moveaxis(np.array(dfr[name]).reshape(shape),
+                          old_order, order)[tuple(idx)]
         if not links:
             return xar.flatten()
         lnk = [nam for nam in new_dims if nam in links]
