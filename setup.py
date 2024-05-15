@@ -11,7 +11,7 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="ntv_numpy",
-    version="0.2.0",
+    version="0.2.1",
     description="NTV-NumPy : A multidimensional semantic, compact and reversible format for interoperability",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -27,6 +27,6 @@ setup(
     keywords="numpy, JSON-NTV, semantic JSON, development, environmental data, multidimensional",
     packages=find_packages(include=['ntv_numpy', 'ntv_numpy.*']),
     package_data={'ntv_numpy': ['*.ini']},
-    python_requires=">=3.9, <4",
+    python_requires=">=3.10, <4",
     install_requires=['json_ntv', 'numpy', 'shapely']
 )

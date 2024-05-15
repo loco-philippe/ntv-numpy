@@ -1,6 +1,11 @@
 Version x.y.z
 =============
 
+0.2.1 RC 1 (2024-05-16)
+------------------------
+- bug #3 (python 3.10)
+- enh #4 (Unification of parameters in to_xarray, to_scipp and to_dataframe)
+
 0.2.0 RC 1 (2024-05-05)
 ------------------------
 - add NTVtype extension (Ndtype class)
