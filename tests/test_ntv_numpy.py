@@ -586,7 +586,7 @@ class TestXdatasetPandas(unittest.TestCase):
         for name in xdt.names[:]:
             # tab = xdt.to_tab_array(name, dimensions)
             tab = PandasConnec._to_np_series(xdt, name, dimensions)
-            if not tab is None:
+            if tab is not None:
                 self.assertTrue(np.all(np.array(df[name]) == tab), name)
 
         dfr = xdt.to_dataframe(json_name=True)

@@ -65,7 +65,7 @@ class Xndarray:
             self.meta = full_name.meta
             return
         self.name, self.add_name = Nutil.split_name(full_name)
-        self.nda = Ndarray(nda) if not nda is None else None
+        self.nda = Ndarray(nda) if nda is not None else None
         self.links = links if links else None
         self.meta = meta if meta else None
         if self.meta is None and self.nda is None:
@@ -221,7 +221,7 @@ class Xndarray:
         - **nda_uri** : boolean (default True) - if True, existing shape and
         ntv_type are not updated (but are created if not existing)'''
         ndarray = Ndarray(ndarray)
-        if not self.nda is None:
+        if self.nda is not None:
             return self.nda.update(ndarray, nda_uri=nda_uri)
         self.nda = ndarray
         return True
@@ -246,9 +246,9 @@ class Xndarray:
         if not option['format'] in ['full', 'complete']:
             option['noshape'] = False
         opt_nda = option | {'header': False}
-        nda_str = self.nda.to_json(**opt_nda) if not self.nda is None else None
+        nda_str = self.nda.to_json(**opt_nda) if self.nda is not None else None
         lis = [nda_str, self.links, self.meta]
-        lis = [val for val in lis if not val is None]
+        lis = [val for val in lis if val is not None]
         return Nutil.json_ntv(None if option['noname'] else self.full_name,
                               None if option['noname'] else 'xndarray',
                               lis[0] if lis == [self.meta] else lis,

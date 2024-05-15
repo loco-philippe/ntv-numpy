@@ -284,7 +284,7 @@ class PandasConnec:
         if name in dimensions:
             dims += [name]
         else:
-            if not 'links' in data[name]:
+            if 'links' not in data[name]:
                 return
             for nam in data[name]['links']:
                 PandasConnec._get_dims(dims, nam, data, dimensions)
