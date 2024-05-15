@@ -5,5 +5,5 @@
 .. include:: ../README.md
 .. include:: ../ntv_numpy/README.md
 .. include:: ../example/README.md
-.. include:: ./README.md    
+.. include:: ./README.md
 """
