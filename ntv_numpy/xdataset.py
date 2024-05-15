@@ -5,7 +5,7 @@
 The `xdataset` module is part of the `ntv-numpy.ntv_numpy` package ([specification document](
 https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
 
-It contains the classes `Xdataset`, `XdatasetInterface`, `XdatasetCategory` for 
+It contains the classes `Xdataset`, `XdatasetInterface`, `XdatasetCategory` for
 the multidimensional dataset.
 
 For more information, see the
@@ -36,7 +36,7 @@ class XdatasetCategory(ABC):
     def data_arrays(self):
         '''return a tuple of data_arrays Xndarray full_name'''
         return tuple(sorted(nda for nda in self.namedarrays
-                            if not nda in self.dimensions + self.uniques))
+                            if nda not in self.dimensions + self.uniques))
 
     @property
     def dimensions(self):
@@ -89,7 +89,7 @@ class XdatasetCategory(ABC):
     def undef_links(self):
         '''return a tuple of variables Xndarray full_name with inconsistent links'''
         return tuple(sorted(link for var in self.variables for link in self[var].links
-                            if not link in self.names))
+                            if link not in self.names))
 
     @property
     def masks(self):
@@ -320,10 +320,10 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
     def __eq__(self, other):
         '''equal if xnd are equal'''
         for xnda in self.xnd:
-            if not xnda in other:
+            if xnda not in other:
                 return False
         for xnda in other.xnd:
-            if not xnda in self:
+            if xnda not in self:
                 return False
         return True
 
@@ -382,13 +382,13 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         - **var**: string - full_name of the Xndarray
         - **json_name**: boolean (defaut False) - if True return json_name else full_name
         '''
-        if not var in self.names:
+        if var not in self.names:
             return None
         if self[var].add_name and not self[var].links:
             return self.dims(self[var].name, json_name)
         if var in self.namedarrays:
             return [self[var].json_name if json_name else var]
-        if not var in self.variables + self.additionals:
+        if var not in self.variables + self.additionals:
             return None
         list_dims = []
         for link in self[var].links:

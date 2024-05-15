@@ -132,7 +132,7 @@ class Ndarray:
     @property
     def ndarray(self):
         '''representation with a np.ndarray not flattened'''
-        return self.darray.reshape(self.shape) if not self.darray is None else None
+        return self.darray.reshape(self.shape) if self.darray is not None else None
 
     def set_shape(self, shape):
         '''update the shape'''
@@ -162,8 +162,8 @@ class Ndarray:
             self.ntvtype = nda.ntvtype if self.ntv_type is None else self.ntvtype
             self.shape = nda.shape if self.shape is None else self.shape
         else:
-            self.ntvtype = nda.ntvtype if not nda.ntv_type is None else self.ntvtype
-            self.shape = nda.shape if not nda.shape is None else self.shape
+            self.ntvtype = nda.ntvtype if nda.ntv_type is not None else self.ntvtype
+            self.shape = nda.shape if nda.shape is not None else self.shape
         self.uri, self.darray = (
             nda.uri, None) if nda.uri else (None, nda.darray)
         return True
@@ -245,7 +245,7 @@ class Ndarray:
             case [ntv_type, shape]: ...
             case [str(ntv_type)]: ...
             case [list(shape)]: ...
-        unidim = not shape is None
+        unidim = shape is not None
         if isinstance(ntv_value[-1], str):
             return Ndarray(ntv_value[-1], shape=shape, ntv_type=ntv_type)
         darray = Darray.read_json(ntv_value[-1], dtype=Nutil.dtype(ntv_type),
@@ -284,7 +284,7 @@ class Ndarray:
 
         lis = [self.ntv_type if not option['notype'] else None, shape, js_val]
         return Nutil.json_ntv(None, 'ndarray',
-                              [val for val in lis if not val is None],
+                              [val for val in lis if val is not None],
                               header=option['header'], encoded=option['encoded'])
 
     @property
@@ -551,7 +551,7 @@ class Nutil:
             return ntv_type
         dtype = nda.dtype.name
         pytype = nda.flat[0].__class__.__name__
-        dtype = pytype if dtype == 'object' and not pytype in Nutil.STRUCT_DT else dtype
+        dtype = pytype if dtype == 'object' and pytype not in Nutil.STRUCT_DT else dtype
         return Nutil.ntv_type(dtype, ntv_type, ext)
 
     @staticmethod

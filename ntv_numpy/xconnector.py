@@ -61,7 +61,7 @@ class AstropyNDDataConnec:
         '''return a Xdataset from a astropy.NDData'''
         xnd = []
         name = 'no_name'
-        unit = ndd.unit.to_string() if not ndd.unit is None else None
+        unit = ndd.unit.to_string() if ndd.unit is not None else None
         ntv_type = Nutil.ntv_type(ndd.data.dtype.name, ext=unit)
         xnd += [Xndarray('data', nda=Ndarray(ndd.data, ntv_type=ntv_type))]
         if ndd.meta:
@@ -70,11 +70,11 @@ class AstropyNDDataConnec:
             xnd += [Xndarray('meta', meta=meta)]
         if ndd.wcs:
             xnd += [Xndarray('wcs', meta=dict(ndd.wcs.to_header()))]
-        if not ndd.psf is None:
+        if ndd.psf is not None:
             xnd += [Xndarray('psf', nda=Ndarray(ndd.psf, ntv_type=ntv_type))]
-        if not ndd.mask is None:
+        if ndd.mask is not None:
             xnd += [Xndarray('data.mask', nda=ndd.mask)]
-        if not ndd.uncertainty is None:
+        if ndd.uncertainty is not None:
             typ_u = ndd.uncertainty.__class__.__name__[:3].lower()
             ntv_type = Nutil.ntv_type(
                 ndd.uncertainty.array.dtype.name, ext=typ_u)
@@ -115,7 +115,7 @@ class PandasConnec:
             dfr.attrs |= {'info': xdt.tab_info}
             dfr.attrs |= {'metadata': {
                 name: xdt[name].meta for name in xdt.metadata}}
-            fields_uri = [var for var in fields if not var in fields_array]
+            fields_uri = [var for var in fields if var not in fields_array]
             fields_other = [nam for nam in xdt.group(xdt.data_arrays)
                             if len(xdt[nam]) != xdt.length]
             if fields_uri:
@@ -136,7 +136,7 @@ class PandasConnec:
         opt = {'dims': None} | kwargs
         xnd = []
         dfr = df.reset_index()
-        if 'index' in dfr.columns and not 'index' in df.columns:
+        if 'index' in dfr.columns and 'index' not in df.columns:
             del dfr['index']
         df_names = {Nutil.split_json_name(j_name)[0]: j_name
                     for j_name in dfr.columns}
@@ -232,7 +232,7 @@ class PandasConnec:
         dim_name = xdt.dims(name)
         if not set(dim_name) <= set(dims):
             return None
-        add_name = [nam for nam in dims if not nam in dim_name]
+        add_name = [nam for nam in dims if nam not in dim_name]
         tab_name = add_name + dim_name
 
         til = 1
@@ -331,7 +331,7 @@ class XarrayConnec:
         '''return a Xdataset from a xr.DataArray or a xr.Dataset'''
         xnd = []
         if xar.attrs:
-            attrs = {k: v for k, v in xar.attrs.items() if not k in [
+            attrs = {k: v for k, v in xar.attrs.items() if k not in [
                 'name', 'ntv_type']}
             for name, meta in attrs.items():
                 if isinstance(meta, list):
@@ -375,7 +375,7 @@ class XarrayConnec:
         if nda.dtype.name == 'datetime64[ns]' and ntv_type:
             nda = Nutil.convert(ntv_type, nda, tojson=False)
         attrs = {k: v for k, v in var.attrs.items()
-                 if not k in ['ntv_type', 'name']} if add_attrs else {}
+                 if k not in ['ntv_type', 'name']} if add_attrs else {}
         return Xndarray(full_name, Ndarray(nda, ntv_type), dims, attrs)
 
     @staticmethod
@@ -385,7 +385,7 @@ class XarrayConnec:
         *Parameters*
 
         - **datagroup** : Boolean  if True, add json representation of 'relative'
-        Xndarrays and 'data_arrays' Xndarrays in attrs 
+        Xndarrays and 'data_arrays' Xndarrays in attrs
         '''
         attrs = {meta: xdt[meta].meta for meta in xdt.metadata}
         attrs |= {'name': xdt.name} if xdt.name else {}
@@ -426,7 +426,7 @@ class XarrayConnec:
     @staticmethod
     def _xr_add_type(xar):
         '''add 'ntv_type' as attribute for a xr.DataArray'''
-        if isinstance(xar, xr.DataArray) and not 'ntv_type' in xar.attrs:
+        if isinstance(xar, xr.DataArray) and 'ntv_type' not in xar.attrs:
             xar.attrs |= {'ntv_type': Nutil.ntv_type(xar.data.dtype.name)}
             return
         for coord in xar.coords:
@@ -525,7 +525,7 @@ class ScippConnec:
         - var : name
         - sc_name : scipp name'''
         l_xnda = []
-        unit = scv.unit.name if scv.unit and not scv.unit in [
+        unit = scv.unit.name if scv.unit and scv.unit not in [
             'dimensionless', 'ns'] else ''
         ext_name, typ1 = Nutil.split_json_name(sc_name, True)
         var_name, typ2 = Nutil.split_json_name(var, True)
@@ -534,9 +534,9 @@ class ScippConnec:
         ntv_type_base = typ1 + typ2
         ntv_type = ntv_type_base + ('[' + unit + ']' if unit else '')
         links = [Nutil.split_json_name(jsn)[0] for jsn in scv.dims]
-        if not scd is None and sc_name in scd.coords and scv.dims == scd.dims:
+        if scd is not None and sc_name in scd.coords and scv.dims == scd.dims:
             links = [Nutil.split_json_name(list(scd)[0])[0]]
-        if not scv.variances is None:
+        if scv.variances is not None:
             nda = Ndarray(scv.variances, ntv_type_base)
             l_xnda.append(Xndarray(full_name + '.variance', nda, links))
         nda = Ndarray(scv.values, ntv_type, str_uri=False)
@@ -563,7 +563,7 @@ class ScippConnec:
         opt_mask = option | {'grp_mask': True}
         grp |= dict([ScippConnec._to_scipp_var(xdt, name, **opt_mask)
                      for name in xdt.masks
-                     if xdt[name].name in xdt.names and not xdt[name].name in xdt.data_vars])
+                     if xdt[name].name in xdt.names and xdt[name].name not in xdt.data_vars])
         grp |= {name + '.meta': xdt[name].meta for name in xdt.names
                 if xdt[name].meta}
         for name in xdt.names:
