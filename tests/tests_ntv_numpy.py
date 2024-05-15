@@ -18,15 +18,10 @@ import xarray as xr
 
 from ntv_numpy import Darray, Dfull, Ndarray, Xndarray, Xdataset, Dutil
 from ntv_numpy.xconnector import PandasConnec
+import ntv_pandas as npd # activation of pandas ntv connector
 
-from json_ntv import NtvConnector
-
-SeriesConnec = NtvConnector.connector()['SeriesConnec']
-DataFrameConnec = NtvConnector.connector()['DataFrameConnec']
 nd_equals = Dutil.equals
 FILE = 'https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example/ex_ndarray.ntv'
-
-# read_json({':ndarray': ['int64', [1, 2]]})
 
 
 class TestDarray(unittest.TestCase):
