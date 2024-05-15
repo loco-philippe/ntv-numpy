@@ -18,7 +18,7 @@ import xarray as xr
 
 from ntv_numpy import Darray, Dfull, Ndarray, Xndarray, Xdataset, Dutil
 from ntv_numpy.xconnector import PandasConnec
-import ntv_pandas as npd # activation of pandas ntv connector
+import ntv_pandas as npd  # activation of pandas ntv connector
 
 nd_equals = Dutil.equals
 FILE = 'https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example/ex_ndarray.ntv'
@@ -519,13 +519,13 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
         for example in examples:
             xd = Xdataset.read_json(example)
             xd2 = Xdataset.from_scipp(
-                xd.to_scipp(dataset=False, datagroup=False))
+                xd.to_scipp(dataset=False, info=False))
             self.assertEqual(xd, xd2)
             xd2 = Xdataset.from_scipp(xd.to_scipp(dataset=False))
             self.assertEqual(xd, xd2)
             xd2 = Xdataset.from_scipp(xd.to_scipp())
             self.assertEqual(xd, xd2)
-            xd2 = Xdataset.from_scipp(xd.to_scipp(datagroup=False))
+            xd2 = Xdataset.from_scipp(xd.to_scipp(info=False))
             self.assertEqual(xd, xd2)
 
     def test_xdataset_mixte(self):
@@ -584,7 +584,7 @@ class TestXdatasetPandas(unittest.TestCase):
             if tab is not None:
                 self.assertTrue(np.all(np.array(df[name]) == tab), name)
 
-        dfr = xdt.to_dataframe(json_name=True)
+        dfr = xdt.to_dataframe(ntv_type=True)
         xds = Xdataset.from_dataframe(dfr)
         self.assertEqual(xds, xdt)
 
@@ -668,7 +668,7 @@ class TestXdatasetPandas(unittest.TestCase):
         df1 = pd.DataFrame(fruits)
         a_df = df1.npd.analysis(distr=True)
         xdt = Xdataset.from_dataframe(df1)
-        df3 = xdt.to_dataframe(json_name=False).reset_index()
+        df3 = xdt.to_dataframe(ntv_type=False).reset_index()
         df2 = df1.sort_values(a_df.partitions(mode='id')
                               [0]).reset_index(drop=True)
         df4 = df3.sort_values(a_df.partitions(mode='id')[
@@ -685,7 +685,7 @@ class TestXdatasetPandas(unittest.TestCase):
                   'e': [1, 1, 1, 1, 1]}
         df1 = pd.DataFrame(simple)
         df3 = Xdataset.from_dataframe(df1).to_dataframe(
-            json_name=False)[df1.columns]
+            ntv_type=False)[df1.columns]
         self.assertTrue(df3.equals(df1))
 
         simple = {'a': [1, 2, 3, 4, 5],
@@ -696,7 +696,7 @@ class TestXdatasetPandas(unittest.TestCase):
                   'e': [1, 1, 1, 1, 1]}
         df1 = pd.DataFrame(simple)
         df3 = Xdataset.from_dataframe(df1).to_dataframe(
-            json_name=False).reset_index()[df1.columns]
+            ntv_type=False).reset_index()[df1.columns]
         self.assertTrue(df3.equals(df1))
 
 

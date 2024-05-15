@@ -92,12 +92,12 @@ class PandasConnec:
 
         *Parameters*
 
-        - **json_name**: Boolean (default True) - if False use full_name else json_name
+        - **ntv_type**: Boolean (default True) - if False use full_name else json_name
         - **info**: Boolean (default True) - if True add xdt.info in DataFrame.attrs
         - **dims**: list of string (default None) - order of dimensions full_name to apply
         '''
-        opt = {'json_name': True, 'info': True, 'dims': None} | kwargs
-        dic_name = {name: xdt[name].json_name if opt['json_name'] else xdt[name].full_name
+        opt = {'ntv_type': True, 'info': True, 'dims': None} | kwargs
+        dic_name = {name: xdt[name].json_name if opt['ntv_type'] else xdt[name].full_name
                     for name in xdt.names}
         dims = xdt.dimensions if not opt['dims'] else tuple(opt['dims'])
         fields = (xdt.group(dims) + xdt.group(xdt.coordinates) +
@@ -301,10 +301,10 @@ class XarrayConnec:
 
         - **dataset** : Boolean (default True) - if False and a single data_var,
         return a xr.DataArray
-        - **datagroup** : Boolean (default True) - if True, add json representation
+        - **info** : Boolean (default True) - if True, add json representation
         of 'relative' Xndarrays and 'data_arrays' Xndarrays in attrs
         '''
-        option = {'dataset': True, 'datagroup': True} | kwargs
+        option = {'dataset': True, 'info': True} | kwargs
         coords = XarrayConnec._to_xr_vars(
             xdt, xdt.dimensions + xdt.coordinates + xdt.uniques)
         coords |= XarrayConnec._to_xr_vars(xdt, xdt.additionals)
@@ -384,12 +384,12 @@ class XarrayConnec:
 
         *Parameters*
 
-        - **datagroup** : Boolean  if True, add json representation of 'relative'
+        - **info** : Boolean  if True, add json representation of 'relative'
         Xndarrays and 'data_arrays' Xndarrays in attrs
         '''
         attrs = {meta: xdt[meta].meta for meta in xdt.metadata}
         attrs |= {'name': xdt.name} if xdt.name else {}
-        if option['datagroup']:
+        if option['info']:
             for name in xdt.names:
                 if xdt[name].mode == 'relative':
                     attrs |= xdt[name].to_json(header=False)
@@ -449,11 +449,11 @@ class ScippConnec:
 
         - **dataset** : Boolean (default True) - if False and a single data_var,
         return a DataArray
-        - **datagroup** : Boolean (default True) - if True return a DataGroup with
+        - **info** : Boolean (default True) - if True return a DataGroup with
         metadata and data_arrays
         - **ntv_type** : Boolean (default True) - if True add ntv-type to the name
         '''
-        option = {'dataset': True, 'datagroup': True,
+        option = {'dataset': True, 'info': True,
                   'ntv_type': True} | kwargs
         coords = dict([ScippConnec._to_scipp_var(xdt, name, **option)
                        for name in xdt.coordinates + xdt.dimensions + xdt.uniques
@@ -462,7 +462,7 @@ class ScippConnec:
                                for name in xdt.data_vars
                                if xdt[name].mode == 'absolute']))
         scd = scd if option['dataset'] else scd[list(scd)[0]]
-        if not option['datagroup']:
+        if not option['info']:
             return scd
         sc_name = xdt.name if xdt.name else 'no_name'
         return sc.DataGroup({sc_name: scd} | ScippConnec._to_scipp_grp(xdt, **option))

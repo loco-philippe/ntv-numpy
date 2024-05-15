@@ -180,15 +180,15 @@ class XdatasetInterface(ABC):
                               encoded=kwargs.get('encoded', False))
 
     def to_xarray(self, **kwargs):
-        '''return a DataArray or a Dataset from a Xdataset
+        '''return a xr.DataArray or a xr.Dataset from a Xdataset
 
         *Parameters*
 
         - **dataset** : Boolean (default True) - if False and a single data_var,
-        return a sc.DataArray
-        - **datagroup** : Boolean (default True) - if True, return a sc.DataGroup
-        which contains the sc.DataArray/sc.Dataset and the other data else only
-        sc.DataArray/sc.Dataset'''
+        return a xr.DataArray
+        - **info** : Boolean (default True) - if True, add json representation
+        of 'relative' Xndarrays and 'data_arrays' Xndarrays in attrs
+        '''
         return XarrayConnec.xexport(self, **kwargs)
 
     @staticmethod
@@ -203,7 +203,7 @@ class XdatasetInterface(ABC):
 
         - **dataset** : Boolean (default True) - if False and a single data_var,
         return a DataArray
-        - **datagroup** : Boolean (default True) - if True return a DataGroup with
+        - **info** : Boolean (default True) - if True return a DataGroup with
         metadata and data_arrays
         - **ntv_type** : Boolean (default True) - if True add ntv-type to the name
         '''
@@ -224,12 +224,24 @@ class XdatasetInterface(ABC):
         return AstropyNDDataConnec.ximport(ndd, Xdataset, **kwargs)
 
     def to_dataframe(self, **kwargs):
-        '''return a pd.DataFrame from a Xdataset'''
+        '''return a pd.DataFrame from a Xdataset
+
+        *Parameters*
+
+        - **ntv_type**: Boolean (default True) - if False use full_name else json_name
+        - **info**: Boolean (default True) - if True add xdt.info in DataFrame.attrs
+        - **dims**: list of string (default None) - order of dimensions full_name to apply
+        '''
         return PandasConnec.xexport(self, **kwargs)
 
     @staticmethod
     def from_dataframe(dfr, **kwargs):
-        '''return a Xdataset from a pd.DataFrame'''
+        '''return a Xdataset from a pd.DataFrame
+
+        *Parameters*
+
+        - dims: list of string (default None) - order of dimensions to apply
+        '''
         return PandasConnec.ximport(dfr, Xdataset, **kwargs)
 
 
