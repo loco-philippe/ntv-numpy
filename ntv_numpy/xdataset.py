@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: Philippe@loco-labs.io
-
-The `xdataset` module is part of the `ntv-numpy.ntv_numpy` package ([specification document](
-https://loco-philippe.github.io/ES/JSON%20semantic%20format%20(JSON-NTV).htm)).
+The `xdataset` module is part of the `ntv-numpy.ntv_numpy` package.
 
 It contains the classes `Xdataset`, `XdatasetInterface`, `XdatasetCategory` for
 the multidimensional dataset.
@@ -231,6 +228,7 @@ class XdatasetInterface(ABC):
         - **ntv_type**: Boolean (default True) - if False use full_name else json_name
         - **info**: Boolean (default True) - if True add xdt.info in DataFrame.attrs
         - **dims**: list of string (default None) - order of dimensions full_name to apply
+        - **index**: Boolean (default True) - if True, dimensions are translated into indexes
         '''
         return PandasConnec.xexport(self, **kwargs)
 

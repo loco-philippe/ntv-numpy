@@ -95,8 +95,9 @@ class PandasConnec:
         - **ntv_type**: Boolean (default True) - if False use full_name else json_name
         - **info**: Boolean (default True) - if True add xdt.info in DataFrame.attrs
         - **dims**: list of string (default None) - order of dimensions full_name to apply
+        - **index**: Boolean (default True) - if True, dimensions are translated into indexes
         '''
-        opt = {'ntv_type': True, 'info': True, 'dims': None} | kwargs
+        opt = {'ntv_type': True, 'info': True, 'index': True, 'dims': None} | kwargs
         dic_name = {name: xdt[name].json_name if opt['ntv_type'] else xdt[name].full_name
                     for name in xdt.names}
         dims = xdt.dimensions if not opt['dims'] else tuple(opt['dims'])
@@ -109,7 +110,7 @@ class PandasConnec:
                       for name in fields_array}
         dfr = pd.DataFrame(dic_series)
         index = [dic_name[name] for name in dims]
-        if index:
+        if index and opt['index']:
             dfr = dfr.set_index(index)
         if opt['info']:
             dfr.attrs |= {'info': xdt.tab_info}
