@@ -57,6 +57,8 @@ from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
 from ntv_numpy.ndarray import Ndarray, Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xdataset import Xdataset
+
+import ntv_numpy.xarray_accessors
 # import ntv_pandas.pandas_ntv_connector
 
 # path = Path(ntv_numpy.numpy_ntv_connector.__file__).parent
