@@ -200,9 +200,9 @@ class XdatasetInterface(ABC):
 
         - **dataset** : Boolean (default True) - if False and a single data_var,
         return a DataArray
-        - **info** : Boolean (default True) - if True return a DataGroup with
+        - **info** : Boolean (default True) - if True return an additional DataGroup with
         metadata and data_arrays
-        - **ntv_type** : Boolean (default True) - if True add ntv-type to the name
+        - **ntv_type** : Boolean (default True) - if True add ntv_type to the name
         '''
         return ScippConnec.xexport(self, **kwargs)
 
