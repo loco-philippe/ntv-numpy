@@ -55,16 +55,24 @@ This package contains the following classes and functions:
     - `ntv-numpy.ntv_numpy.xarray_accessors.NxrDatasetAccessor`
 """
 
-# from pathlib import Path
-# , read_json, to_json
-from ntv_numpy.numpy_ntv_connector import XndarrayConnec as XndarrayConnec
-from ntv_numpy.numpy_ntv_connector import NdarrayConnec as NdarrayConnec
-from ntv_numpy.data_array import Dfull as Dfull
-from ntv_numpy.data_array import Dcomplete as Dcomplete
-from ntv_numpy.data_array import Darray as Darray
-from ntv_numpy.data_array import Dutil as Dutil
-from ntv_numpy.ndarray import Nutil as Nutil
-from ntv_numpy.ndarray import Ndarray as Ndarray
-from ntv_numpy.xndarray import Xndarray as Xndarray
-from ntv_numpy.xdataset import Xdataset as Xdataset
+from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec
+from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
+from ntv_numpy.ndarray import Ndarray, Nutil
+from ntv_numpy.xndarray import Xndarray
+from ntv_numpy.xdataset import Xdataset
+
 import ntv_numpy.xarray_accessors as xarray_accessors
+
+__all__ = [
+    "XndarrayConnec",
+    "NdarrayConnec",
+    "Dfull",
+    "Dcomplete",
+    "Darray",
+    "Dutil",
+    "Ndarray",
+    "Nutil",
+    "Xndarray",
+    "Xdataset",
+    "xarray_accessors",
+]
