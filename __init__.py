@@ -3,4 +3,4 @@
 @author: philippe@loco-labs.io
 """
 
-name = 'ntv_numpy'
+name = "ntv_numpy"

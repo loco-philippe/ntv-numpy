@@ -11,13 +11,13 @@ Version x.y.z
 - add NTVtype extension (Ndtype class)
 - add 'uniques' xndarray
 - interface:
-    - pandas.DataFrame  
+    - pandas.DataFrame
 
 0.1.2 alpha 1 (2024-04-10)
 ---------------------------
 - First version
 - exchanging via JSON format
-- lightweight format (structure: json, arrays: URI) 
+- lightweight format (structure: json, arrays: URI)
 - numpy.dtype supported: all except 'complex' and 'timedelta'
 - NTVtype supported:
     - datetime, date, time, dat

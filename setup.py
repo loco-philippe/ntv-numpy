@@ -23,10 +23,11 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Build Tools",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3"],
+        "Programming Language :: Python :: 3",
+    ],
     keywords="numpy, JSON-NTV, semantic JSON, development, environmental data, multidimensional",
-    packages=find_packages(include=['ntv_numpy', 'ntv_numpy.*']),
-    package_data={'ntv_numpy': ['*.ini']},
+    packages=find_packages(include=["ntv_numpy", "ntv_numpy.*"]),
+    package_data={"ntv_numpy": ["*.ini"]},
     python_requires=">=3.10, <4",
-    install_requires=['json_ntv', 'numpy', 'shapely']
+    install_requires=["json_ntv", "numpy", "shapely"],
 )

@@ -11,6 +11,7 @@ For more information, see the
 [user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html)
  or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 """
+
 import configparser
 from pathlib import Path
 import json
@@ -19,7 +20,7 @@ import ntv_numpy
 
 
 class Ndtype(Datatype):
-    ''' The Ndtype is a child class of Datatype with additional attributes.
+    """The Ndtype is a child class of Datatype with additional attributes.
 
     *Additional attributes :*
     - add_type: additional data added to the JSON ndarray
@@ -35,19 +36,22 @@ class Ndtype(Datatype):
 
     The methods defined in this class are :
     - `read_ini` (static method)
-    '''
+    """
+
     @staticmethod
     def read_ini():
-        '''return a dict with config data read in ntv_numpy.ini'''
+        """return a dict with config data read in ntv_numpy.ini"""
         config = configparser.ConfigParser()
-        p_file = Path('ntv_numpy.ini')
+        p_file = Path("ntv_numpy.ini")
         config.read(Path(ntv_numpy.__file__).parent / p_file)
-        types = json.loads(config['data']['types'])
-        return {ntv_type: {'add_type': add_type, 'dtype': dtype}
-                for [ntv_type, add_type, dtype] in types}
+        types = json.loads(config["data"]["types"])
+        return {
+            ntv_type: {"add_type": add_type, "dtype": dtype}
+            for [ntv_type, add_type, dtype] in types
+        }
 
     def __init__(self, full_name, module=False, force=False, validate=None):
-        '''NdType constructor.
+        """NdType constructor.
 
         *Parameters*
 
@@ -55,12 +59,12 @@ class Ndtype(Datatype):
         - **module** : boolean (default False) - if True search data in the
         local .ini file, else in the distant repository
         - **force** : boolean (default False) - if True, no Namespace control
-        - **validate** : function (default None) - validate function to include'''
+        - **validate** : function (default None) - validate function to include"""
         super().__init__(full_name, module=module, force=force, validate=validate)
         np_type = NP_TYPES.get(self.base_name)
-        self.dtype = np_type['dtype'] if np_type else None
-        self.add_type = np_type['add_type'] if np_type else None
+        self.dtype = np_type["dtype"] if np_type else None
+        self.add_type = np_type["add_type"] if np_type else None
 
 
 NP_TYPES = Ndtype.read_ini()
-NP_NTYPE = {val['dtype']: key for key, val in NP_TYPES.items()}
+NP_NTYPE = {val["dtype"]: key for key, val in NP_TYPES.items()}

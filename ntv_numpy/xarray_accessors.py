@@ -8,6 +8,7 @@ For more information, see the
 [user guide](https://loco-philippe.github.io/ntv-numpy/docs/user_guide.html)
  or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 """
+
 import xarray as xr
 
 from ntv_numpy.xdataset import Xdataset
@@ -18,12 +19,13 @@ try:
 except AttributeError:
     pass
 
+
 @xr.register_dataset_accessor("nxr")
 class NxrDatasetAccessor:
     """Accessor class for methods invoked as `xr.Dataset.nxr.*`"""
-    
+
     def __init__(self, xarray_obj):
-        '''initialisation of the class'''
+        """initialisation of the class"""
         self._obj = xarray_obj
 
     def to_dataframe(self, **kwargs):
@@ -66,6 +68,6 @@ class NxrDatasetAccessor:
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **format** : list of string (default list of 'full') - representation
         format of the ndarray,
-        
+
         """
         return Xdataset.from_xarray(self._obj, **kwargs).to_json(**kwargs)

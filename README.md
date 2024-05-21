@@ -52,18 +52,18 @@ In [1]: example = {
                         'var1.variance': [[[2, 2], [0.1, 0.2, 0.3, 0.4]]],
                         'var1.mask1': [[[True, False]], ['x']],
                         'var1.mask2': [[[2, 2], [True, False, False, True]]],
-                
-                        'var2': [['var2.ntv'], ['x', 'y']],    
-                        
+
+                        'var2': [['var2.ntv'], ['x', 'y']],
+
                         'x': [['string', ['23F0AE', '578B98']], {'test': 21}],
                         'y': [['date', ['2021-01-01', '2022-02-02']]],
-                        
+
                         'ranking': [['month', [2, 2], [1, 2, 3, 4]], ['var1']],
                         'z': [['float', [10, 20]], ['x']],
                         'z.uncertainty': [[[0.1, 0.2]]],
-                        
+
                         'z_bis': [[['z1_bis', 'z2_bis']]],
-                
+
                         'info': {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/',
                         'location': [['string', ['paris']]]}
                 }
@@ -136,20 +136,20 @@ Out[5]: True
 In [6]: x_dataframe = x_example.to_dataframe()
         print(x_example.to_dataframe(json_name=False))
         print(x_xarray)
-Out[6]: 
+Out[6]:
                    ranking     z  z.uncertainty  var1  var1.mask1  var1.mask2  \
-x      y                                                                        
-23F0AE 2021-01-01        1  10.0            0.1  10.1        True        True   
-       2022-02-02        2  10.0            0.1   0.4        True       False   
-578B98 2021-01-01        3  20.0            0.2   3.4       False       False   
-       2022-02-02        4  20.0            0.2   8.2       False        True   
+x      y
+23F0AE 2021-01-01        1  10.0            0.1  10.1        True        True
+       2022-02-02        2  10.0            0.1   0.4        True       False
+578B98 2021-01-01        3  20.0            0.2   3.4       False       False
+       2022-02-02        4  20.0            0.2   8.2       False        True
 
-                   var1.variance location  
-x      y                                   
-23F0AE 2021-01-01            0.1    paris  
-       2022-02-02            0.2    paris  
-578B98 2021-01-01            0.3    paris  
-       2022-02-02            0.4    paris 
+                   var1.variance location
+x      y
+23F0AE 2021-01-01            0.1    paris
+       2022-02-02            0.2    paris
+578B98 2021-01-01            0.3    paris
+       2022-02-02            0.4    paris
 ```
 
 Reversibility:
@@ -203,9 +203,9 @@ In [1]: example = {
                                 'LATPOLE': -72.05457184279, 'WCSNAME': 'IDC_qbu1641sj', 'MJDREF': 0.0, 'RADESYS': 'ICRS'},
                         'psf': [['float[erg/s]', [1,2,3,4]]]
                 }
-        } 
+        }
         n_example = Xdataset.read_json(example)
-        n_example.info 
+        n_example.info
 Out[1]: {'name': 'example',
         'xtype': 'group',
         'data_arrays': ['data', 'psf'],
@@ -240,18 +240,18 @@ In [1]: example = {
                         'var1.variance': [[[2, 2], 'var1_variance.ntv']],
                         'var1.mask1': [['var1_mask1.ntv'], ['x']],
                         'var1.mask2': [[[2, 2], 'var1_mask2.ntv']],
-                
-                        'var2': [['var2.ntv'], ['x', 'y']],    
-                        
+
+                        'var2': [['var2.ntv'], ['x', 'y']],
+
                         'x': [['x.ntv'], {'test': 21}],
                         'y': [['date', 'y.ntv']],
-                        
+
                         'ranking': [['month', [2, 2], 'ranking.ntv'], ['var1']],
                         'z': [['float', 'z.ntv'], ['x']],
                         'z.uncertainty': [['z_uncertainty.ntv']],
-                        
+
                         'z_bis': [['z_bis.ntv']],
-                
+
                         'info': {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/'}
                 }
         }
