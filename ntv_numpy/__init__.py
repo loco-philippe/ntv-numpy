@@ -67,4 +67,4 @@ from ntv_numpy.ndarray import Nutil as Nutil
 from ntv_numpy.ndarray import Ndarray as Ndarray
 from ntv_numpy.xndarray import Xndarray as Xndarray
 from ntv_numpy.xdataset import Xdataset as Xdataset
-from ntv_numpy.xarray_accessors import NxrDatasetAccessor as NxrDatasetAccessor
+import ntv_numpy.xarray_accessors as xarray_accessors
