@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import Point, LineString
 import xarray as xr
-import ntv_pandas as npd
 
 from ntv_numpy import Darray, Dfull, Ndarray, Xndarray, Xdataset, Dutil
 from ntv_numpy.xconnector import PandasConnec
