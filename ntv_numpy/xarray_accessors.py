@@ -57,7 +57,7 @@ class NxrDatasetAccessor:
 
     def to_json(self, **kwargs):
         """Accessor for method `Xdataset.from_xarray.to_json` invoked as
-        xr.Dataset.nxr.to_scipp`.
+        xr.Dataset.nxr.to_json`.
 
         *Parameters*
 
