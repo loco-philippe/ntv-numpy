@@ -20,7 +20,7 @@ import ntv_pandas
 from ntv_numpy import Darray, Dfull, Ndarray, Xndarray, Xdataset, Dutil
 from ntv_numpy.xconnector import PandasConnec
 
-ana = ntv_pandas.to_analysis # uniquement pour le pre-commit
+ana = ntv_pandas.to_analysis  # uniquement pour le pre-commit
 nd_equals = Dutil.equals
 FILE = "https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example/ex_ndarray.ntv"
 
