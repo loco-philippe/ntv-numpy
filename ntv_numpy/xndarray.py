@@ -217,6 +217,38 @@ class Xndarray:
         nda = Ndarray.read_json(nda, **option) if nda else None
         return Xndarray(full_name, links=links, meta=meta, nda=nda)
 
+    @staticmethod
+    def read_new_json(jsn, **kwargs):
+        """convert json data into a Xndarray.
+
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with
+        non Numpy ntv_type into data with python type
+        """
+        option = {"convert": True} | kwargs
+        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
+        xnda_lst, full_name, ntv_type = Ntv.decode_json(jso)[:3]
+
+        shape = meta = links = dar = None
+        if len(xnda_lst) == 0:
+            return None
+        dar = xnda_lst[-1]
+        if len(xnda_lst) == 1:
+        else: 
+            for val in xnda_lst:
+                if isinstance(val, list) and len(val) > 0: 
+                    if isinstance(val[0], int): 
+                        shape = val
+                    elif isinstance(val[0], str): 
+                        links = val
+                elif isinstance(val, dict):
+                    meta = val
+           
+                        
+        nda = Ndarray.read_json(nda, **option) if nda else None
+        return Xndarray(full_name, links=links, meta=meta, nda=nda)
+    
     def set_ndarray(self, ndarray, nda_uri=True):
         """set a new ndarray (nda) and return the result (True, False)
 
@@ -293,13 +325,13 @@ class Xndarray:
         } | kwargs
         if option["format"] not in ["full", "complete"]:
             option["noshape"] = False
-        opt_nda = option | {"header": False}
-        nda_str = self.nda.to_json(**opt_nda) if self.nda is not None else None
-        lis = [nda_str, self.links, self.meta]
+        opt_nda = option | {"header": False, "modelist": False}
+        nda_dic = self.nda.to_json(**opt_nda) if self.nda is not None else {}
+        lis = [nda_dic.get('shape'), self.links, self.meta, nda_dic.get('darray')]
         lis = [val for val in lis if val is not None]
         return Nutil.json_ntv(
             None if option["noname"] else self.full_name,
-            None if option["noname"] else "xndarray",
+            nda_dic.get('ntv_type'),
             lis[0] if lis == [self.meta] else lis,
             header=option["header"],
             encoded=option["encoded"],
