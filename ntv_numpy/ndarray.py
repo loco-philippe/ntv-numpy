@@ -278,6 +278,7 @@ class Ndarray:
         - **format** : string (default 'full') - representation format of the ndarray,
         - **encoded** : Boolean (default False) - json-value if False else json-text
         - **header** : Boolean (default True) - including ndarray type
+        - **modelist** : Boolean (default True) - return a list if True else a dict
         """
         option = {
             "format": "full",
@@ -286,37 +287,42 @@ class Ndarray:
             "notype": False,
             "noshape": True,
             "novalue": False,
+            "modelist": True,
         } | kwargs
         if self.mode in ["undefined", "inconsistent"]:
             return None
         if self.mode == "absolute" and len(self.darray) == 0:
             return [[]]
 
-        shape = (
+        js_shape = (
             None
             if not self.shape or (len(self.shape) < 2 and option["noshape"])
             else self.shape
         )
 
         if self.mode == "relative":
-            js_val = self.uri
+            js_darray = self.uri
         else:
-            js_val = (
+            js_darray = (
                 Nutil.ntv_val(
                     self.ntv_type, self.darray, option["format"], self.is_json
                 )
                 if not option["novalue"]
                 else ["-"]
             )
-
-        lis = [self.ntv_type if not option["notype"] else None, shape, js_val]
-        return Nutil.json_ntv(
-            None,
-            "ndarray",
-            [val for val in lis if val is not None],
-            header=option["header"],
-            encoded=option["encoded"],
-        )
+        js_ntv_type = self.ntv_type if not option["notype"] else None
+        
+        lis = [js_ntv_type, js_shape, js_darray]
+        
+        if option["modelist"]: 
+            return Nutil.json_ntv(
+                None,
+                "ndarray",
+                [val for val in lis if val is not None],
+                header=option["header"],
+                encoded=option["encoded"],
+            )
+        return {'ntv_type': js_ntv_type, 'shape': js_shape, 'darray': js_darray}
 
     @property
     def info(self):

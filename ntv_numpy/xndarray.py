@@ -268,6 +268,43 @@ class Xndarray:
             encoded=option["encoded"],
         )
 
+    def to_new_json(self, **kwargs):
+        """convert a Xndarray into json-value.
+
+        *Parameters*
+
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including xndarray type
+        - **noname** : Boolean (default False) - including data type and name if False
+        - **notype** : Boolean (default False) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
+        - **format** : string (default 'full') - representation format of the ndarray,
+        - **extension** : string (default None) - type extension
+        """
+        option = {
+            "notype": False,
+            "format": "full",
+            "noshape": True,
+            "header": True,
+            "encoded": False,
+            "novalue": False,
+            "noname": False,
+        } | kwargs
+        if option["format"] not in ["full", "complete"]:
+            option["noshape"] = False
+        opt_nda = option | {"header": False}
+        nda_str = self.nda.to_json(**opt_nda) if self.nda is not None else None
+        lis = [nda_str, self.links, self.meta]
+        lis = [val for val in lis if val is not None]
+        return Nutil.json_ntv(
+            None if option["noname"] else self.full_name,
+            None if option["noname"] else "xndarray",
+            lis[0] if lis == [self.meta] else lis,
+            header=option["header"],
+            encoded=option["encoded"],
+        )
+    
     def _to_json(self):
         """return dict of attributes"""
         return {
@@ -277,4 +314,5 @@ class Xndarray:
             "nda": self.nda,
             "meta": self.meta,
             "links": self.links,
+            "shape": self.shape
         }
