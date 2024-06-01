@@ -39,7 +39,7 @@ class Ndarray:
 
         *Parameters*
 
-        - **dar**: Darray or np.ndarray - data to represent
+        - **dar**: list, Darray or np.ndarray - data to represent
         - **shape** : list of integer (default None) - length of dimensions
         - **ntv_type**: string (default None) - NTVtype to apply
         - **str_uri**: boolean(default True) - if True and dar is a string,
@@ -238,15 +238,17 @@ class Ndarray:
 
         *Parameters*
 
+        - **ntv_type** : string (default None) - If ntv_type is not in json data
+        - **shape** : list (default None) - If shape is not in json data
         - **convert** : boolean (default True) - If True, convert json data with
         non Numpy ntv_type into data with python type
         """
-        option = {"convert": True} | kwargs
+        option = {"convert": True, "shape": None, "ntv_type": None} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         (ntv_value,) = Ntv.decode_json(jso)[:1]
 
-        ntv_type = None
-        shape = None
+        ntv_type = option['ntv_type']
+        shape = option['shape']
         match ntv_value[:-1]:
             case []:
                 ...

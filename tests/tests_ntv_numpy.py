@@ -260,6 +260,29 @@ class TestNdarray(unittest.TestCase):
 class TestXndarray(unittest.TestCase):
     """test Xndarray class"""
 
+    def test_new_xndarray_simple(self):
+        """test Xndarray"""
+        example = [
+            {"y:string": [["y1", "y2"]]},
+        ]
+        for ex in example:
+            self.assertEqual(ex, Xndarray.read_new_json(ex).to_new_json(header=False))
+
+        example = [
+            {":xndarray": {":int64[kg]": [[10, 20]]}},
+            {":xndarray": {":month": [[1, 2]]}},
+            {":xndarray": {":ipv4": [["192.168.1.1", "192.168.2.5"]]}},
+            {":xndarray": {":json": [[1, "two", {"three": 3}]]}},
+            {":xndarray": {":base16": [[b"1F23", b"236A5E"]]}},
+            {":xndarray": {":uri": [["geo:13.4125,103.86673", "geo:13.41,103.86"]]}},
+            {":xndarray": {":object": [FILE]}},
+        ]
+        for ex in example:
+            # print(ex)
+            self.assertEqual(ex, Xndarray.read_new_json(ex).to_new_json())
+            xnd = Xndarray.read_new_json(ex)
+            self.assertEqual(xnd, Xndarray.read_new_json(xnd.to_new_json()))
+            
     def test_xndarray_simple(self):
         """test Xndarray"""
         example = [
