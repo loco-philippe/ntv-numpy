@@ -188,6 +188,23 @@ class XdatasetInterface(ABC):
     xnd: list = NotImplemented
 
     @staticmethod
+    def read_new_json(jsn, **kwargs):
+        """convert json data into a Xdataset.
+
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with
+        non Numpy ntv_type into Xndarray with python type
+        """
+        option = {"convert": True} | kwargs
+        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
+        value, name = Ntv.decode_json(jso)[:2]
+
+        xnd = [Xndarray.read_new_json({key: val}, **option)
+               for key, val in value.items()]
+        return Xdataset(xnd, name)
+
+    @staticmethod
     def read_json(jsn, **kwargs):
         """convert json data into a Xdataset.
 
@@ -203,7 +220,7 @@ class XdatasetInterface(ABC):
         xnd = [Xndarray.read_json({key: val}, **option)
                for key, val in value.items()]
         return Xdataset(xnd, name)
-
+    
     def to_json(self, **kwargs):
         """convert a Xdataset into json-value.
 
@@ -243,6 +260,45 @@ class XdatasetInterface(ABC):
             encoded=kwargs.get("encoded", False),
         )
 
+    def to_new_json(self, **kwargs):
+        """convert a Xdataset into json-value.
+
+        *Parameters*
+
+        - **encoded** : Boolean (default False) - json value if False else json text
+        - **header** : Boolean (default True) - including 'xdataset' type
+        - **notype** : list of Boolean (default list of None) - including data type if False
+        - **novalue** : Boolean (default False) - including value if False
+        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
+        - **format** : list of string (default list of 'full') - representation
+        format of the ndarray,
+        """
+        notype = (kwargs["notype"] if ("notype" in kwargs
+                                       and isinstance(kwargs["notype"], list)
+                                       and len(kwargs["notype"]) == len(self))
+                  else [False] * len(self))
+        forma = (kwargs["format"] if ("format" in kwargs
+                                      and isinstance(kwargs["format"], list)
+                                      and len(kwargs["format"]) == len(self))
+                 else ["full"] * len(self))
+        noshape = kwargs.get("noshape", True)
+        dic_xnd = {}
+        for xna, notyp, forma in zip(self.xnd, notype, forma):
+            dic_xnd |= xna.to_new_json(
+                notype=notyp,
+                novalue=kwargs.get("novalue", False),
+                noshape=noshape,
+                format=forma,
+                header=False,
+            )
+        return Nutil.json_ntv(
+            self.name,
+            "xdataset",
+            dic_xnd,
+            header=kwargs.get("header", True),
+            encoded=kwargs.get("encoded", False),
+        )
+    
     def to_xarray(self, **kwargs):
         """return a xr.DataArray or a xr.Dataset from a Xdataset
 

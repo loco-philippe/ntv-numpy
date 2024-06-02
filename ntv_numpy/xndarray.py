@@ -232,24 +232,26 @@ class Xndarray:
         if ntv_type == 'xndarray':
             xnda_lst, full_name, ntv_type = Ntv.decode_json(xnda_lst)[:3]
 
-        shape = meta = links = None
-        if len(xnda_lst) == 0:
-            return None
-
-        for val in xnda_lst[:-1]:
-            if isinstance(val, dict):
-                meta = val
-            elif isinstance(val, list) and len(val) > 0: 
-                if isinstance(val[0], int): 
-                    shape = val
-                elif isinstance(val[0], str): 
-                    links = val
-        
-        da_jsn = xnda_lst[-1]
+        shape = meta = links = da_jsn = nda = None
+        match xnda_lst:
+            case str(meta) | dict(meta):
+                ...
+            case list(data) if len(data) > 0:
+                for val in data[:-1]:
+                    if isinstance(val, dict):
+                        meta = val
+                    elif isinstance(val, list) and len(val) > 0: 
+                        if isinstance(val[0], int): 
+                            shape = val
+                        elif isinstance(val[0], str): 
+                            links = val                
+                da_jsn = data[-1]
+            case _:
+                return None
         unidim = shape is not None
         if isinstance(da_jsn, str):
             nda = Ndarray(da_jsn, shape=shape, ntv_type=ntv_type)
-        else:
+        elif da_jsn:
             darray = Darray.read_json(
                 da_jsn, dtype=Nutil.dtype(ntv_type), unidim=unidim
             )
@@ -338,7 +340,7 @@ class Xndarray:
             option["noshape"] = False
         opt_nda = option | {"header": False, "modelist": False}
         nda_dic = self.nda.to_json(**opt_nda) if self.nda is not None else {}
-        lis = [nda_dic.get('shape'), self.links, self.meta, nda_dic.get('darray')]
+        lis = [self.links, self.meta, nda_dic.get('shape'), nda_dic.get('darray')]
         lis = [val for val in lis if val is not None]
         xnda_jsn = Nutil.json_ntv(
             None if option["noname"] else self.full_name,

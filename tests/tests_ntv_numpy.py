@@ -306,6 +306,54 @@ class TestXndarray(unittest.TestCase):
             xnd = Xndarray.read_json(ex)
             self.assertEqual(xnd, Xndarray.read_json(xnd.to_json()))
 
+    def test_new_xndarray_dataset(self):
+        """test Xndarray"""
+        example = [
+            [{"var1:object": [["x", "y"], FILE]}, "relative", "variable"],
+            [{"var1": [["x", "y"], FILE]}, "relative", "variable"],
+            [{"var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]]},
+              "absolute", "variable"],
+            [{"ranking:int": [["var1"], [2, 2], [1, 2, 3, 4]]},
+                "absolute", "variable"],
+            [{"x:string": [{"test": 21}, ["x1", "x2"]]}, "absolute", "namedarray"],
+            [{"y:string": [["y1", "y2"]]}, "absolute", "namedarray"],
+            [{"z:string": [["x"], ["z1", "z2"]]}, "absolute", "variable"],
+            [{"x.mask:boolean": [[True, False]]}, "absolute", "additional"],
+            [{"x.variance:float64": [[0.1, 0.2]]}, "absolute", "additional"],
+            [{"z.variance:float64": [[0.1, 0.2]]}, "absolute", "additional"],
+            [{"unit": "kg"}, "undefined", "meta"],
+            [{"info": {"example": "everything"}}, "undefined", "meta"],
+        ]
+
+        for ex, mode, xtype in example:
+            # print(ex)
+            self.assertEqual(ex, Xndarray.read_new_json(ex).to_new_json(header=False))
+            self.assertEqual(mode, Xndarray.read_new_json(ex).mode)
+            self.assertEqual(xtype, Xndarray.read_new_json(ex).xtype)
+            xa = Xndarray.read_new_json(ex)
+            for format in ["full", "complete"]:
+                # print(xa.to_json(format=format))
+                # print(Xndarray.read_json(xa.to_json(format=format)))
+                self.assertEqual(xa, Xndarray.read_new_json(xa.to_new_json(format=format)))
+
+        example2 = [
+            
+            {"var1:object": [["x", "y"], FILE]},
+            {"var1": [["x", "y"], FILE]},
+            {"var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]]},
+            {"ranking": [["var1"], [2, 2], [1, 2, 3, 4]]},
+            {"x": [{"test": 21}, ["x1", "x2"]]},
+            {"y": [["y1", "y2"]]},
+            {"z": [["x"], ["z1", "z2"]]},
+            {"x.mask": [[True, False]]},
+            {"x.variance": [[0.1, 0.2]]},
+            {"z.variance": [[0.1, 0.2]]},
+            
+        ]
+        for (ex, mode, xtype), ex2 in zip(example, example2):
+            #print(ex, ex2)
+            self.assertEqual(Xndarray.read_new_json(ex2).to_new_json(header=False), ex)
+
     def test_xndarray_dataset(self):
         """test Xndarray"""
         example = [
@@ -358,7 +406,6 @@ class TestXndarray(unittest.TestCase):
             # print(ex, ex2)
             self.assertEqual(Xndarray.read_json(ex2).to_json(header=False), ex)
 
-
 class TestXdataset(unittest.TestCase):
     """test Xdataset class"""
 
@@ -366,24 +413,23 @@ class TestXdataset(unittest.TestCase):
         """test Xdataset"""
         example = {
             "test": {
-                "var1": [[FILE], ["x", "y"]],
-                "var2": [["float[kg]", [2, 2], [10.1, 0.4, 3.4, 8.2]], ["x", "y"]],
-                "ranking": [[[2, 2], [1, 2, 3, 4]], ["var1"]],
-                "x": [[["x1", "x2"]], {"test": 21}],
-                "y": [[["y1", "y2"]]],
-                "z": [[["z1", "z2"]], ["x"]],
-                "x.mask1": [[[True, False]]],
-                "x.variance": [[[0.1, 0.2]]],
-                "z.variance": [[[0.1, 0.2]]],
-                "unit": [[["kg"]]],
+                "var1": [["x", "y"], FILE],
+                "var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]],
+                "ranking": [["var1"], [2, 2], [1, 2, 3, 4]],
+                "x": [{"test": 21}, ["x1", "x2"]],
+                "y": [["y1", "y2"]],
+                "z": [["x"], ["z1", "z2"]],
+                "x.mask1": [[True, False]],
+                "x.variance": [[0.1, 0.2]],
+                "z.variance": [[0.1, 0.2]],
+                "unit": [["kg"]],
                 "info": {"example": "everything"},
             }
         }
-
         notype = [True, False, True, True, True, True, True, True, True, True, True]
-        xds = Xdataset.read_json(example)
+        xds = Xdataset.read_new_json(example)
         self.assertEqual(
-            xds.to_json(notype=notype, noshape=True, header=False), example
+            xds.to_new_json(notype=notype, noshape=True, header=False), example
         )
         self.assertEqual(xds.dimensions, ("x", "y"))
         self.assertEqual(
@@ -400,11 +446,11 @@ class TestXdataset(unittest.TestCase):
 
         xdim = Xdataset(xds[xds.dimensions])
         self.assertEqual(
-            xdim.to_json(novalue=True, noshape=True),
+            xdim.to_new_json(novalue=True, noshape=True),
             {
                 ":xdataset": {
-                    "x": [["string", ["-"]], {"test": 21}],
-                    "y": [["string", ["-"]]],
+                    "x:string": [{"test": 21}, ["-"]],
+                    "y:string": [["-"]],
                 }
             },
         )
@@ -434,7 +480,7 @@ class TestXdataset(unittest.TestCase):
             },
         )
 
-        example = {
+        '''example = {
             "test": {
                 "var1": [[FILE], ["x", "y"]],
                 "var2": [["float[kg]", [2, 2], [10.1, 0.4, 3.4, 8.2]], ["x", "y"]],
@@ -449,8 +495,25 @@ class TestXdataset(unittest.TestCase):
                 "unit": [[["kg"]]],
                 "info": {"example": "everything"},
             }
+        }'''
+        example = {
+            "test": {
+                "var1": [["x", "y"], FILE],
+                "var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]],
+                "ranking": [["var1"], [2, 2], [1, 2, 3, 4]],
+                "x": [{"test": 21}, ["x1", "x2"]],
+                "y": [["y1", "y2"]],
+                "z": [["x"], ["z1", "z2"]],
+                "z_bis": [["z1_bis", "z2_bis"]],
+                "x.mask1": [[True, False]],
+                "x.variance": [[0.1, 0.2]],
+                "z.variance": [[0.1, 0.2]],
+                "unit": [["kg"]],
+                "info": {"example": "everything"},
+            }
         }
-        xd = Xdataset.read_json(example)
+
+        xd = Xdataset.read_new_json(example)
         self.assertEqual(
             xd.info["structure"],
             {
