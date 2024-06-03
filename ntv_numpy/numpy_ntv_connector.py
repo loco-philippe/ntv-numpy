@@ -132,7 +132,7 @@ class XndarrayConnec(NtvConnector):
         - **convert** : boolean (default True) - If True, convert json data with
         non-umpy ntv_type into Xndarray with python type
         """
-        print(ntv_value)
+        #print(ntv_value)
         return Xndarray.read_json(ntv_value, **kwargs)
 
     @staticmethod
@@ -164,6 +164,7 @@ class XndarrayConnec(NtvConnector):
         } | kwargs
         if option["format"] not in ["full", "complete"]:
             option["noshape"] = False
+        option["header"] = False
         return (value.to_json(**option), name, "xndarray")
 
 
@@ -206,12 +207,12 @@ class XdatasetConnec(NtvConnector):
             "extension": None,
             "format": "full",
             "noshape": True,
-            "header": True,
+            "header": False,
             "encoded": False,
             "novalue": False,
-            "noname": False,
+            "noname": True,
         } | kwargs
         if option["format"] not in ["full", "complete"]:
             option["noshape"] = False
-        option["noname"] = True
-        return (value.to_json(**option), name, "xdataset")
+        #option["noname"] = True
+        return (value.to_json(**option), value.name, "xdataset")
