@@ -20,7 +20,8 @@ For more information, see the
 import importlib
 
 import xarray as xr
-#import scipp as sc
+
+# import scipp as sc
 import pandas as pd
 import numpy as np
 
@@ -497,7 +498,6 @@ class XarrayConnec:
 class ScippConnec:
     """Scipp interface with two static methods ximport and xexport"""
 
-    
     SCTYPE_DTYPE = {"string": "str"}
 
     @staticmethod
@@ -543,6 +543,7 @@ class ScippConnec:
         """return a xdataset from a scipp object DataArray, Dataset or DataGroup"""
         import_optional_dependency("scipp")
         import scipp as sc
+
         xnd = []
         scd = sc_obj
         xnd_name = None
