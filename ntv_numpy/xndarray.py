@@ -196,38 +196,6 @@ class Xndarray:
         """
         option = {"convert": True} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
-        value, full_name = Ntv.decode_json(jso)[:2]
-
-        meta = links = nda = None
-        match value:
-            case str(meta) | dict(meta):
-                ...
-            case [list(nda)]:
-                ...
-            case [list(nda), list(links)]:
-                ...
-            case [list(nda), dict(meta)] | [list(nda), str(meta)]:
-                ...
-            case [list(nda), list(links), dict(meta)]:
-                ...
-            case [list(nda), list(links), str(meta)]:
-                ...
-            case _:
-                return None
-        nda = Ndarray.read_json(nda, **option) if nda else None
-        return Xndarray(full_name, links=links, meta=meta, nda=nda)
-
-    @staticmethod
-    def read_new_json(jsn, **kwargs):
-        """convert json data into a Xndarray.
-
-        *Parameters*
-
-        - **convert** : boolean (default True) - If True, convert json data with
-        non Numpy ntv_type into data with python type
-        """
-        option = {"convert": True} | kwargs
-        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         xnda_lst, full_name, ntv_type = Ntv.decode_json(jso)[:3]
         if ntv_type == 'xndarray':
             xnda_lst, full_name, ntv_type = Ntv.decode_json(xnda_lst)[:3]
@@ -277,43 +245,6 @@ class Xndarray:
         return True
 
     def to_json(self, **kwargs):
-        """convert a Xndarray into json-value.
-
-        *Parameters*
-
-        - **encoded** : Boolean (default False) - json-value if False else json-text
-        - **header** : Boolean (default True) - including xndarray type
-        - **noname** : Boolean (default False) - including data type and name if False
-        - **notype** : Boolean (default False) - including data type if False
-        - **novalue** : Boolean (default False) - including value if False
-        - **noshape** : Boolean (default True) - if True, without shape if dim < 1
-        - **format** : string (default 'full') - representation format of the ndarray,
-        - **extension** : string (default None) - type extension
-        """
-        option = {
-            "notype": False,
-            "format": "full",
-            "noshape": True,
-            "header": True,
-            "encoded": False,
-            "novalue": False,
-            "noname": False,
-        } | kwargs
-        if option["format"] not in ["full", "complete"]:
-            option["noshape"] = False
-        opt_nda = option | {"header": False}
-        nda_str = self.nda.to_json(**opt_nda) if self.nda is not None else None
-        lis = [nda_str, self.links, self.meta]
-        lis = [val for val in lis if val is not None]
-        return Nutil.json_ntv(
-            None if option["noname"] else self.full_name,
-            None if option["noname"] else "xndarray",
-            lis[0] if lis == [self.meta] else lis,
-            header=option["header"],
-            encoded=option["encoded"],
-        )
-
-    def to_new_json(self, **kwargs):
         """convert a Xndarray into json-value.
 
         *Parameters*

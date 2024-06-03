@@ -267,8 +267,8 @@ class TestXndarray(unittest.TestCase):
             {"y:string": [["y1", "y2"]]},
         ]
         for ex in example:
-            self.assertEqual(ex, Xndarray.read_new_json(
-                ex).to_new_json(header=False))
+            self.assertEqual(ex, Xndarray.read_json(
+                ex).to_json(header=False))
 
         example = [
             {":xndarray": {":int64[kg]": [[10, 20]]}},
@@ -282,9 +282,9 @@ class TestXndarray(unittest.TestCase):
         ]
         for ex in example:
             # print(ex)
-            self.assertEqual(ex, Xndarray.read_new_json(ex).to_new_json())
-            xnd = Xndarray.read_new_json(ex)
-            self.assertEqual(xnd, Xndarray.read_new_json(xnd.to_new_json()))
+            self.assertEqual(ex, Xndarray.read_json(ex).to_json())
+            xnd = Xndarray.read_json(ex)
+            self.assertEqual(xnd, Xndarray.read_json(xnd.to_json()))
 
     def test_new_xndarray_dataset(self):
         """test Xndarray"""
@@ -307,16 +307,16 @@ class TestXndarray(unittest.TestCase):
 
         for ex, mode, xtype in example:
             # print(ex)
-            self.assertEqual(ex, Xndarray.read_new_json(
-                ex).to_new_json(header=False))
-            self.assertEqual(mode, Xndarray.read_new_json(ex).mode)
-            self.assertEqual(xtype, Xndarray.read_new_json(ex).xtype)
-            xa = Xndarray.read_new_json(ex)
+            self.assertEqual(ex, Xndarray.read_json(
+                ex).to_json(header=False))
+            self.assertEqual(mode, Xndarray.read_json(ex).mode)
+            self.assertEqual(xtype, Xndarray.read_json(ex).xtype)
+            xa = Xndarray.read_json(ex)
             for format in ["full", "complete"]:
                 # print(xa.to_json(format=format))
                 # print(Xndarray.read_json(xa.to_json(format=format)))
-                self.assertEqual(xa, Xndarray.read_new_json(
-                    xa.to_new_json(format=format)))
+                self.assertEqual(xa, Xndarray.read_json(
+                    xa.to_json(format=format)))
 
         example2 = [
 
@@ -334,8 +334,8 @@ class TestXndarray(unittest.TestCase):
         ]
         for (ex, mode, xtype), ex2 in zip(example, example2):
             # print(ex, ex2)
-            self.assertEqual(Xndarray.read_new_json(
-                ex2).to_new_json(header=False), ex)
+            self.assertEqual(Xndarray.read_json(
+                ex2).to_json(header=False), ex)
 
 
 class TestXdataset(unittest.TestCase):
@@ -360,9 +360,9 @@ class TestXdataset(unittest.TestCase):
         }
         notype = [True, False, True, True, True,
                   True, True, True, True, True, True]
-        xds = Xdataset.read_new_json(example)
+        xds = Xdataset.read_json(example)
         self.assertEqual(
-            xds.to_new_json(notype=notype, noshape=True, header=False), example
+            xds.to_json(notype=notype, noshape=True, header=False), example
         )
         self.assertEqual(xds.dimensions, ("x", "y"))
         self.assertEqual(
@@ -379,7 +379,7 @@ class TestXdataset(unittest.TestCase):
 
         xdim = Xdataset(xds[xds.dimensions])
         self.assertEqual(
-            xdim.to_new_json(novalue=True, noshape=True),
+            xdim.to_json(novalue=True, noshape=True),
             {
                 ":xdataset": {
                     "x:string": [{"test": 21}, ["-"]],
@@ -429,7 +429,7 @@ class TestXdataset(unittest.TestCase):
             }
         }
 
-        xd = Xdataset.read_new_json(example)
+        xd = Xdataset.read_json(example)
         self.assertEqual(
             xd.info["structure"],
             {
@@ -482,7 +482,7 @@ class TestXdataset(unittest.TestCase):
                 },
             }
         }
-        xd = Xdataset.read_new_json(example)
+        xd = Xdataset.read_json(example)
         self.assertEqual(
             xd.info["structure"],
             {
@@ -540,7 +540,7 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
             },
         ]
         for example in examples:
-            xd = Xdataset.read_new_json(example)
+            xd = Xdataset.read_json(example)
             xd2 = Xdataset.from_xarray(xd.to_xarray(dataset=False))
             self.assertEqual(xd, xd2)
             xd2 = Xdataset.from_xarray(xd.to_xarray())
@@ -594,7 +594,7 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
                 xd2 = Xdataset.from_xarray(xar2)
                 # print(xd2.to_json())
                 self.assertEqual(xd, xd2)
-                self.assertEqual(xd.to_new_json(), xd2.to_new_json())
+                self.assertEqual(xd.to_json(), xd2.to_json())
 
     def test_xdataset_new_scipp(self):
         """test Scipp"""
@@ -627,7 +627,7 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
             },
         ]
         for example in examples:
-            xd = Xdataset.read_new_json(example)
+            xd = Xdataset.read_json(example)
             xd2 = Xdataset.from_scipp(xd.to_scipp(dataset=False, info=False))
             self.assertEqual(xd, xd2)
             xd2 = Xdataset.from_scipp(xd.to_scipp(dataset=False))
@@ -661,7 +661,7 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
             }
         ]
         for example in examples:
-            xd = Xdataset.read_new_json(example)
+            xd = Xdataset.read_json(example)
             xd_sc = Xdataset.from_scipp(xd.to_scipp(dataset=False))
             xd_xr = Xdataset.from_xarray(xd.to_xarray(dataset=False))
             self.assertTrue(xd == xd_sc == xd_xr)
@@ -708,7 +708,6 @@ class TestXdatasetPandas(unittest.TestCase):
         """test pandas interface"""
 
         example = {
-
             "test:xdataset": {
                 "var1": [["x", "y"], FILE],
                 "var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]],
@@ -725,10 +724,9 @@ class TestXdatasetPandas(unittest.TestCase):
                 "z.variance:float": [[0.1, 0.2]],
                 "info": {"example": "everything"},
                 "location": "paris",
-
             }
         }
-        xd = Xdataset.read_new_json(example)
+        xd = Xdataset.read_json(example)
         df = xd.to_dataframe()
         xd2 = Xdataset.from_dataframe(df)
         self.assertEqual(xd, xd2)
@@ -748,7 +746,7 @@ class TestXdatasetPandas(unittest.TestCase):
                 "location:string": [["paris"]],
             }
         }
-        xd = Xdataset.read_new_json(example)
+        xd = Xdataset.read_json(example)
         df = xd.to_dataframe()
         xd2 = Xdataset.from_dataframe(df)
         self.assertEqual(xd, xd2)

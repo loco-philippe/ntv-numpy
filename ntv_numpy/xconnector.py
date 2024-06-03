@@ -44,17 +44,21 @@ class AstropyNDDataConnec:
 
     import_optional_dependency("astropy")
     import astropy
-
+    from astropy import wcs
+    from astropy.nddata import NDData
+    from astropy.nddata.nduncertainty import StdDevUncertainty
+    from astropy.nddata.nduncertainty import VarianceUncertainty
+    from astropy.nddata.nduncertainty import InverseVariance
+    
     @staticmethod
     def xexport(xdt, **kwargs):
         """return a NDData from a Xdataset"""
 
-        astro = AstropyNDDataConnec.astropy
-        wcs = astro.wcs
-        NDData = astro.nddata.NDData
-        StdDevUncertainty = astro.nddata.nduncertainty.StdDevUncertainty
-        VarianceUncertainty = astro.nddata.nduncertainty.VarianceUncertainty
-        InverseVariance = astro.nddata.nduncertainty.InverseVariance
+        NDData = AstropyNDDataConnec.NDData
+        wcs = AstropyNDDataConnec.wcs
+        StdDevUncertainty = AstropyNDDataConnec.StdDevUncertainty
+        VarianceUncertainty = AstropyNDDataConnec.VarianceUncertainty
+        InverseVariance = AstropyNDDataConnec.InverseVariance
 
         data = xdt["data"].ndarray
         mask = xdt["data.mask"].ndarray
@@ -158,19 +162,14 @@ class PandasConnec:
             dfr.attrs |= {"info": xdt.tab_info}
             dfr.attrs |= {"metadata": {
                 name: xdt[name].meta for name in xdt.metadata}}
-            fields_uri = [var for var in fields if var not in fields_array]
-            fields_other = [
-                nam for nam in xdt.group(xdt.data_arrays) if len(xdt[nam]) != xdt.length
-            ]
-            if fields_uri:
-                dfr.attrs |= {
-                    "fields": {
-                        nam: xdt[nam].to_json(
-                            noname=True,
-                        )
-                        for nam in fields_uri + fields_other
-                    }
-                }
+            fields_attrs = [
+                uri for uri in fields if uri not in fields_array] + [
+                nam for nam in xdt.group(xdt.data_arrays) if len(xdt[nam]) != xdt.length]
+            if fields_attrs:
+                dic_fields = {}
+                for nam in fields_attrs:
+                    dic_fields |= xdt[nam].to_json(header=False)
+                dfr.attrs |= {"fields": dic_fields}
             if xdt.name:
                 dfr.attrs |= {"name": xdt.name}
         return dfr
