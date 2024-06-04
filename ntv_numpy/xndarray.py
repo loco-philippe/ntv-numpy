@@ -14,7 +14,7 @@ For more information, see the
 
 import json
 from json_ntv import Ntv
-from ntv_numpy.ndarray import Ndarray, Nutil, NdarrayError
+from ntv_numpy.ndarray import Darray, Ndarray, Nutil, NdarrayError
 
 
 class Xndarray:
@@ -196,25 +196,38 @@ class Xndarray:
         """
         option = {"convert": True} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
-        value, full_name = Ntv.decode_json(jso)[:2]
+        xnda_lst, full_name, ntv_type = Ntv.decode_json(jso)[:3]
+        if ntv_type == "xndarray":
+            xnda_lst, full_name, ntv_type = Ntv.decode_json(xnda_lst)[:3]
 
-        meta = links = nda = None
-        match value:
+        shape = meta = links = da_jsn = nda = None
+        match xnda_lst:
             case str(meta) | dict(meta):
                 ...
-            case [list(nda)]:
-                ...
-            case [list(nda), list(links)]:
-                ...
-            case [list(nda), dict(meta)] | [list(nda), str(meta)]:
-                ...
-            case [list(nda), list(links), dict(meta)]:
-                ...
-            case [list(nda), list(links), str(meta)]:
-                ...
+            case list(data) if len(data) > 0:
+                for val in data[:-1]:
+                    if isinstance(val, dict):
+                        meta = val
+                    elif isinstance(val, list) and len(val) > 0:
+                        if isinstance(val[0], int):
+                            shape = val
+                        elif isinstance(val[0], str):
+                            links = val
+                da_jsn = data[-1]
             case _:
                 return None
-        nda = Ndarray.read_json(nda, **option) if nda else None
+        unidim = shape is not None
+        if isinstance(da_jsn, str):
+            nda = Ndarray(da_jsn, shape=shape, ntv_type=ntv_type)
+        elif da_jsn:
+            darray = Darray.read_json(
+                da_jsn, dtype=Nutil.dtype(ntv_type), unidim=unidim
+            )
+            darray.data = Nutil.convert(
+                ntv_type, darray.data, tojson=False, convert=option["convert"]
+            )
+            nda = Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
+
         return Xndarray(full_name, links=links, meta=meta, nda=nda)
 
     def set_ndarray(self, ndarray, nda_uri=True):
@@ -256,14 +269,21 @@ class Xndarray:
         } | kwargs
         if option["format"] not in ["full", "complete"]:
             option["noshape"] = False
-        opt_nda = option | {"header": False}
-        nda_str = self.nda.to_json(**opt_nda) if self.nda is not None else None
-        lis = [nda_str, self.links, self.meta]
+        opt_nda = option | {"header": False, "modelist": False}
+        nda_dic = self.nda.to_json(**opt_nda) if self.nda is not None else {}
+        lis = [self.links, self.meta, nda_dic.get("shape"), nda_dic.get("darray")]
         lis = [val for val in lis if val is not None]
-        return Nutil.json_ntv(
+        xnda_jsn = Nutil.json_ntv(
             None if option["noname"] else self.full_name,
-            None if option["noname"] else "xndarray",
+            nda_dic.get("ntv_type"),
             lis[0] if lis == [self.meta] else lis,
+            header=True,
+            encoded=False,
+        )
+        return Nutil.json_ntv(
+            None,
+            "xndarray",
+            xnda_jsn,
             header=option["header"],
             encoded=option["encoded"],
         )
@@ -277,4 +297,5 @@ class Xndarray:
             "nda": self.nda,
             "meta": self.meta,
             "links": self.links,
+            "shape": self.shape,
         }

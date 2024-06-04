@@ -39,7 +39,7 @@ class Ndarray:
 
         *Parameters*
 
-        - **dar**: Darray or np.ndarray - data to represent
+        - **dar**: list, Darray or np.ndarray - data to represent
         - **shape** : list of integer (default None) - length of dimensions
         - **ntv_type**: string (default None) - NTVtype to apply
         - **str_uri**: boolean(default True) - if True and dar is a string,
@@ -238,15 +238,17 @@ class Ndarray:
 
         *Parameters*
 
+        - **ntv_type** : string (default None) - If ntv_type is not in json data
+        - **shape** : list (default None) - If shape is not in json data
         - **convert** : boolean (default True) - If True, convert json data with
         non Numpy ntv_type into data with python type
         """
-        option = {"convert": True} | kwargs
+        option = {"convert": True, "shape": None, "ntv_type": None} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         (ntv_value,) = Ntv.decode_json(jso)[:1]
 
-        ntv_type = None
-        shape = None
+        ntv_type = option["ntv_type"]
+        shape = option["shape"]
         match ntv_value[:-1]:
             case []:
                 ...
@@ -278,6 +280,7 @@ class Ndarray:
         - **format** : string (default 'full') - representation format of the ndarray,
         - **encoded** : Boolean (default False) - json-value if False else json-text
         - **header** : Boolean (default True) - including ndarray type
+        - **modelist** : Boolean (default True) - return a list if True else a dict
         """
         option = {
             "format": "full",
@@ -286,37 +289,42 @@ class Ndarray:
             "notype": False,
             "noshape": True,
             "novalue": False,
+            "modelist": True,
         } | kwargs
         if self.mode in ["undefined", "inconsistent"]:
             return None
         if self.mode == "absolute" and len(self.darray) == 0:
             return [[]]
 
-        shape = (
+        js_shape = (
             None
             if not self.shape or (len(self.shape) < 2 and option["noshape"])
             else self.shape
         )
 
         if self.mode == "relative":
-            js_val = self.uri
+            js_darray = self.uri
         else:
-            js_val = (
+            js_darray = (
                 Nutil.ntv_val(
                     self.ntv_type, self.darray, option["format"], self.is_json
                 )
                 if not option["novalue"]
                 else ["-"]
             )
+        js_ntv_type = self.ntv_type if not option["notype"] else None
 
-        lis = [self.ntv_type if not option["notype"] else None, shape, js_val]
-        return Nutil.json_ntv(
-            None,
-            "ndarray",
-            [val for val in lis if val is not None],
-            header=option["header"],
-            encoded=option["encoded"],
-        )
+        lis = [js_ntv_type, js_shape, js_darray]
+
+        if option["modelist"]:
+            return Nutil.json_ntv(
+                None,
+                "ndarray",
+                [val for val in lis if val is not None],
+                header=option["header"],
+                encoded=option["encoded"],
+            )
+        return {"ntv_type": js_ntv_type, "shape": js_shape, "darray": js_darray}
 
     @property
     def info(self):

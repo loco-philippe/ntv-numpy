@@ -19,10 +19,9 @@ For more information, see the
 
 import importlib
 
-import xarray as xr
-
+# import xarray as xr
 # import scipp as sc
-import pandas as pd
+# import pandas as pd
 import numpy as np
 
 from ntv_numpy.ndarray import Nutil, Ndarray
@@ -43,15 +42,23 @@ def import_optional_dependency(name):
 class AstropyNDDataConnec:
     """NDData interface with two static methods ximport and xexport"""
 
+    import_optional_dependency("astropy")
+    import astropy
+    from astropy import wcs
+    from astropy.nddata import NDData
+    from astropy.nddata.nduncertainty import StdDevUncertainty
+    from astropy.nddata.nduncertainty import VarianceUncertainty
+    from astropy.nddata.nduncertainty import InverseVariance
+
     @staticmethod
     def xexport(xdt, **kwargs):
         """return a NDData from a Xdataset"""
 
-        import_optional_dependency("astropy")
-        from astropy import wcs
-        from astropy.nddata import NDData
-        from astropy.nddata.nduncertainty import StdDevUncertainty, VarianceUncertainty
-        from astropy.nddata.nduncertainty import InverseVariance
+        NDData = AstropyNDDataConnec.NDData
+        wcs = AstropyNDDataConnec.wcs
+        StdDevUncertainty = AstropyNDDataConnec.StdDevUncertainty
+        VarianceUncertainty = AstropyNDDataConnec.VarianceUncertainty
+        InverseVariance = AstropyNDDataConnec.InverseVariance
 
         data = xdt["data"].ndarray
         mask = xdt["data.mask"].ndarray
@@ -109,6 +116,9 @@ class AstropyNDDataConnec:
 class PandasConnec:
     """pandas.DataFrame interface with two static methods ximport and xexport"""
 
+    import_optional_dependency("pandas")
+    import pandas
+
     @staticmethod
     def xexport(xdt, **kwargs):
         """return a pd.DataFrame from a Xdataset
@@ -120,6 +130,8 @@ class PandasConnec:
         - **dims**: list of string (default None) - order of dimensions full_name to apply
         - **index**: Boolean (default True) - if True, dimensions are translated into indexes
         """
+        pd = PandasConnec.pandas
+
         opt = {"ntv_type": True, "info": True, "index": True, "dims": None} | kwargs
         dic_name = {
             name: xdt[name].json_name if opt["ntv_type"] else xdt[name].full_name
@@ -147,19 +159,14 @@ class PandasConnec:
         if opt["info"]:
             dfr.attrs |= {"info": xdt.tab_info}
             dfr.attrs |= {"metadata": {name: xdt[name].meta for name in xdt.metadata}}
-            fields_uri = [var for var in fields if var not in fields_array]
-            fields_other = [
+            fields_attrs = [uri for uri in fields if uri not in fields_array] + [
                 nam for nam in xdt.group(xdt.data_arrays) if len(xdt[nam]) != xdt.length
             ]
-            if fields_uri:
-                dfr.attrs |= {
-                    "fields": {
-                        nam: xdt[nam].to_json(
-                            noname=True,
-                        )
-                        for nam in fields_uri + fields_other
-                    }
-                }
+            if fields_attrs:
+                dic_fields = {}
+                for nam in fields_attrs:
+                    dic_fields |= xdt[nam].to_json(header=False)
+                dfr.attrs |= {"fields": dic_fields}
             if xdt.name:
                 dfr.attrs |= {"name": xdt.name}
         return dfr
@@ -345,6 +352,9 @@ class PandasConnec:
 class XarrayConnec:
     """Xarray interface with two static methods ximport and xexport"""
 
+    import_optional_dependency("xarray")
+    import xarray
+
     @staticmethod
     def xexport(xdt, **kwargs):
         """return a xr.DataArray or a xr.Dataset from a Xdataset
@@ -356,6 +366,8 @@ class XarrayConnec:
         - **info** : Boolean (default True) - if True, add json representation
         of 'relative' Xndarrays and 'data_arrays' Xndarrays in attrs
         """
+        xr = XarrayConnec.xarray
+
         option = {"dataset": True, "info": True} | kwargs
         coords = XarrayConnec._to_xr_vars(
             xdt, xdt.dimensions + xdt.coordinates + xdt.uniques
@@ -384,6 +396,8 @@ class XarrayConnec:
     @staticmethod
     def ximport(xar, Xclass, **kwargs):
         """return a Xdataset from a xr.DataArray or a xr.Dataset"""
+        xr = XarrayConnec.xarray
+
         xnd = []
         if xar.attrs:
             attrs = {
@@ -485,6 +499,8 @@ class XarrayConnec:
     @staticmethod
     def _xr_add_type(xar):
         """add 'ntv_type' as attribute for a xr.DataArray"""
+        xr = XarrayConnec.xarray
+
         if isinstance(xar, xr.DataArray) and "ntv_type" not in xar.attrs:
             xar.attrs |= {"ntv_type": Nutil.ntv_type(xar.data.dtype.name)}
             return
@@ -500,6 +516,9 @@ class ScippConnec:
 
     SCTYPE_DTYPE = {"string": "str"}
 
+    import_optional_dependency("scipp")
+    import scipp
+
     @staticmethod
     def xexport(xdt, **kwargs):
         """return a sc.DataArray or a sc.Dataset from a xdataset
@@ -512,8 +531,7 @@ class ScippConnec:
         metadata and data_arrays
         - **ntv_type** : Boolean (default True) - if True add ntv-type to the name
         """
-        import_optional_dependency("scipp")
-        import scipp as sc
+        sc = ScippConnec.scipp
 
         option = {"dataset": True, "info": True, "ntv_type": True} | kwargs
         coords = dict(
@@ -541,8 +559,7 @@ class ScippConnec:
     @staticmethod
     def ximport(sc_obj, Xclass, **kwargs):
         """return a xdataset from a scipp object DataArray, Dataset or DataGroup"""
-        import_optional_dependency("scipp")
-        import scipp as sc
+        sc = ScippConnec.scipp
 
         xnd = []
         scd = sc_obj
@@ -572,6 +589,8 @@ class ScippConnec:
     @staticmethod
     def _grp_sc_to_xnd(sc_obj, xnd):
         """return a list of Xndarray from a scipp variable"""
+        sc = ScippConnec.scipp
+
         dic_xnd = {xar.name: xar for xar in xnd}
         for obj in sc_obj:
             name, add_name = Nutil.split_name(obj)
@@ -624,6 +643,8 @@ class ScippConnec:
     @staticmethod
     def _to_sc_dataarray(xdt, name, coords, **option):
         """return a scipp.DataArray from a xdataset.global_var defined by his name"""
+        sc = ScippConnec.scipp
+
         scipp_name, data = ScippConnec._to_scipp_var(xdt, name, **option)
         masks = dict(
             [
@@ -661,6 +682,8 @@ class ScippConnec:
     @staticmethod
     def _to_scipp_var(xdt, name, **kwargs):
         """return a scipp.Variable from a Xndarray defined by his name"""
+        sc = ScippConnec.scipp
+
         option = {"grp_mask": False, "ntv_type": True} | kwargs
         simple_type, unit = Nutil.split_type(xdt[name].ntv_type)
         unit = unit if unit else ""

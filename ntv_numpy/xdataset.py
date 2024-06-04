@@ -211,6 +211,7 @@ class XdatasetInterface(ABC):
         - **encoded** : Boolean (default False) - json value if False else json text
         - **header** : Boolean (default True) - including 'xdataset' type
         - **notype** : list of Boolean (default list of None) - including data type if False
+        - **noname** : Boolean (default False) - including name if False
         - **novalue** : Boolean (default False) - including value if False
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **format** : list of string (default list of 'full') - representation
@@ -245,7 +246,7 @@ class XdatasetInterface(ABC):
                 header=False,
             )
         return Nutil.json_ntv(
-            self.name,
+            None if kwargs.get("noname", False) else self.name,
             "xdataset",
             dic_xnd,
             header=kwargs.get("header", True),
