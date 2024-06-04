@@ -200,8 +200,7 @@ class XdatasetInterface(ABC):
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         value, name = Ntv.decode_json(jso)[:2]
 
-        xnd = [Xndarray.read_json({key: val}, **option)
-               for key, val in value.items()]
+        xnd = [Xndarray.read_json({key: val}, **option) for key, val in value.items()]
         return Xdataset(xnd, name)
 
     def to_json(self, **kwargs):
@@ -218,14 +217,24 @@ class XdatasetInterface(ABC):
         - **format** : list of string (default list of 'full') - representation
         format of the ndarray,
         """
-        notype = (kwargs["notype"] if ("notype" in kwargs
-                                       and isinstance(kwargs["notype"], list)
-                                       and len(kwargs["notype"]) == len(self))
-                  else [False] * len(self))
-        forma = (kwargs["format"] if ("format" in kwargs
-                                      and isinstance(kwargs["format"], list)
-                                      and len(kwargs["format"]) == len(self))
-                 else ["full"] * len(self))
+        notype = (
+            kwargs["notype"]
+            if (
+                "notype" in kwargs
+                and isinstance(kwargs["notype"], list)
+                and len(kwargs["notype"]) == len(self)
+            )
+            else [False] * len(self)
+        )
+        forma = (
+            kwargs["format"]
+            if (
+                "format" in kwargs
+                and isinstance(kwargs["format"], list)
+                and len(kwargs["format"]) == len(self)
+            )
+            else ["full"] * len(self)
+        )
         noshape = kwargs.get("noshape", True)
         dic_xnd = {}
         for xna, notyp, forma in zip(self.xnd, notype, forma):
@@ -243,7 +252,7 @@ class XdatasetInterface(ABC):
             header=kwargs.get("header", True),
             encoded=kwargs.get("encoded", False),
         )
-    
+
     def to_xarray(self, **kwargs):
         """return a xr.DataArray or a xr.Dataset from a Xdataset
 
@@ -393,8 +402,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
             + "["
             + str(len(self))
             + "]\n"
-            + pprint.pformat(self.to_json(novalue=True,
-                             header=False, noshape=False))
+            + pprint.pformat(self.to_json(novalue=True, header=False, noshape=False))
         )
 
     def __str__(self):
@@ -477,8 +485,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         list_dims = []
         for link in self[var].links:
             list_dims += (
-                self.dims(link, json_name) if self.dims(
-                    link, json_name) else [link]
+                self.dims(link, json_name) if self.dims(link, json_name) else [link]
             )
         return list_dims
 
@@ -537,13 +544,10 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         """return a dict of Xndarray grouped with category"""
         dic = {}
         dic |= {"data_vars": list(self.data_vars)} if self.data_vars else {}
-        dic |= {"data_arrays": list(self.data_arrays)
-                } if self.data_arrays else {}
+        dic |= {"data_arrays": list(self.data_arrays)} if self.data_arrays else {}
         dic |= {"dimensions": list(self.dimensions)} if self.dimensions else {}
-        dic |= {"coordinates": list(self.coordinates)
-                } if self.coordinates else {}
-        dic |= {"additionals": list(self.additionals)
-                } if self.additionals else {}
+        dic |= {"coordinates": list(self.coordinates)} if self.coordinates else {}
+        dic |= {"additionals": list(self.additionals)} if self.additionals else {}
         dic |= {"metadata": list(self.metadata)} if self.metadata else {}
         dic |= {"uniques": list(self.uniques)} if self.uniques else {}
         return dic
@@ -556,8 +560,7 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         inf["length"] = len(self[self.data_vars[0]]) if self.data_vars else 0
         inf["width"] = len(self)
         data = {
-            name: {key: val for key,
-                   val in self[name].info.items() if key != "name"}
+            name: {key: val for key, val in self[name].info.items() if key != "name"}
             for name in self.names
         }
         return {

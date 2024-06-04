@@ -197,7 +197,7 @@ class Xndarray:
         option = {"convert": True} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         xnda_lst, full_name, ntv_type = Ntv.decode_json(jso)[:3]
-        if ntv_type == 'xndarray':
+        if ntv_type == "xndarray":
             xnda_lst, full_name, ntv_type = Ntv.decode_json(xnda_lst)[:3]
 
         shape = meta = links = da_jsn = nda = None
@@ -208,11 +208,11 @@ class Xndarray:
                 for val in data[:-1]:
                     if isinstance(val, dict):
                         meta = val
-                    elif isinstance(val, list) and len(val) > 0: 
-                        if isinstance(val[0], int): 
+                    elif isinstance(val, list) and len(val) > 0:
+                        if isinstance(val[0], int):
                             shape = val
-                        elif isinstance(val[0], str): 
-                            links = val                
+                        elif isinstance(val[0], str):
+                            links = val
                 da_jsn = data[-1]
             case _:
                 return None
@@ -225,11 +225,11 @@ class Xndarray:
             )
             darray.data = Nutil.convert(
                 ntv_type, darray.data, tojson=False, convert=option["convert"]
-                )
+            )
             nda = Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
 
         return Xndarray(full_name, links=links, meta=meta, nda=nda)
-    
+
     def set_ndarray(self, ndarray, nda_uri=True):
         """set a new ndarray (nda) and return the result (True, False)
 
@@ -271,18 +271,23 @@ class Xndarray:
             option["noshape"] = False
         opt_nda = option | {"header": False, "modelist": False}
         nda_dic = self.nda.to_json(**opt_nda) if self.nda is not None else {}
-        lis = [self.links, self.meta, nda_dic.get('shape'), nda_dic.get('darray')]
+        lis = [self.links, self.meta, nda_dic.get("shape"), nda_dic.get("darray")]
         lis = [val for val in lis if val is not None]
         xnda_jsn = Nutil.json_ntv(
             None if option["noname"] else self.full_name,
-            nda_dic.get('ntv_type'),
+            nda_dic.get("ntv_type"),
             lis[0] if lis == [self.meta] else lis,
             header=True,
             encoded=False,
         )
-        return Nutil.json_ntv(None, "xndarray", xnda_jsn, header=option["header"], 
-                              encoded=option["encoded"])
-    
+        return Nutil.json_ntv(
+            None,
+            "xndarray",
+            xnda_jsn,
+            header=option["header"],
+            encoded=option["encoded"],
+        )
+
     def _to_json(self):
         """return dict of attributes"""
         return {
@@ -292,5 +297,5 @@ class Xndarray:
             "nda": self.nda,
             "meta": self.meta,
             "links": self.links,
-            "shape": self.shape
+            "shape": self.shape,
         }

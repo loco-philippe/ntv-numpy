@@ -247,8 +247,8 @@ class Ndarray:
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         (ntv_value,) = Ntv.decode_json(jso)[:1]
 
-        ntv_type = option['ntv_type']
-        shape = option['shape']
+        ntv_type = option["ntv_type"]
+        shape = option["shape"]
         match ntv_value[:-1]:
             case []:
                 ...
@@ -313,10 +313,10 @@ class Ndarray:
                 else ["-"]
             )
         js_ntv_type = self.ntv_type if not option["notype"] else None
-        
+
         lis = [js_ntv_type, js_shape, js_darray]
-        
-        if option["modelist"]: 
+
+        if option["modelist"]:
             return Nutil.json_ntv(
                 None,
                 "ndarray",
@@ -324,7 +324,7 @@ class Ndarray:
                 header=option["header"],
                 encoded=option["encoded"],
             )
-        return {'ntv_type': js_ntv_type, 'shape': js_shape, 'darray': js_darray}
+        return {"ntv_type": js_ntv_type, "shape": js_shape, "darray": js_darray}
 
     @property
     def info(self):

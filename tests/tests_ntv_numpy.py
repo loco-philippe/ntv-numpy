@@ -160,8 +160,7 @@ class TestNdarray(unittest.TestCase):
                 ex_rt = Ndarray.read_json(js, convert=False)
                 # print(js, ex_rt.to_json(format=format))
                 self.assertEqual(
-                    js[":ndarray"][1], ex_rt.to_json(format=forma)[
-                        ":ndarray"][1]
+                    js[":ndarray"][1], ex_rt.to_json(format=forma)[":ndarray"][1]
                 )
                 # print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
             if len(ex[0]) == 2:
@@ -240,13 +239,13 @@ class TestNdarray(unittest.TestCase):
 
     def test_ndarray_uri2(self):
         """test Ndarray"""
-        '''jsn = requests.get(FILE, allow_redirects=True, timeout=30).content.decode()
+        jsn = requests.get(FILE, allow_redirects=True, timeout=30).content.decode()
         # print(type(jsn), jsn)
         nda = Ndarray.read_json(jsn)
         # print(nda)
         self.assertEqual(
             nda, Ndarray.read_json({":ndarray": ["int64[kg]", [2, 2], [1, 2, 3, 4]]})
-        )'''
+        )
         example = [
             ["uri", "int32", None],
             ["uri", None, None],
@@ -267,8 +266,7 @@ class TestXndarray(unittest.TestCase):
             {"y:string": [["y1", "y2"]]},
         ]
         for ex in example:
-            self.assertEqual(ex, Xndarray.read_json(
-                ex).to_json(header=False))
+            self.assertEqual(ex, Xndarray.read_json(ex).to_json(header=False))
 
         example = [
             {":xndarray": {":int64[kg]": [[10, 20]]}},
@@ -276,8 +274,7 @@ class TestXndarray(unittest.TestCase):
             {":xndarray": {":ipv4": [["192.168.1.1", "192.168.2.5"]]}},
             {":xndarray": {":json": [[1, "two", {"three": 3}]]}},
             {":xndarray": {":base16": [[b"1F23", b"236A5E"]]}},
-            {":xndarray": {
-                ":uri": [["geo:13.4125,103.86673", "geo:13.41,103.86"]]}},
+            {":xndarray": {":uri": [["geo:13.4125,103.86673", "geo:13.41,103.86"]]}},
             {":xndarray": {":object": [FILE]}},
         ]
         for ex in example:
@@ -291,10 +288,12 @@ class TestXndarray(unittest.TestCase):
         example = [
             [{"var1:object": [["x", "y"], FILE]}, "relative", "variable"],
             [{"var1": [["x", "y"], FILE]}, "relative", "variable"],
-            [{"var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]]},
-             "absolute", "variable"],
-            [{"ranking:int": [["var1"], [2, 2], [1, 2, 3, 4]]},
-                "absolute", "variable"],
+            [
+                {"var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]]},
+                "absolute",
+                "variable",
+            ],
+            [{"ranking:int": [["var1"], [2, 2], [1, 2, 3, 4]]}, "absolute", "variable"],
             [{"x:string": [{"test": 21}, ["x1", "x2"]]}, "absolute", "namedarray"],
             [{"y:string": [["y1", "y2"]]}, "absolute", "namedarray"],
             [{"z:string": [["x"], ["z1", "z2"]]}, "absolute", "variable"],
@@ -307,19 +306,16 @@ class TestXndarray(unittest.TestCase):
 
         for ex, mode, xtype in example:
             # print(ex)
-            self.assertEqual(ex, Xndarray.read_json(
-                ex).to_json(header=False))
+            self.assertEqual(ex, Xndarray.read_json(ex).to_json(header=False))
             self.assertEqual(mode, Xndarray.read_json(ex).mode)
             self.assertEqual(xtype, Xndarray.read_json(ex).xtype)
             xa = Xndarray.read_json(ex)
             for format in ["full", "complete"]:
                 # print(xa.to_json(format=format))
                 # print(Xndarray.read_json(xa.to_json(format=format)))
-                self.assertEqual(xa, Xndarray.read_json(
-                    xa.to_json(format=format)))
+                self.assertEqual(xa, Xndarray.read_json(xa.to_json(format=format)))
 
         example2 = [
-
             {"var1:object": [["x", "y"], FILE]},
             {"var1": [["x", "y"], FILE]},
             {"var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]]},
@@ -330,12 +326,10 @@ class TestXndarray(unittest.TestCase):
             {"x.mask": [[True, False]]},
             {"x.variance": [[0.1, 0.2]]},
             {"z.variance": [[0.1, 0.2]]},
-
         ]
         for (ex, mode, xtype), ex2 in zip(example, example2):
             # print(ex, ex2)
-            self.assertEqual(Xndarray.read_json(
-                ex2).to_json(header=False), ex)
+            self.assertEqual(Xndarray.read_json(ex2).to_json(header=False), ex)
 
 
 class TestXdataset(unittest.TestCase):
@@ -358,8 +352,7 @@ class TestXdataset(unittest.TestCase):
                 "info": {"example": "everything"},
             }
         }
-        notype = [True, False, True, True, True,
-                  True, True, True, True, True, True]
+        notype = [True, False, True, True, True, True, True, True, True, True, True]
         xds = Xdataset.read_json(example)
         self.assertEqual(
             xds.to_json(notype=notype, noshape=True, header=False), example
@@ -511,7 +504,7 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
                     "var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]],
                     "unit": "kg",
                     "info": {"example": "everything"},
-                    "ranking": [["var2"], [2, 2], [1, 2, 3, 4]],   # !!!
+                    "ranking": [["var2"], [2, 2], [1, 2, 3, 4]],  # !!!
                     "x": [{"test": 21}, ["x1", "x2"]],
                     "y:date": [["2021-01-01", "2022-02-02"]],
                     "z": [["x"], ["z1", "z2"]],
@@ -527,7 +520,7 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
                     "var2.variance": [[2, 2], [0.1, 0.2, 0.3, 0.4]],
                     "var2.mask1": [["x"], [True, False]],
                     "var2.mask2": [[2, 2], [True, False, False, True]],
-                    "ranking:month": [["var2"], [2, 2], [1, 2, 3, 4]],   # !!!
+                    "ranking:month": [["var2"], [2, 2], [1, 2, 3, 4]],  # !!!
                     "x:string": [{"test": 21}, ["23F0AE", "578B98"]],
                     "x.mask1": [[True, False]],
                     "y:date": [["2021-01-01", "2022-02-02"]],
@@ -549,8 +542,7 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
         examples = [
             xr.DataArray(np.array([1, 2, 3, 4]).reshape([2, 2])),
             xr.Dataset(
-                {"var": (["date", "y"], np.array(
-                    [1, 2, 3, 4]).reshape([2, 2]))},
+                {"var": (["date", "y"], np.array([1, 2, 3, 4]).reshape([2, 2]))},
                 coords={
                     "date": np.array(
                         ["2021-02-04", "2022-02-04"], dtype="datetime64[ns]"
@@ -559,26 +551,22 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
                 },
             ),
             xr.Dataset(
-                {"var": (["date", "y"], np.array(
-                    [1, 2, 3, 4]).reshape([2, 2]))},
+                {"var": (["date", "y"], np.array([1, 2, 3, 4]).reshape([2, 2]))},
                 coords={
                     "date": (
                         ["date"],
-                        np.array(["2021-02-04", "2022-02-04"],
-                                 dtype="datetime64[ns]"),
+                        np.array(["2021-02-04", "2022-02-04"], dtype="datetime64[ns]"),
                         {"ntv_type": "date"},
                     ),
                     "y": np.array([10, 20]),
                 },
             ),
             xr.Dataset(
-                {"var": (["date", "y"], np.array(
-                    [1, 2, 3, 4]).reshape([2, 2]))},
+                {"var": (["date", "y"], np.array([1, 2, 3, 4]).reshape([2, 2]))},
                 coords={
                     "date": (
                         ["date"],
-                        np.array(["2021-02-04", "2022-02-04"],
-                                 dtype="datetime64[ns]"),
+                        np.array(["2021-02-04", "2022-02-04"], dtype="datetime64[ns]"),
                         {"ntv_type": "date"},
                     ),
                     "y": np.array([Point([1, 2]), Point([3, 4])]),
@@ -599,13 +587,12 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
     def test_xdataset_new_scipp(self):
         """test Scipp"""
         examples = [
-
             {  # "test": {
                 "var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]],
                 "var2.variance": [[2, 2], [0.1, 0.2, 0.3, 0.4]],
                 "var2.mask1": [["x"], [True, False]],
                 "var2.mask2": [[2, 2], [True, False, False, True]],
-                "ranking:month": [["var2"], [2, 2], [1, 2, 3, 4]],   # !!!
+                "ranking:month": [["var2"], [2, 2], [1, 2, 3, 4]],  # !!!
                 "x:string": [["23F0AE", "578B98"]],
                 # "x.mask1": [[True, False]],
                 "y:date": [["2021-01-01", "2022-02-02"]],
@@ -620,8 +607,11 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
                 "y:string": [["a", "b", "c"]],
                 "z:int32": [[1, 2, 3]],
                 "year:int32": [[2020, 2021]],
-                "point:string": [["y", "x"], [3, 2],
-                                 ["pt1", "pt2", "pt3", "pt4", "pt5", "pt6"]],
+                "point:string": [
+                    ["y", "x"],
+                    [3, 2],
+                    ["pt1", "pt2", "pt3", "pt4", "pt5", "pt6"],
+                ],
                 "along_x:float64": [["x"], [-1.18, -0.74]],
                 "foo:float64": [["x", "y", "z", "year"], [2, 3, 3, 2], list(range(36))],
             },
@@ -647,7 +637,7 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
                     "var2.variance": [[2, 2], [0.1, 0.2, 0.3, 0.4]],
                     "var2.mask1": [["x"], [True, False]],
                     "var2.mask2": [[2, 2], [True, False, False, True]],
-                    "ranking:month": [["var2"], [2, 2], [1, 2, 3, 4]],   # !!!
+                    "ranking:month": [["var2"], [2, 2], [1, 2, 3, 4]],  # !!!
                     "x:string": [["23F0AE", "578B98"]],  # , {'test': 21}],
                     "x.mask1": [[True, False]],
                     "y:date": [["2021-01-01", "2022-02-02"]],
@@ -684,8 +674,7 @@ class TestXdatasetPandas(unittest.TestCase):
                 "year": [2020, 2021],
                 "point": (
                     ("x", "y"),
-                    np.array(["pt1", "pt2", "pt3", "pt4",
-                             "pt5", "pt6"]).reshape(2, 3),
+                    np.array(["pt1", "pt2", "pt3", "pt4", "pt5", "pt6"]).reshape(2, 3),
                 ),
                 "along_x": ("x", np.random.randn(2)),
                 "scalar": 123,
@@ -714,7 +703,7 @@ class TestXdatasetPandas(unittest.TestCase):
                 "var2.variance": [[2, 2], [0.1, 0.2, 0.3, 0.4]],
                 "var2.mask1": [["x"], [True, False]],
                 "var2.mask2": [[2, 2], [True, False, False, True]],
-                "ranking:month": [["var2"], [2, 2], [1, 2, 3, 4]],   # !!!
+                "ranking:month": [["var2"], [2, 2], [1, 2, 3, 4]],  # !!!
                 "x:string": [["23F0AE", "578B98"]],  # , {'test': 21}],
                 "x.mask1": [[True, False]],
                 "y:date": [["2021-01-01", "2022-02-02"]],
@@ -736,7 +725,7 @@ class TestXdatasetPandas(unittest.TestCase):
                 "var2.variance": [[2, 2], [0.1, 0.2, 0.3, 0.4]],
                 "var2.mask1": [["x"], [True, False]],
                 "var2.mask2": [[2, 2], [True, False, False, True]],
-                "ranking:month": [["x", "y"], [2, 2], [1, 2, 3, 4]],   # !!!
+                "ranking:month": [["x", "y"], [2, 2], [1, 2, 3, 4]],  # !!!
                 "x:string": [["23F0AE", "578B98"]],  # , {'test': 21}],
                 "x.mask1": [[True, False]],
                 "y:date": [["2021-01-01", "2022-02-02"]],
@@ -818,8 +807,7 @@ class TestXdatasetPandas(unittest.TestCase):
         a_df = df1.npd.analysis(distr=True)
         xdt = Xdataset.from_dataframe(df1)
         df3 = xdt.to_dataframe(ntv_type=False).reset_index()
-        df2 = df1.sort_values(a_df.partitions(mode="id")
-                              [0]).reset_index(drop=True)
+        df2 = df1.sort_values(a_df.partitions(mode="id")[0]).reset_index(drop=True)
         df4 = df3.sort_values(a_df.partitions(mode="id")[0]).reset_index(drop=True)[
             df2.columns
         ]
@@ -836,8 +824,7 @@ class TestXdatasetPandas(unittest.TestCase):
             "e": [1, 1, 1, 1, 1],
         }
         df1 = pd.DataFrame(simple)
-        df3 = Xdataset.from_dataframe(df1).to_dataframe(
-            ntv_type=False)[df1.columns]
+        df3 = Xdataset.from_dataframe(df1).to_dataframe(ntv_type=False)[df1.columns]
         self.assertTrue(df3.equals(df1))
 
         simple = {
