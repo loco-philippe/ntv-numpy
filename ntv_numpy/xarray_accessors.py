@@ -15,7 +15,7 @@ from ntv_numpy.xdataset import Xdataset
 
 try:
     # delete the accessor to avoid warning
-    del xr.Dataset.nnp
+    del xr.Dataset.nxr
 except AttributeError:
     pass
 

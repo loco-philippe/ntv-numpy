@@ -36,7 +36,8 @@ class Darray(ABC):
     - `to_json`
     """
 
-    def __init__(self, data, ref=None, coding=None, dtype=None, unidim=False):
+    #def __init__(self, data, ref=None, coding=None, dtype=None, unidim=False):
+    def __init__(self, data, **kwargs):
         """Darray constructor.
 
         *Parameters*
@@ -46,19 +47,20 @@ class Darray(ABC):
         - **coding**: List of integer (default None) - mapping between data and the list of values
         - **dtype**: string (default None) - numpy.dtype to apply
         """
+        option = {'ref': None, 'coding': None, 'dtype': None, 'unidim': False} | kwargs
         if isinstance(data, Darray):
             self.data = data.data
             self.ref = data.ref
             self.coding = data.coding
             return
         data = data if isinstance(data, (list, np.ndarray)) else [data]
-        if (len(data) > 0 and isinstance(data[0], (list, np.ndarray))) or unidim:
+        if (len(data) > 0 and isinstance(data[0], (list, np.ndarray))) or option['unidim']:
             dtype = data.dtype if isinstance(data, np.ndarray) else "object"
             self.data = np.fromiter(data, dtype=dtype)
         else:
-            self.data = np.array(data, dtype=dtype).reshape(-1)
-        self.ref = ref
-        self.coding = np.array(coding)
+            self.data = np.array(data, dtype=option['dtype']).reshape(-1)
+        self.ref = option['ref']
+        self.coding = np.array(option['coding'])
 
     def __repr__(self):
         """return classname and number of value"""
@@ -120,7 +122,7 @@ class Darray(ABC):
             case [data, list(coding)] if (
                 isinstance(coding[0], int) and max(coding) < len(data)
             ):
-                return Dcomplete(data, None, coding, dtype=dtype, unidim=unidim)
+                return Dcomplete(data, coding=coding, dtype=dtype, unidim=unidim)
             case _:
                 return Dfull(val, dtype=dtype, unidim=unidim)
 
@@ -150,17 +152,16 @@ class Dfull(Darray):
     - `to_json`
     """
 
-    def __init__(self, data, ref=None, coding=None, dtype=None, unidim=False):
+    def __init__(self, data, **kwargs):
         """Dfull constructor.
 
         *Parameters*
 
         - **data**: list, Darray or np.ndarray - data to represent (after coding)
-        - **ref** : unused
-        - **coding**: unused
         - **dtype**: string (default None) - numpy.dtype to apply
         """
-        super().__init__(data, dtype=dtype, unidim=unidim)
+        option = {'dtype': None, 'unidim': False} | kwargs
+        super().__init__(data, **option)
 
     def to_json(self):
         """return a JsonValue of the Dfull entity."""
@@ -179,6 +180,54 @@ class Dfull(Darray):
 
 class Dcomplete(Darray):
     """Representation of a one dimensional Array with full representation
+
+    *dynamic values (@property)*
+    - `values`
+
+    *methods*
+    - `read_json` (staticmethod)
+    - `to_json`
+    """
+
+    def __init__(self, data, **kwargs):
+        """Dcomplete constructor.
+
+        *Parameters*
+
+        - **data**: list, Darray or np.ndarray - data to represent (after coding)
+        - **coding**: List of integer (default None) - mapping between data and the list of values
+        - **dtype**: string (default None) - numpy.dtype to apply
+        """
+        option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
+        coding = option['coding']
+        if coding is None:
+            try:
+                data, coding = np.unique(data, return_inverse=True)
+            except (TypeError, ValueError):
+                dat, idx, coding = np.unique(
+                    np.frompyfunc(Ntv.from_obj, 1, 1)(data),
+                    return_index=True,
+                    return_inverse=True,
+                )
+                data = data[idx]
+        super().__init__(data, coding=coding, dtype=option['dtype'], unidim=option['unidim'])
+
+    def to_json(self):
+        """return a JsonValue of the Dcomplete entity."""
+        return [Dutil.list_json(self.data), self.coding.tolist()]
+
+    @property
+    def values(self):
+        """return the list of values"""
+        return self.data[self.coding]
+
+    @property
+    def _len_val(self):
+        """return the length of the Dcomplete entity"""
+        return len(self.coding) if self.coding.ndim > 0 else 0
+
+class Dsparse(Darray):
+    """Representation of a one dimensional Array with sparse representation
 
     *dynamic values (@property)*
     - `values`
@@ -223,7 +272,6 @@ class Dcomplete(Darray):
     def _len_val(self):
         """return the length of the Dcomplete entity"""
         return len(self.coding) if self.coding.ndim > 0 else 0
-
 
 class Dutil:
     """np.ndarray utilities.
