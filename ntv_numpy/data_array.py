@@ -61,6 +61,7 @@ class Darray(ABC):
             self.data = np.array(data, dtype=option['dtype']).reshape(-1)
         self.ref = option['ref']
         self.coding = np.array(option['coding'])
+        return
 
     def __repr__(self):
         """return classname and number of value"""
@@ -93,6 +94,39 @@ class Darray(ABC):
     def __copy__(self):
         """Copy all the data"""
         return self.__class__(self)
+
+    @staticmethod 
+    def decode_json(jsn):
+        """return a dict of parameters deduced from jsn
+
+        *return*: dict
+  
+        - **uri**: string
+        - **data**: list of values
+        - **keys**: list of integers
+        - **leng**: integer
+        - **coef**: integer
+        - **sp_idx**: list of integers
+        - **custom**: dict
+        """
+        uri = data = keys = leng = coef = sp_idx = custom = None
+        match jsn:
+            case str(uri):...
+            case [list(data), coding]:
+                match coding: 
+                    case [int(leng), code]:
+                        match code: 
+                            case int(coef):...
+                            case [list(keys), list(sp_idx)]:...
+                            case list(sp_idx):...
+                            case _:...
+                    case list(keys):...
+                    case dict(custom):...
+                    case _: ...
+            case list(data):...
+            case _: ...
+        return {'uri': uri, 'data': data, 'keys': keys, 'leng': leng, 
+                  'coef': coef, 'sp_idx': sp_idx, 'custom': custom}
 
     @staticmethod
     def read_json(val, dtype=None, unidim=False):
@@ -226,7 +260,7 @@ class Dcomplete(Darray):
         """return the length of the Dcomplete entity"""
         return len(self.coding) if self.coding.ndim > 0 else 0
 
-class Dsparse(Darray):
+'''class Dsparse(Darray):
     """Representation of a one dimensional Array with sparse representation
 
     *dynamic values (@property)*
@@ -237,17 +271,19 @@ class Dsparse(Darray):
     - `to_json`
     """
 
-    def __init__(self, data, ref=None, coding=None, dtype=None, unidim=False):
-        """Dcomplete constructor.
+    def __init__(self, data, **kwargs):
+        """Dsparse constructor.
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (after coding)
-        - **ref** : unused
-        - **coding**: List of integer (default None) - mapping between data and the list of values
+        - **data**: list, Darray or np.ndarray - data to represent (sp_value + fill_value)
+        - **coding**: List of integer (default None) - mapping between data and values (sp_index)
         - **dtype**: string (default None) - numpy.dtype to apply
         """
-        if coding is None:
+        option = {'sp_value': None, 'sp_index': None, 'fill_value': None, 
+                  'length': None, 'dtype': None, 'unidim': False} | kwargs
+        length, idx = option['coding']
+        coding = coding if is None:
             try:
                 data, coding = np.unique(data, return_inverse=True)
             except (TypeError, ValueError):
@@ -257,7 +293,7 @@ class Dsparse(Darray):
                     return_inverse=True,
                 )
                 data = data[idx]
-        super().__init__(data, coding=coding, dtype=dtype, unidim=unidim)
+        super().__init__(data, coding=coding, dtype=option['dtype'], unidim=option['unidim'])
 
     def to_json(self):
         """return a JsonValue of the Dcomplete entity."""
@@ -325,3 +361,4 @@ class Dutil:
         if isinstance(nda[0], np.ndarray):
             return [Dutil.list_json(arr) for arr in nda]
         return nda.tolist()
+'''
