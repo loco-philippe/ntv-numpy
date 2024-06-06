@@ -308,7 +308,7 @@ class Dcomplete(Darray):
     def _len_val(self):
         """return the length of the Dcomplete entity"""
         return len(self.coding) if self.coding.ndim > 0 else 0
-
+'''
 class Dutil:
     """np.ndarray utilities.
 
@@ -361,4 +361,3 @@ class Dutil:
         if isinstance(nda[0], np.ndarray):
             return [Dutil.list_json(arr) for arr in nda]
         return nda.tolist()
-'''
