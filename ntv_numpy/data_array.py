@@ -129,6 +129,18 @@ class Darray(ABC):
                   'coef': coef, 'sp_idx': sp_idx, 'custom': custom}
 
     @staticmethod
+    def read_json2(val, dtype=None, unidim=False):
+        """return a Darray entity from a list of data.
+
+        *Parameters*
+
+        - **val**: list of data
+        - **dtype** : string (default None) - numpy.dtype to apply
+        """
+        params = Darray.decode_json(val)
+        list_params = [key for key, val in params.items() if val]
+        
+    @staticmethod
     def read_json(val, dtype=None, unidim=False):
         """return a Darray entity from a list of data.
 
