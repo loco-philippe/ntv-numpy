@@ -264,6 +264,7 @@ class Ndarray:
         darray = Darray.read_json(
             ntv_value[-1], dtype=Nutil.dtype(ntv_type), unidim=unidim
         )
+        #print(ntv_value[-1], Nutil.dtype(ntv_type), unidim, darray)
         darray.data = Nutil.convert(
             ntv_type, darray.data, tojson=False, convert=option["convert"]
         )

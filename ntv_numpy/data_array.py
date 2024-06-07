@@ -114,22 +114,30 @@ class Darray(ABC):
             case str(uri):...
             case [list(data), coding]:
                 match coding: 
-                    case [int(leng), code]:
+                    case [int(val), code] if val >= len(data):
+                        leng = val
                         match code: 
                             case int(coef):...
                             case [list(keys), list(sp_idx)]:...
                             case list(sp_idx):...
-                            case _:...
-                    case list(keys):...
+                            case _:
+                                leng = data = None
+                        # print('leng', leng)
+                    case list(val) if (
+                        isinstance(val[0], int) and max(val) < len(data)):
+                        keys = val
+                        # print('keys', leng) 
+                        ...
                     case dict(custom):...
-                    case _: ...
+                    case _: 
+                        data = jsn
             case list(data):...
             case _: ...
         return {'uri': uri, 'data': data, 'keys': keys, 'leng': leng, 
                   'coef': coef, 'sp_idx': sp_idx, 'custom': custom}
 
     @staticmethod
-    def read_json2(val, dtype=None, unidim=False):
+    def read_json(val, dtype=None, unidim=False):
         """return a Darray entity from a list of data.
 
         *Parameters*
@@ -139,9 +147,21 @@ class Darray(ABC):
         """
         params = Darray.decode_json(val)
         list_params = [key for key, val in params.items() if val]
+        match list_params:
+            case ['data']:
+                return Dfull(params['data'], dtype=dtype, unidim=unidim)
+            case ['data', 'keys']:
+                return Dcomplete(params['data'], coding=params['keys'], 
+                                 dtype=dtype, unidim=unidim)
+            #case ['data', 'leng', 'sp_idx']:
+            #    return Dsparse(params['data'], leng=params['leng'], 
+            #                   sp_idx=params['sp_idx'], dtype=dtype, unidim=unidim)
+            case _:
+                return
+        return
         
     @staticmethod
-    def read_json(val, dtype=None, unidim=False):
+    def read_json_old(val, dtype=None, unidim=False):
         """return a Darray entity from a list of data.
 
         *Parameters*

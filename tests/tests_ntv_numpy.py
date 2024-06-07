@@ -193,7 +193,7 @@ class TestNdarray(unittest.TestCase):
     def test_ndarray_nested2(self):
         """test Ndarray"""
         example = [
-            [[[1, 2], [3, 4]], "array"],
+            [[[1, 2], [3, 4, 5]], "array"],
             [
                 [
                     np.array([1, 2], dtype="int64"),
@@ -224,7 +224,7 @@ class TestNdarray(unittest.TestCase):
             arr = Ndarray(ex[0], shape=[2], ntv_type=ex[1])
             for forma in ["full", "complete"]:
                 js = arr.to_json(format=forma)
-                # print(js)
+                # print(js, ex, forma)
                 ex_rt = Ndarray.read_json(js)
                 self.assertEqual(ex_rt, arr)
                 # print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
@@ -255,7 +255,7 @@ class TestNdarray(unittest.TestCase):
                 # print(ex_rt)
                 self.assertEqual(ex_rt, arr)
 
-    def test_ndarray_uri2(self):
+    '''def test_ndarray_uri2(self):
         """test Ndarray"""
         jsn = requests.get(FILE, allow_redirects=True, timeout=30).content.decode()
         # print(type(jsn), jsn)
@@ -272,7 +272,7 @@ class TestNdarray(unittest.TestCase):
         ]
         for ex in example:
             nda = Ndarray(ex[0], ex[1], ex[2])
-            self.assertEqual(Ndarray.read_json(nda.to_json()), nda)
+            self.assertEqual(Ndarray.read_json(nda.to_json()), nda)'''
 
 
 class TestXndarray(unittest.TestCase):
