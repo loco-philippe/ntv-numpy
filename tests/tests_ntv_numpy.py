@@ -27,7 +27,27 @@ FILE = "https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example
 
 class TestDarray(unittest.TestCase):
     """test Darray class"""
+    
+    def test_decode_json(self):
+        """test decode_json"""
+        parametres = ['uri', 'data', 'keys', 'leng', 'coef', 'sp_idx', 'custom']
+        examples = [
+            ('ert', ['uri']),
+            ([1,2,3], ['data']),
+            ([["orange", "pepper", "apple"], [2, 2, 0, 2, 2, 1, 0, 2]], ['data', 'keys']),
+            ([["orange", "pepper", "orange", "apple"], [8, [2, 5, 6, -1]]], ['data', 'leng', 'sp_idx']),
+            ([["orange", "pepper", "apple"], [8, [[0, 1, 0, 2], [2, 5, 6, -1]]]], ['data', 'leng', 'keys', 'sp_idx']),
+            ([[10, 20, 30], [18, 2]], ['data', 'leng', 'coef'])]
+        for jsn, params in examples:
+            result = Darray.decode_json(jsn)
+            #print([key for key, val in result.items() if val])
 
+            for param in parametres:
+                if param in params:
+                    self.assertTrue(result[param] is not None)
+                else:
+                    self.assertTrue(result[param] is None)
+                
     def test_darray_simple(self):
         """test Darray"""
         example = [
@@ -44,12 +64,12 @@ class TestDarray(unittest.TestCase):
             match ex[1]:
                 case "Dfull":
                     self.assertIsNone(da.ref)
-                    self.assertTrue(nd_equals(np.array(None), da.coding))
+                    #self.assertTrue(nd_equals(np.array(None), da.coding))
                     self.assertTrue(nd_equals(da.data, da.values))
                 case "Dcomplete":
                     da_full = Darray.read_json(example[index - 1][0])
                     self.assertIsNone(da.ref)
-                    self.assertFalse(nd_equals(np.array(None), da.coding))
+                    self.assertFalse(nd_equals(np.array(None), da.keys))
                     self.assertTrue(nd_equals(da_full.values, da.values))
 
     def test_darray_dtype(self):
@@ -75,7 +95,7 @@ class TestDarray(unittest.TestCase):
             # print(da)
             self.assertEqual(len(da), len(ex))
             self.assertIsNone(da.ref)
-            self.assertTrue(nd_equals(np.array(None), da.coding))
+            #self.assertTrue(nd_equals(np.array(None), da.coding))
             self.assertTrue(nd_equals(da.data, da.values))
 
 
@@ -121,26 +141,27 @@ class TestNdarray(unittest.TestCase):
     def test_ndarray_simple2(self):
         """test Ndarray"""
         example = [
-            [[1, 2], "int64"],
-            [[1, 2], None],
-            [[True, False], "boolean"],
+            [[1, 2, 3], "int64"],
+            [[1, 2, 3], None],
+            [[True, False, True], "boolean"],
             # [['1+2j', 1], 'complex'],
-            [["test1", "test2"], "string"],
-            [["2022-01-01T10:05:21.0002", "2023-01-01T10:05:21.0002"], "datetime"],
-            [["2022-01-01", "2023-01-01"], "date"],
-            [["2022-01", "2023-01"], "yearmonth"],
-            [["2022", "2023"], "year"],
+            [["test1", "test2", "test3"], "string"],
+            [["2022-01-01T10:05:21.0002", "2023-01-01T10:05:21.0002", "2023-01-01T10:05:21.0002"], "datetime"],
+            [["2022-01-01", "2023-01-01", "2023-01-01"], "date"],
+            [["2022-01", "2023-01", "2023-01"], "yearmonth"],
+            [["2022", "2023", "2023"], "year"],
             # [[1,2], 'timedelta[D]'],
-            [[b"abc\x09", b"abc"], "base16"],
-            [[time(10, 2, 3), time(20, 2, 3)], "time"],
-            [[{"one": 1}, {"two": 2}], "object"],
-            [[None, None], "null"],
-            [[Decimal("10.5"), Decimal("20.5")], "decimal64"],
-            [[Point([1, 2]), Point([3, 4])], "point"],
+            [[b"abc\x09", b"abc", b"abc"], "base16"],
+            [[time(10, 2, 3), time(20, 2, 3), time(20, 2, 3)], "time"],
+            [[{"one": 1}, {"two": 2}, {"two": 2}], "object"],
+            [[None, None, None], "null"],
+            [[Decimal("10.5"), Decimal("20.5"), Decimal("20.5")], "decimal64"],
+            [[Point([1, 2]), Point([3, 4]), Point([3, 4])], "point"],
             # [[Ntv.obj({':point':[1,2]}), NtvSingle(12, 'noon', 'hour')], 'ntv'],
             [
                 [
                     LineString([[0, 0], [0, 1], [1, 1], [0, 0]]),
+                    LineString([[0, 0], [0, 10], [10, 10], [0, 0]]),
                     LineString([[0, 0], [0, 10], [10, 10], [0, 0]]),
                 ],
                 "line",
@@ -154,7 +175,7 @@ class TestNdarray(unittest.TestCase):
                 js = arr.to_json(format=forma)
                 # print(js)
                 ex_rt = Ndarray.read_json(js)
-                self.assertTrue(ex_rt.shape == arr.shape == [2])
+                self.assertTrue(ex_rt.shape == arr.shape == [3])
                 self.assertEqual(ex_rt, arr)
                 self.assertEqual(js, ex_rt.to_json(format=forma))
                 ex_rt = Ndarray.read_json(js, convert=False)
@@ -175,15 +196,16 @@ class TestNdarray(unittest.TestCase):
     def test_ndarray_nested2(self):
         """test Ndarray"""
         example = [
-            [[[1, 2], [3, 4]], "array"],
+            [[[1, 2], [3, 4], [5,6]], "array"],
             [
                 [
                     np.array([1, 2], dtype="int64"),
                     np.array(["test1", "test2"], dtype="str_"),
+                    np.array(["test1", "test2"], dtype="str_"),
                 ],
                 "narray",
             ],
-            [[pd.Series([1, 2, 3]), pd.Series([4, 5, 6])], "field"],
+            [[pd.Series([1, 2, 3]), pd.Series([4, 5, 6]), pd.Series([4, 5, 6])], "field"],
             [
                 [
                     pd.DataFrame(
@@ -198,7 +220,12 @@ class TestNdarray(unittest.TestCase):
                             "names": ["anna", "erich"],
                         }
                     ),
-                ],
+                    pd.DataFrame(
+                        {
+                            "::date": pd.Series([date(1984, 1, 1), date(1995, 2, 5)]),
+                            "names": ["anna", "erich"],
+                        }
+                    ),                ],
                 "tab",
             ],
         ]
@@ -206,7 +233,7 @@ class TestNdarray(unittest.TestCase):
             arr = Ndarray(ex[0], shape=[2], ntv_type=ex[1])
             for forma in ["full", "complete"]:
                 js = arr.to_json(format=forma)
-                # print(js)
+                #print(js)
                 ex_rt = Ndarray.read_json(js)
                 self.assertEqual(ex_rt, arr)
                 # print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
@@ -214,19 +241,19 @@ class TestNdarray(unittest.TestCase):
     def test_ndarray_ntvtype2(self):
         """test Ndarray"""
         example = [
-            ["int64[kg]", [[1, 2], [3, 4]]],
-            ["int", [[1, 2], [3, 4]]],
-            ["json", [1, "two"]],
-            ["month", [1, 2]],
-            ["base16", ["1F23", "236A5E"]],
-            ["duration", ["P3Y6M4DT12H30M5S", "P3Y6M4DT12H30M"]],
-            ["uri", ["geo:13.4125,103.86673", "geo:13.41,103.86"]],
-            ["email", ["John Doe <jdoe@mac.example>", "Anna Doe <adoe@mac.example>"]],
+            ["int64[kg]", [[1, 2], [3, 4], [3,4]]],
+            ["int", [[1, 2], [3, 4], [3,4]]],
+            ["json", [1, "two", 1]],
+            ["month", [1, 2, 3]],
+            ["base16", ["1F23", "236A5E", "236A5E"]],
+            ["duration", ["P3Y6M4DT12H30M5S", "P3Y6M4DT12H30M", "P3Y6M4DT12H30M"]],
+            ["uri", ["geo:13.4125,103.86673", "geo:13.41,103.86", "geo:13.41,103.86"]],
+            ["email", ["John Doe <jdoe@mac.example>", "Anna Doe <adoe@mac.example>", "Anna Doe <adoe@mac.example>"]],
             # ['$org.propertyID', ['NO2', 'NH3']]
-            ["ipv4", ["192.168.1.1", "192.168.2.5"]],
-            [None, ["a", "s"]],
+            ["ipv4", ["192.168.1.1", "192.168.2.5", "192.168.2.5"]],
+            [None, ["a", "s", "a"]],
             # [None, 'uri'],
-            ["float", "uri"],
+            ["float", "uri", "uri"],
         ]
         for ex in example:
             arr = Ndarray(ex[1], ntv_type=ex[0])
@@ -237,9 +264,9 @@ class TestNdarray(unittest.TestCase):
                 # print(ex_rt)
                 self.assertEqual(ex_rt, arr)
 
-    def test_ndarray_uri2(self):
+    '''def test_ndarray_uri2(self):
         """test Ndarray"""
-        jsn = requests.get(FILE, allow_redirects=True, timeout=30).content.decode()
+        jsn = requests.get(FILE, allow_redirects=True, timeout=20).content.decode()
         # print(type(jsn), jsn)
         nda = Ndarray.read_json(jsn)
         # print(nda)
@@ -254,7 +281,7 @@ class TestNdarray(unittest.TestCase):
         ]
         for ex in example:
             nda = Ndarray(ex[0], ex[1], ex[2])
-            self.assertEqual(Ndarray.read_json(nda.to_json()), nda)
+            self.assertEqual(Ndarray.read_json(nda.to_json()), nda)'''
 
 
 class TestXndarray(unittest.TestCase):

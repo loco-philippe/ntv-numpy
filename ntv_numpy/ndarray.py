@@ -295,7 +295,8 @@ class Ndarray:
             return None
         if self.mode == "absolute" and len(self.darray) == 0:
             return [[]]
-
+        #if len(self) < 3:
+        #    option["format"] = "full"
         js_shape = (
             None
             if not self.shape or (len(self.shape) < 2 and option["noshape"])
@@ -505,25 +506,34 @@ class Nutil:
                 "complete format is not available with ndarray length < 2"
             )
         Format = Nutil.FORMAT_CLS[form]
-        darray = Format(nda)
-        ref = darray.ref
-        coding = darray.coding
+        #darray = Format(nda)
+        '''ref = darray.ref
+        coding = darray.coding'''
+        darray = nda
         if is_json:
-            return Format(darray.data, ref=ref, coding=coding).to_json()
+            #return Format(darray.data, ref=ref, coding=coding).to_json()
+            #return Format(darray.data).to_json()
+            return Format(nda).to_json()
         match ntv_type:
             case "narray":
-                data = [Ndarray(nd).to_json(header=False) for nd in darray.data]
+                #data = [Ndarray(nd).to_json(header=False) for nd in darray.data]
+                data = [Ndarray(nd).to_json(header=False) for nd in nda]
             case "ndarray":
-                data = [Ndarray(nd).to_json(header=False) for nd in darray.data]
+                #data = [Ndarray(nd).to_json(header=False) for nd in darray.data]
+                data = [Ndarray(nd).to_json(header=False) for nd in nda]
             case connec if connec in Nutil.CONNECTOR_DT:
-                data = [NtvConnector.cast(nd, None, connec)[0] for nd in darray.data]
+                #data = [NtvConnector.cast(nd, None, connec)[0] for nd in darray.data]
+                data = [NtvConnector.cast(nd, None, connec)[0] for nd in nda]
             case "point" | "line" | "polygon" | "geometry":
-                data = np.frompyfunc(ShapelyConnec.to_coord, 1, 1)(darray.data)
+                #data = np.frompyfunc(ShapelyConnec.to_coord, 1, 1)(darray.data)
+                data = np.frompyfunc(ShapelyConnec.to_coord, 1, 1)(nda)
             case None:
                 data = nda
             case _:
-                data = Nutil.convert(ntv_type, darray.data)
-        return Format(data, ref=ref, coding=coding).to_json()
+                #data = Nutil.convert(ntv_type, darray.data)
+                data = Nutil.convert(ntv_type, nda)
+        #return Format(data, ref=ref, coding=coding).to_json()
+        return Format(data).to_json()
 
     @staticmethod
     def add_ext(typ, ext):
