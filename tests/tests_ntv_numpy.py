@@ -62,12 +62,12 @@ class TestDarray(unittest.TestCase):
             match ex[1]:
                 case "Dfull":
                     self.assertIsNone(da.ref)
-                    self.assertTrue(nd_equals(np.array(None), da.coding))
+                    self.assertTrue(da.coding is None)
                     self.assertTrue(nd_equals(da.data, da.values))
                 case "Dcomplete":
                     da_full = Darray.read_json(example[index - 1][0])
                     self.assertIsNone(da.ref)
-                    self.assertFalse(nd_equals(np.array(None), da.coding))
+                    self.assertTrue(da.coding is not None)
                     self.assertTrue(nd_equals(da_full.values, da.values))
 
     def test_darray_dtype(self):
@@ -93,7 +93,7 @@ class TestDarray(unittest.TestCase):
             # print(da)
             self.assertEqual(len(da), len(ex))
             self.assertIsNone(da.ref)
-            self.assertTrue(nd_equals(np.array(None), da.coding))
+            self.assertTrue(da.coding is None)
             self.assertTrue(nd_equals(da.data, da.values))
 
 

@@ -47,7 +47,8 @@ class Darray(ABC):
         - **coding**: List of integer (default None) - mapping between data and the list of values
         - **dtype**: string (default None) - numpy.dtype to apply
         """
-        option = {'ref': None, 'coding': None, 'dtype': None, 'unidim': False} | kwargs
+        #option = {'ref': None, 'coding': None, 'dtype': None, 'unidim': False} | kwargs
+        option = {'ref': None, 'dtype': None, 'unidim': False} | kwargs
         if isinstance(data, Darray):
             self.data = data.data
             self.ref = data.ref
@@ -60,7 +61,7 @@ class Darray(ABC):
         else:
             self.data = np.array(data, dtype=option['dtype']).reshape(-1)
         self.ref = option['ref']
-        self.coding = np.array(option['coding'])
+        #self.coding = np.array(option['coding'])
         return
 
     def __repr__(self):
@@ -160,7 +161,7 @@ class Darray(ABC):
                 return
         return
         
-    @staticmethod
+    '''@staticmethod
     def read_json_old(val, dtype=None, unidim=False):
         """return a Darray entity from a list of data.
 
@@ -190,7 +191,7 @@ class Darray(ABC):
             ):
                 return Dcomplete(data, coding=coding, dtype=dtype, unidim=unidim)
             case _:
-                return Dfull(val, dtype=dtype, unidim=unidim)
+                return Dfull(val, dtype=dtype, unidim=unidim)'''
 
     @abstractmethod
     def to_json(self):
@@ -228,6 +229,8 @@ class Dfull(Darray):
         """
         option = {'dtype': None, 'unidim': False} | kwargs
         super().__init__(data, **option)
+        self.coding = None
+
 
     def to_json(self):
         """return a JsonValue of the Dfull entity."""
@@ -260,7 +263,7 @@ class Dcomplete(Darray):
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (after coding)
+        - **data**: list, Darray or np.ndarray - data to represent (values or codec+coding)
         - **coding**: List of integer (default None) - mapping between data and the list of values
         - **dtype**: string (default None) - numpy.dtype to apply
         """
@@ -276,7 +279,9 @@ class Dcomplete(Darray):
                     return_inverse=True,
                 )
                 data = data[idx]
-        super().__init__(data, coding=coding, dtype=option['dtype'], unidim=option['unidim'])
+        #super().__init__(data, coding=coding, dtype=option['dtype'], unidim=option['unidim'])
+        super().__init__(data, dtype=option['dtype'], unidim=option['unidim'])
+        self.coding = np.array(coding)
 
     def to_json(self):
         """return a JsonValue of the Dcomplete entity."""
@@ -292,7 +297,7 @@ class Dcomplete(Darray):
         """return the length of the Dcomplete entity"""
         return len(self.coding) if self.coding.ndim > 0 else 0
 
-'''class Dsparse(Darray):
+class Dsparse(Darray):
     """Representation of a one dimensional Array with sparse representation
 
     *dynamic values (@property)*
@@ -308,10 +313,17 @@ class Dcomplete(Darray):
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (sp_value + fill_value)
-        - **coding**: List of integer (default None) - mapping between data and values (sp_index)
+        - **data**: list, Darray or np.ndarray - data to represent (values or data+coding)
+        - **coding**: List (default None) - sparse data coding (leng + sp_index)
         - **dtype**: string (default None) - numpy.dtype to apply
         """
+        option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
+        coding = option['coding']
+        if coding is None:
+            
+        
+        
+        
         option = {'sp_value': None, 'sp_index': None, 'fill_value': None, 
                   'length': None, 'dtype': None, 'unidim': False} | kwargs
         length, idx = option['coding']
@@ -340,7 +352,7 @@ class Dcomplete(Darray):
     def _len_val(self):
         """return the length of the Dcomplete entity"""
         return len(self.coding) if self.coding.ndim > 0 else 0
-'''
+
 class Dutil:
     """np.ndarray utilities.
 
