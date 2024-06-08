@@ -17,7 +17,7 @@ from shapely.geometry import Point, LineString
 import xarray as xr
 import ntv_pandas
 
-from ntv_numpy import Darray, Dfull, Ndarray, Xndarray, Xdataset, Dutil
+from ntv_numpy import Darray, Dfull, Dcomplete, Dsparse, Ndarray, Xndarray, Xdataset, Dutil
 from ntv_numpy.xconnector import PandasConnec
 
 ana = ntv_pandas.to_analysis  # uniquement pour le pre-commit
@@ -27,7 +27,7 @@ FILE = "https://raw.githubusercontent.com/loco-philippe/ntv-numpy/master/example
 
 class TestDarray(unittest.TestCase):
     """test Darray class"""
-    
+
     def test_decode_json(self):
         """test decode_json"""
         parametres = ['uri', 'data', 'keys', 'leng', 'coef', 'sp_idx', 'custom']
@@ -35,9 +35,11 @@ class TestDarray(unittest.TestCase):
             ('ert', ['uri']),
             ([1,2,3], ['data']),
             ([["orange", "pepper", "apple"], [2, 2, 0, 2, 2, 1, 0, 2]], ['data', 'keys']),
-            ([["orange", "pepper", "orange", "apple"], [8, [2, 5, 6, -1]]], ['data', 'leng', 'sp_idx']),
-            ([["orange", "pepper", "apple"], [8, [[0, 1, 0, 2], [2, 5, 6, -1]]]], ['data', 'leng', 'keys', 'sp_idx']),
-            ([[10, 20, 30], [18, 2]], ['data', 'leng', 'coef'])]
+            ([["orange", "pepper", "orange", "apple"], [8, [2, 5, 6, -1]]], 
+             ['data', 'leng', 'sp_idx']),
+            ([["orange", "pepper", "apple"], [8, [[0, 1, 0, 2], [2, 5, 6, -1]]]], 
+             ['data', 'leng', 'keys', 'sp_idx']),
+            ([[10, 20, 30], [18, [2]]], ['data', 'leng', 'coef'])]
         for jsn, params in examples:
             result = Darray.decode_json(jsn)
             for param in parametres:
@@ -45,7 +47,21 @@ class TestDarray(unittest.TestCase):
                     self.assertTrue(result[param] is not None)
                 else:
                     self.assertTrue(result[param] is None)
-                
+
+    def test_json(self):
+        """test json conversion"""
+        example = [
+            [10, 20, 30, 30, 40, 30, 50, 50, 30, 10],
+            [1, 2, 3],
+            [[1, 2], [2, 3], 4, [2, 3]],
+            [[1, 2], [2, 3, 4], [2, 3]]]
+
+        for ex in example:
+            for forma in [Dfull, Dcomplete, Dsparse]:
+                #print(ex, forma)
+                dar = forma(ex)
+                self.assertEqual(dar, Darray.read_json(dar.to_json()))
+
     def test_darray_simple(self):
         """test Darray"""
         example = [

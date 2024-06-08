@@ -56,7 +56,7 @@ This package contains the following classes and functions:
 """
 
 from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec
-from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
+from ntv_numpy.data_array import Dfull, Dcomplete, Dsparse, Darray, Dutil
 from ntv_numpy.ndarray import Ndarray, Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xdataset import Xdataset
@@ -68,6 +68,7 @@ __all__ = [
     "NdarrayConnec",
     "Dfull",
     "Dcomplete",
+    "Dsparse",
     "Darray",
     "Dutil",
     "Ndarray",

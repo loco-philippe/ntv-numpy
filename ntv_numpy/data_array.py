@@ -63,7 +63,7 @@ class Darray(ABC):
         else:
             self.data = np.array(data, dtype=option['dtype']).reshape(-1)
         self.ref = option['ref']
-        #self.coding = np.array(option['coding'])
+        self.coding = None
         return
 
     def __repr__(self):
@@ -98,12 +98,12 @@ class Darray(ABC):
         """Copy all the data"""
         return self.__class__(self)
 
-    @staticmethod 
+    @staticmethod
     def decode_json(jsn):
         """return a dict of parameters deduced from jsn
 
         *return*: dict
-  
+
         - **uri**: string
         - **data**: list of values
         - **keys**: list of integers
@@ -116,27 +116,26 @@ class Darray(ABC):
         match jsn:
             case str(uri):...
             case [list(data), coding]:
-                match coding: 
-                    case [int(val), code] if val >= len(data):
+                match coding:
+                    case [int(val), list(code)] if val >= len(data):
                         leng = val
-                        match code: 
-                            case int(coef):...
+                        match code:
+                            case [int(coef)]:...
                             case [list(keys), list(sp_idx)]:...
                             case list(sp_idx):...
                             case _:
                                 leng = data = None
                         # print('leng', leng)
-                    case list(val) if (
-                        isinstance(val[0], int) and max(val) < len(data)):
+                    case list(val) if isinstance(val[0], int) and max(val) < len(data):
                         keys = val
-                        # print('keys', leng) 
+                        # print('keys', leng)
                         ...
                     case dict(custom):...
-                    case _: 
+                    case _:
                         data = jsn
             case list(data):...
             case _: ...
-        return {'uri': uri, 'data': data, 'keys': keys, 'leng': leng, 
+        return {'uri': uri, 'data': data, 'keys': keys, 'leng': leng,
                   'coef': coef, 'sp_idx': sp_idx, 'custom': custom}
 
     @staticmethod
@@ -154,47 +153,15 @@ class Darray(ABC):
             case ['data']:
                 return Dfull(params['data'], dtype=dtype, unidim=unidim)
             case ['data', 'keys']:
-                return Dcomplete(params['data'], coding=params['keys'], 
+                return Dcomplete(params['data'], coding=params['keys'],
                                  dtype=dtype, unidim=unidim)
             case ['data', 'leng', 'sp_idx']:
-                return Dsparse(params['data'], 
+                return Dsparse(params['data'],
                                coding=[params['leng'], params['sp_idx']],
                                dtype=dtype, unidim=unidim)
             case _:
                 return
         return
-        
-    '''@staticmethod
-    def read_json_old(val, dtype=None, unidim=False):
-        """return a Darray entity from a list of data.
-
-        *Parameters*
-
-        - **val**: list of data
-        - **dtype** : string (default None) - numpy.dtype to apply
-        """
-        val = val if isinstance(val, list) else [val]
-        if not val or not isinstance(val[0], list):
-            return Dfull(val, dtype=dtype, unidim=unidim)
-        match val:
-            case [data, ref, list(coding)] if (
-                isinstance(ref, (int, str))
-                and isinstance(coding[0], int)
-                and max(coding) < len(data)
-            ):
-                return None
-            case [data, ref] if (
-                isinstance(data, list) and isinstance(ref, (int, str))
-            ):
-                return None
-            case [data, list(coef)] if len(coef) == 1:
-                return None
-            case [data, list(coding)] if (
-                isinstance(coding[0], int) and max(coding) < len(data)
-            ):
-                return Dcomplete(data, coding=coding, dtype=dtype, unidim=unidim)
-            case _:
-                return Dfull(val, dtype=dtype, unidim=unidim)'''
 
     def to_json(self):
         """return a JsonValue"""
@@ -202,7 +169,7 @@ class Darray(ABC):
         if json_coding:
             return [Dutil.list_json(self.data), json_coding]
         return Dutil.list_json(self.data)
-        
+
     @property
     def json_coding(self):
         """return the json coding"""
@@ -273,22 +240,25 @@ class Dcomplete(Darray):
         - **dtype**: string (default None) - numpy.dtype to apply
         """
         option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
-        coding = option['coding']
-        if coding is None:
-            try:
-                data, coding = np.unique(data, return_inverse=True)
-            except (TypeError, ValueError):
-                dat, idx, coding = np.unique(
-                    np.frompyfunc(Ntv.from_obj, 1, 1)(data),
-                    return_index=True,
-                    return_inverse=True,
-                )
-                data = data[idx]
-        #super().__init__(data, coding=coding, dtype=option['dtype'], unidim=option['unidim'])
-        super().__init__(data, dtype=option['dtype'], unidim=option['unidim'])
-        self.coding = np.array(coding)
+        super().__init__(data, **option)
+        coding = np.array(option['coding']) if option['coding'] is not None else None
+        self.coding = self.coding if self.coding is not None else coding
+        if self.coding is not None:
+            return
+        try:
+            values, coding = np.unique(self.data, return_inverse=True)
+        except (TypeError, ValueError):
+            idx, coding = np.unique(
+                np.frompyfunc(Ntv.from_obj, 1, 1)(self.data),
+                return_index=True,
+                return_inverse=True,
+            )[1:]
+            values = self.data[idx]
+        self.data = values
+        self.coding = coding
+        return
 
-    @property 
+    @property
     def json_coding(self):
         """return a JsonValue of the coding data"""
         return self.coding.tolist()
@@ -324,29 +294,31 @@ class Dsparse(Darray):
         - **dtype**: string (default None) - numpy.dtype to apply
         """
         option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
-        coding = option['coding']
-        sp_values = data
-        if coding is None:
-            leng = len(data)
-            try:
-                cat, count = np.unique(data, return_inverse=True, 
-                                       return_counts=True)[1:]
-            except (TypeError, ValueError):
-                idx, cat, count = np.unique(
-                    np.frompyfunc(Ntv.from_obj, 1, 1)(data),
-                    return_index=True,
-                    return_inverse=True,
-                )[:1]
-            idx_fill = list(count).index(max(count))
-            sp_index = [row for row, cat in zip(range(len(cat)), cat) 
-                        if cat != idx_fill] + [idx_fill]
-            sp_values = data[sp_index]
-            sp_index[-1]= -1
-            coding = [leng, sp_index]
-        super().__init__(sp_values, dtype=option['dtype'], unidim=option['unidim'])
-        self.coding = coding
-        
-    @property 
+        super().__init__(data, **option)
+        self.coding = self.coding if self.coding is not None else option['coding']
+        if self.coding is not None:
+            return
+        leng = len(self.data)
+        try:
+            cat, count = np.unique(self.data, return_inverse=True,
+                                   return_counts=True)[1:]
+        except (TypeError, ValueError):
+            cat, count = np.unique(
+                np.frompyfunc(Ntv.from_obj, 1, 1)(self.data),
+                return_index=True,
+                return_inverse=True,
+                return_counts=True
+            )[2:]
+        idx_fill = list(count).index(max(count))
+        sp_index = [row for row, cat in zip(range(len(cat)), cat)
+                    if cat != idx_fill] + [idx_fill]
+        sp_values = self.data[sp_index]
+        sp_index[-1]= -1
+        self.coding = [leng, sp_index]
+        self.data = sp_values
+        return
+
+    @property
     def json_coding(self):
         """return a JsonValue of the coding data"""
         return self.coding
@@ -354,11 +326,13 @@ class Dsparse(Darray):
     @property
     def values(self):
         """return the list of values"""
-        leng, sp_index = self.coding 
-        values = np.full([leng], self.data[-1])
-        for ind, idx in enumerate(sp_index[:-1]):
-            values[idx] = self.data[ind]
-        return values
+        leng, sp_index = self.coding
+        try:
+            values = np.full([leng], self.data[-1])
+        except ValueError:
+            values = np.fromiter([self.data[-1]] * leng, dtype='object')
+        values[sp_index[:-1]] = self.data[:-1]
+        return
 
     @property
     def _len_val(self):
