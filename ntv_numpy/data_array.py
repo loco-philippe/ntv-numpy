@@ -320,6 +320,18 @@ class Dsparse(Darray):
         option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
         coding = option['coding']
         if coding is None:
+            try:
+                data, coding = np.unique(data, return_inverse=True)
+            except (TypeError, ValueError):
+                dat, idx, coding = np.unique(
+                    np.frompyfunc(Ntv.from_obj, 1, 1)(data),
+                    return_index=True,
+                    return_inverse=True,
+                )
+                data = data[idx]
+        #super().__init__(data, coding=coding, dtype=option['dtype'], unidim=option['unidim'])
+        super().__init__(data, dtype=option['dtype'], unidim=option['unidim'])
+        self.coding = np.array(coding)
             
         
         
