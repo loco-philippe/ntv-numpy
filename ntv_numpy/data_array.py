@@ -32,7 +32,9 @@ class Darray(ABC):
     - `values`
 
     *methods*
+    - `decode_json` (staticmethod)
     - `read_json` (staticmethod)
+    - `json_coding`
     - `to_json`
     """
 
@@ -193,9 +195,16 @@ class Darray(ABC):
             case _:
                 return Dfull(val, dtype=dtype, unidim=unidim)'''
 
-    @abstractmethod
     def to_json(self):
         """return a JsonValue"""
+        json_coding = self.json_coding
+        if json_coding:
+            return [Dutil.list_json(self.data), json_coding]
+        return Dutil.list_json(self.data)
+        
+    @property
+    def json_coding(self):
+        """return the json coding"""
 
     @property
     @abstractmethod
@@ -230,11 +239,6 @@ class Dfull(Darray):
         option = {'dtype': None, 'unidim': False} | kwargs
         super().__init__(data, **option)
         self.coding = None
-
-
-    def to_json(self):
-        """return a JsonValue of the Dfull entity."""
-        return Dutil.list_json(self.data)
 
     @property
     def values(self):
@@ -283,9 +287,10 @@ class Dcomplete(Darray):
         super().__init__(data, dtype=option['dtype'], unidim=option['unidim'])
         self.coding = np.array(coding)
 
-    def to_json(self):
-        """return a JsonValue of the Dcomplete entity."""
-        return [Dutil.list_json(self.data), self.coding.tolist()]
+    @property 
+    def json_coding(self):
+        """return a JsonValue of the coding data"""
+        return self.coding.tolist()
 
     @property
     def values(self):
@@ -320,50 +325,43 @@ class Dsparse(Darray):
         option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
         coding = option['coding']
         if coding is None:
+            leng = len(data)
             try:
-                data, coding = np.unique(data, return_inverse=True)
+                cat, count = np.unique(data, return_inverse=True, 
+                                       return_counts=True)[1:]
             except (TypeError, ValueError):
-                dat, idx, coding = np.unique(
+                idx, cat, count = np.unique(
                     np.frompyfunc(Ntv.from_obj, 1, 1)(data),
                     return_index=True,
                     return_inverse=True,
-                )
-                data = data[idx]
-        #super().__init__(data, coding=coding, dtype=option['dtype'], unidim=option['unidim'])
-        super().__init__(data, dtype=option['dtype'], unidim=option['unidim'])
-        self.coding = np.array(coding)
-            
+                )[:1]
+            idx_fill = list(count).index(max(count))
+            sp_index = [row for row, cat in zip(range(len(cat)), cat) 
+                        if cat != idx_fill] + [idx_fill]
+            sp_values = data[sp_index]
+            sp_index[-1]= -1
+            coding = [leng, sp_index]
+        super().__init__(sp_values, dtype=option['dtype'], unidim=option['unidim'])
+        self.coding = coding
         
-        
-        
-        option = {'sp_value': None, 'sp_index': None, 'fill_value': None, 
-                  'length': None, 'dtype': None, 'unidim': False} | kwargs
-        length, idx = option['coding']
-        coding = coding if is None:
-            try:
-                data, coding = np.unique(data, return_inverse=True)
-            except (TypeError, ValueError):
-                dat, idx, coding = np.unique(
-                    np.frompyfunc(Ntv.from_obj, 1, 1)(data),
-                    return_index=True,
-                    return_inverse=True,
-                )
-                data = data[idx]
-        super().__init__(data, coding=coding, dtype=option['dtype'], unidim=option['unidim'])
-
-    def to_json(self):
-        """return a JsonValue of the Dcomplete entity."""
-        return [Dutil.list_json(self.data), self.coding.tolist()]
+    @property 
+    def json_coding(self):
+        """return a JsonValue of the coding data"""
+        return self.coding
 
     @property
     def values(self):
         """return the list of values"""
-        return self.data[self.coding]
+        leng, sp_index = self.coding 
+        values = np.full([leng], self.data[-1])
+        for ind, idx in enumerate(sp_index[:-1]):
+            values[idx] = self.data[ind]
+        return values
 
     @property
     def _len_val(self):
-        """return the length of the Dcomplete entity"""
-        return len(self.coding) if self.coding.ndim > 0 else 0
+        """return the length of the Dsparse entity"""
+        return self.coding[0]
 
 class Dutil:
     """np.ndarray utilities.
