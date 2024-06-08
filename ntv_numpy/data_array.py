@@ -156,9 +156,10 @@ class Darray(ABC):
             case ['data', 'keys']:
                 return Dcomplete(params['data'], coding=params['keys'], 
                                  dtype=dtype, unidim=unidim)
-            #case ['data', 'leng', 'sp_idx']:
-            #    return Dsparse(params['data'], leng=params['leng'], 
-            #                   sp_idx=params['sp_idx'], dtype=dtype, unidim=unidim)
+            case ['data', 'leng', 'sp_idx']:
+                return Dsparse(params['data'], 
+                               coding=[params['leng'], params['sp_idx']],
+                               dtype=dtype, unidim=unidim)
             case _:
                 return
         return
@@ -324,6 +325,7 @@ class Dsparse(Darray):
         """
         option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
         coding = option['coding']
+        sp_values = data
         if coding is None:
             leng = len(data)
             try:
