@@ -24,7 +24,7 @@ class Darray(ABC):
     """The Darray class is an abstract class used by `Dfull`and `Dcomplete` classes.
 
     *Attributes :*
-    - **data** :  np.ndarray - data after coding
+    - **data** :  np.ndarray - data after coding (unidimensional)
     - **ref**:  int or string - reference to another Darray data
     - **coding**: np.ndarray of int - mapping between data and the values
 
@@ -38,30 +38,26 @@ class Darray(ABC):
     - `to_json`
     """
 
-    #def __init__(self, data, ref=None, coding=None, dtype=None, unidim=False):
     def __init__(self, data, **kwargs):
         """Darray constructor.
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (after coding)
+        - **data**: list, Darray or np.ndarray - unidimensional data to represent (after coding)
         - **ref** : String or integer (default None) - name or index of another Darray
         - **coding**: List of integer (default None) - mapping between data and the list of values
         - **dtype**: string (default None) - numpy.dtype to apply
         """
-        #option = {'ref': None, 'coding': None, 'dtype': None, 'unidim': False} | kwargs
-        option = {'ref': None, 'dtype': None, 'unidim': False} | kwargs
+        option = {'ref': None, 'dtype': None} | kwargs
         if isinstance(data, Darray):
             self.data = data.data
             self.ref = data.ref
             self.coding = data.coding
             return
         data = data if isinstance(data, (list, np.ndarray)) else [data]
-        if (len(data) > 0 and isinstance(data[0], (list, np.ndarray))) or option['unidim']:
-            dtype = data.dtype if isinstance(data, np.ndarray) else "object"
-            self.data = np.fromiter(data, dtype=dtype)
-        else:
-            self.data = np.array(data, dtype=option['dtype']).reshape(-1)
+        dtype = data.dtype if isinstance(data, np.ndarray) else option['dtype']
+        dtype = dtype if dtype else 'object'
+        self.data = np.fromiter(data, dtype='object').astype(dtype)
         self.ref = option['ref']
         self.coding = None
         return
@@ -139,7 +135,7 @@ class Darray(ABC):
                   'coef': coef, 'sp_idx': sp_idx, 'custom': custom}
 
     @staticmethod
-    def read_json(val, dtype=None, unidim=False):
+    def read_json(val, dtype=None):
         """return a Darray entity from a list of data.
 
         *Parameters*
@@ -151,14 +147,12 @@ class Darray(ABC):
         list_params = [key for key, val in params.items() if val]
         match list_params:
             case ['data']:
-                return Dfull(params['data'], dtype=dtype, unidim=unidim)
+                return Dfull(params['data'], dtype=dtype)
             case ['data', 'keys']:
-                return Dcomplete(params['data'], coding=params['keys'],
-                                 dtype=dtype, unidim=unidim)
+                return Dcomplete(params['data'], coding=params['keys'], dtype=dtype)
             case ['data', 'leng', 'sp_idx']:
-                return Dsparse(params['data'],
-                               coding=[params['leng'], params['sp_idx']],
-                               dtype=dtype, unidim=unidim)
+                return Dsparse(params['data'], dtype=dtype, 
+                               coding=[params['leng'], params['sp_idx']])
             case _:
                 return
         return
@@ -204,7 +198,7 @@ class Dfull(Darray):
         - **data**: list, Darray or np.ndarray - data to represent (after coding)
         - **dtype**: string (default None) - numpy.dtype to apply
         """
-        option = {'dtype': None, 'unidim': False} | kwargs
+        option = {'dtype': None} | kwargs
         super().__init__(data, **option)
         self.coding = None
 
@@ -239,7 +233,7 @@ class Dcomplete(Darray):
         - **coding**: List of integer (default None) - mapping between data and the list of values
         - **dtype**: string (default None) - numpy.dtype to apply
         """
-        option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
+        option = {'coding': None, 'dtype': None} | kwargs
         super().__init__(data, **option)
         coding = np.array(option['coding']) if option['coding'] is not None else None
         self.coding = self.coding if self.coding is not None else coding
@@ -293,7 +287,7 @@ class Dsparse(Darray):
         - **coding**: List (default None) - sparse data coding (leng + sp_index)
         - **dtype**: string (default None) - numpy.dtype to apply
         """
-        option = {'coding': None, 'dtype': None, 'unidim': False} | kwargs
+        option = {'coding': None, 'dtype': None} | kwargs
         super().__init__(data, **option)
         self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:

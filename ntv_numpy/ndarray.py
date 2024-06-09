@@ -61,7 +61,7 @@ class Ndarray:
             self.darray = None
             return
         if shape:
-            dar = Dfull(dar, dtype=Nutil.dtype(ntv_type), unidim=True).data
+            dar = Dfull(dar, dtype=Nutil.dtype(ntv_type)).data
         else:
             dar = np.array(dar, dtype=Nutil.dtype(ntv_type))
             shape = list(dar.shape)
@@ -258,13 +258,9 @@ class Ndarray:
                 ...
             case [list(shape)]:
                 ...
-        unidim = shape is not None
         if isinstance(ntv_value[-1], str):
             return Ndarray(ntv_value[-1], shape=shape, ntv_type=ntv_type)
-        darray = Darray.read_json(
-            ntv_value[-1], dtype=Nutil.dtype(ntv_type), unidim=unidim
-        )
-        #print(ntv_value[-1], Nutil.dtype(ntv_type), unidim, darray)
+        darray = Darray.read_json(ntv_value[-1], dtype=Nutil.dtype(ntv_type))
         darray.data = Nutil.convert(
             ntv_type, darray.data, tojson=False, convert=option["convert"]
         )

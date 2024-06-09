@@ -216,13 +216,10 @@ class Xndarray:
                 da_jsn = data[-1]
             case _:
                 return None
-        unidim = shape is not None
         if isinstance(da_jsn, str):
             nda = Ndarray(da_jsn, shape=shape, ntv_type=ntv_type)
         elif da_jsn:
-            darray = Darray.read_json(
-                da_jsn, dtype=Nutil.dtype(ntv_type), unidim=unidim
-            )
+            darray = Darray.read_json(da_jsn, dtype=Nutil.dtype(ntv_type))
             darray.data = Nutil.convert(
                 ntv_type, darray.data, tojson=False, convert=option["convert"]
             )

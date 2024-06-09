@@ -54,6 +54,7 @@ class TestDarray(unittest.TestCase):
             [10, 20, 30, 30, 40, 30, 50, 50, 30, 10],
             [1, 2, 3],
             [[1, 2], [2, 3], 4, [2, 3]],
+            [[1, 2], {'a':2, 'b':3}, 4, [2, 3]],
             [[1, 2], [2, 3, 4], [2, 3]]]
 
         for ex in example:
@@ -186,7 +187,7 @@ class TestNdarray(unittest.TestCase):
             arr = Ndarray(ex[0], ntv_type=ex[1])
             for forma in ["full", "complete"]:
                 js = arr.to_json(format=forma)
-                # print(js)
+                #print(js)
                 ex_rt = Ndarray.read_json(js)
                 self.assertTrue(ex_rt.shape == arr.shape == [2])
                 self.assertEqual(ex_rt, arr)
@@ -332,8 +333,8 @@ class TestXndarray(unittest.TestCase):
             [{"y:string": [["y1", "y2"]]}, "absolute", "namedarray"],
             [{"z:string": [["x"], ["z1", "z2"]]}, "absolute", "variable"],
             [{"x.mask:boolean": [[True, False]]}, "absolute", "additional"],
-            [{"x.variance:float64": [[0.1, 0.2]]}, "absolute", "additional"],
-            [{"z.variance:float64": [[0.1, 0.2]]}, "absolute", "additional"],
+            [{"x.variance:float": [[0.1, 0.2]]}, "absolute", "additional"],
+            [{"z.variance:float": [[0.1, 0.2]]}, "absolute", "additional"],
             [{"unit": "kg"}, "undefined", "meta"],
             [{"info": {"example": "everything"}}, "undefined", "meta"],
         ]
