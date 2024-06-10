@@ -25,8 +25,9 @@ class Darray(ABC):
 
     *Attributes :*
     - **data** :  np.ndarray - data after coding (unidimensional)
-    - **ref**:  int or string - reference to another Darray data
-    - **coding**: np.ndarray of int - mapping between data and the values
+    - **ref**:  list - list of parent keys
+    - **coding**: list - parameters to cpnvert data to values
+    - **keys**: np.ndarray of int - mapping between data and the values
 
     *dynamic values (@property)*
     - `values`
@@ -34,7 +35,6 @@ class Darray(ABC):
     *methods*
     - `decode_json` (staticmethod)
     - `read_json` (staticmethod)
-    - `json_coding`
     - `to_json`
     """
 
@@ -112,29 +112,26 @@ class Darray(ABC):
         """
         uri = data = keys = leng = coef = sp_idx = custom = None
         match jsn:
-            case str(uri):...
+            case str(uri): ...
             case [list(data), coding]:
                 match coding:
                     case [int(val), list(code)] if val >= len(data):
                         leng = val
                         match code:
-                            case [int(coef)]:...
-                            case [list(keys), list(sp_idx)]:...
-                            case list(sp_idx):...
+                            case [int(coef)]: ...
+                            case [list(keys), list(sp_idx)]: ...
+                            case list(sp_idx): ...
                             case _:
                                 leng = data = None
-                        # print('leng', leng)
                     case list(val) if isinstance(val[0], int) and max(val) < len(data):
                         keys = val
-                        # print('keys', leng)
-                        ...
-                    case dict(custom):...
+                    case dict(custom): ...
                     case _:
                         data = jsn
-            case list(data):...
+            case list(data): ...
             case _: ...
         return {'uri': uri, 'data': data, 'keys': keys, 'leng': leng,
-                  'coef': coef, 'sp_idx': sp_idx, 'custom': custom}
+                'coef': coef, 'sp_idx': sp_idx, 'custom': custom}
 
     @staticmethod
     def read_json(val, dtype=None, ref=None):
@@ -153,10 +150,10 @@ class Darray(ABC):
             case ['data', 'keys']:
                 return Dcomplete(params['data'], coding=params['keys'], dtype=dtype)
             case ['data', 'keys', 'ref']:
-                return Drelative(params['data'], coding=params['keys'], 
+                return Drelative(params['data'], coding=params['keys'],
                                  ref=params['ref'], dtype=dtype)
             case ['data', 'leng', 'sp_idx']:
-                return Dsparse(params['data'], dtype=dtype, 
+                return Dsparse(params['data'], dtype=dtype,
                                coding=[params['leng'], params['sp_idx']])
             case _:
                 return
@@ -164,14 +161,9 @@ class Darray(ABC):
 
     def to_json(self):
         """return a JsonValue"""
-        json_coding = self.json_coding
-        if json_coding:
-            return [Dutil.list_json(self.data), json_coding]
+        if self.coding is not None:
+            return [Dutil.list_json(self.data), self.coding]
         return Dutil.list_json(self.data)
-
-    @property
-    def json_coding(self):
-        """return the json coding"""
 
     @property
     @abstractmethod
@@ -241,9 +233,9 @@ class Dcomplete(Darray):
         """
         option = {'coding': None, 'dtype': None} | kwargs
         super().__init__(data, **option)
-        coding = np.array(option['coding']) if option['coding'] is not None else None
-        self.coding = self.coding if self.coding is not None else coding
+        self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:
+            self.keys = np.array(self.coding)
             return
         try:
             values, coding = np.unique(self.data, return_inverse=True)
@@ -255,14 +247,9 @@ class Dcomplete(Darray):
             )[1:]
             values = self.data[idx]
         self.data = values
-        self.coding = coding
+        self.coding = coding.tolist()
         self.keys = coding
         return
-
-    @property
-    def json_coding(self):
-        """return a JsonValue of the coding data"""
-        return self.coding.tolist()
 
     @property
     def values(self):
@@ -272,7 +259,8 @@ class Dcomplete(Darray):
     @property
     def _len_val(self):
         """return the length of the Dcomplete entity"""
-        return len(self.coding) if self.coding.ndim > 0 else 0
+        return len(self.keys) if self.keys is not None else 0
+
 
 class Dsparse(Darray):
     """Representation of a one dimensional Array with sparse representation
@@ -298,6 +286,8 @@ class Dsparse(Darray):
         super().__init__(data, **option)
         self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:
+            self.keys = Dsparse.decoding(
+                self.coding, np.arange(len(self.coding)))
             return
         leng = len(self.data)
         try:
@@ -314,32 +304,33 @@ class Dsparse(Darray):
         sp_index = [row for row, cat in zip(range(len(cat)), cat)
                     if cat != idx_fill] + [idx_fill]
         sp_values = self.data[sp_index]
-        sp_index[-1]= -1
+        sp_index[-1] = -1
         self.coding = [leng, sp_index]
         self.data = sp_values
         self.keys = cat
         return
 
     @property
-    def json_coding(self):
-        """return a JsonValue of the coding data"""
-        return self.coding
-
-    @property
     def values(self):
         """return the np.ndarray of values"""
-        leng, sp_index = self.coding
+        return Dsparse.decoding(self.coding, self.data)
+
+    @staticmethod
+    def decoding(coding, data):
+        """return values from coding and data"""
+        leng, sp_index = coding
         try:
-            values = np.full([leng], self.data[-1])
+            values = np.full([leng], data[-1])
         except ValueError:
-            values = np.fromiter([self.data[-1]] * leng, dtype='object')
-        values[sp_index[:-1]] = self.data[:-1]
+            values = np.fromiter([data[-1]] * leng, dtype='object')
+        values[sp_index[:-1]] = data[:-1]
         return values
 
     @property
     def _len_val(self):
         """return the length of the Dsparse entity"""
         return self.coding[0]
+
 
 class Drelative(Darray):
     """Representation of a one dimensional Array with relative representation
@@ -366,7 +357,7 @@ class Drelative(Darray):
         super().__init__(data, **option)
         self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:
-            self.keys = 
+            self.keys = np.array(self.coding)[option['ref']]
             return
         self_dcomp = Dcomplete(self.data)
         derkeys = np.full([max(option['ref'])+1], -1)
@@ -374,14 +365,9 @@ class Drelative(Darray):
         if min(derkeys) < 0:
             raise DarrayError("parent is not a derive Field")
         self.data = self_dcomp.data
-        self.coding = derkeys
+        self.coding = derkeys.tolist()
         self.keys = self_dcomp.keys
         return
-
-    @property
-    def json_coding(self):
-        """return a JsonValue of the coding data"""
-        return self.coding.tolist()
 
     @property
     def values(self):
@@ -392,6 +378,7 @@ class Drelative(Darray):
     def _len_val(self):
         """return the length of the Dsparse entity"""
         return len(self.keys) if self.keys.ndim > 0 else 0
+
 
 class Dutil:
     """np.ndarray utilities.
@@ -445,6 +432,7 @@ class Dutil:
         if isinstance(nda[0], np.ndarray):
             return [Dutil.list_json(arr) for arr in nda]
         return nda.tolist()
+
 
 class DarrayError(Exception):
     """Unidimensional exception"""

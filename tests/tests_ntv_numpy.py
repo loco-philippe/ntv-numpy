@@ -17,7 +17,7 @@ from shapely.geometry import Point, LineString
 import xarray as xr
 import ntv_pandas
 
-from ntv_numpy import Darray, Dfull, Dcomplete, Dsparse, Ndarray, Xndarray, Xdataset, Dutil
+from ntv_numpy import Darray, Dfull, Dcomplete, Dsparse, Drelative, Ndarray, Xndarray, Xdataset, Dutil
 from ntv_numpy.xconnector import PandasConnec
 
 ana = ntv_pandas.to_analysis  # uniquement pour le pre-commit
@@ -30,14 +30,16 @@ class TestDarray(unittest.TestCase):
 
     def test_decode_json(self):
         """test decode_json"""
-        parametres = ['uri', 'data', 'keys', 'leng', 'coef', 'sp_idx', 'custom']
+        parametres = ['uri', 'data', 'keys',
+                      'leng', 'coef', 'sp_idx', 'custom']
         examples = [
             ('ert', ['uri']),
-            ([1,2,3], ['data']),
-            ([["orange", "pepper", "apple"], [2, 2, 0, 2, 2, 1, 0, 2]], ['data', 'keys']),
-            ([["orange", "pepper", "orange", "apple"], [8, [2, 5, 6, -1]]], 
+            ([1, 2, 3], ['data']),
+            ([["orange", "pepper", "apple"], [
+             2, 2, 0, 2, 2, 1, 0, 2]], ['data', 'keys']),
+            ([["orange", "pepper", "orange", "apple"], [8, [2, 5, 6, -1]]],
              ['data', 'leng', 'sp_idx']),
-            ([["orange", "pepper", "apple"], [8, [[0, 1, 0, 2], [2, 5, 6, -1]]]], 
+            ([["orange", "pepper", "apple"], [8, [[0, 1, 0, 2], [2, 5, 6, -1]]]],
              ['data', 'leng', 'keys', 'sp_idx']),
             ([[10, 20, 30], [18, [2]]], ['data', 'leng', 'coef'])]
         for jsn, params in examples:
@@ -54,14 +56,26 @@ class TestDarray(unittest.TestCase):
             [10, 20, 30, 30, 40, 30, 50, 50, 30, 10],
             [1, 2, 3],
             [[1, 2], [2, 3], 4, [2, 3]],
-            [[1, 2], {'a':2, 'b':3}, 4, [2, 3]],
+            [[1, 2], {'a': 2, 'b': 3}, 4, [2, 3]],
             [[1, 2], [2, 3, 4], [2, 3]]]
 
         for ex in example:
             for forma in [Dfull, Dcomplete, Dsparse]:
-                #print(ex, forma)
+                # print(ex, forma)
                 dar = forma(ex)
                 self.assertEqual(dar, Darray.read_json(dar.to_json()))
+
+    def test_relative(self):
+        """test relative format"""
+        parent = [10, 20, 20, 30, 30, 40]
+        parent_keys = Dcomplete(parent).keys
+        example = [
+            [100, 200, 200, 100, 100, 200]
+        ]
+        for ex in example:
+            dr = Drelative(ex, ref=parent_keys)
+            self.assertEqual(Darray.read_json(
+                dr.to_json(), ref=parent_keys), dr)
 
     def test_darray_simple(self):
         """test Darray"""
@@ -187,7 +201,7 @@ class TestNdarray(unittest.TestCase):
             arr = Ndarray(ex[0], ntv_type=ex[1])
             for forma in ["full", "complete"]:
                 js = arr.to_json(format=forma)
-                #print(js)
+                # print(js)
                 ex_rt = Ndarray.read_json(js)
                 self.assertTrue(ex_rt.shape == arr.shape == [2])
                 self.assertEqual(ex_rt, arr)
@@ -195,7 +209,8 @@ class TestNdarray(unittest.TestCase):
                 ex_rt = Ndarray.read_json(js, convert=False)
                 # print(js, ex_rt.to_json(format=format))
                 self.assertEqual(
-                    js[":ndarray"][1], ex_rt.to_json(format=forma)[":ndarray"][1]
+                    js[":ndarray"][1], ex_rt.to_json(format=forma)[
+                        ":ndarray"][1]
                 )
                 # print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
             if len(ex[0]) == 2:
@@ -309,7 +324,8 @@ class TestXndarray(unittest.TestCase):
             {":xndarray": {":ipv4": [["192.168.1.1", "192.168.2.5"]]}},
             {":xndarray": {":json": [[1, "two", {"three": 3}]]}},
             {":xndarray": {":base16": [[b"1F23", b"236A5E"]]}},
-            {":xndarray": {":uri": [["geo:13.4125,103.86673", "geo:13.41,103.86"]]}},
+            {":xndarray": {
+                ":uri": [["geo:13.4125,103.86673", "geo:13.41,103.86"]]}},
             {":xndarray": {":object": [FILE]}},
         ]
         for ex in example:
@@ -324,11 +340,13 @@ class TestXndarray(unittest.TestCase):
             [{"var1:object": [["x", "y"], FILE]}, "relative", "variable"],
             [{"var1": [["x", "y"], FILE]}, "relative", "variable"],
             [
-                {"var2:float[kg]": [["x", "y"], [2, 2], [10.1, 0.4, 3.4, 8.2]]},
+                {"var2:float[kg]": [["x", "y"], [
+                    2, 2], [10.1, 0.4, 3.4, 8.2]]},
                 "absolute",
                 "variable",
             ],
-            [{"ranking:int": [["var1"], [2, 2], [1, 2, 3, 4]]}, "absolute", "variable"],
+            [{"ranking:int": [["var1"], [2, 2], [1, 2, 3, 4]]},
+                "absolute", "variable"],
             [{"x:string": [{"test": 21}, ["x1", "x2"]]}, "absolute", "namedarray"],
             [{"y:string": [["y1", "y2"]]}, "absolute", "namedarray"],
             [{"z:string": [["x"], ["z1", "z2"]]}, "absolute", "variable"],
@@ -348,7 +366,8 @@ class TestXndarray(unittest.TestCase):
             for format in ["full", "complete"]:
                 # print(xa.to_json(format=format))
                 # print(Xndarray.read_json(xa.to_json(format=format)))
-                self.assertEqual(xa, Xndarray.read_json(xa.to_json(format=format)))
+                self.assertEqual(xa, Xndarray.read_json(
+                    xa.to_json(format=format)))
 
         example2 = [
             {"var1:object": [["x", "y"], FILE]},
@@ -387,7 +406,8 @@ class TestXdataset(unittest.TestCase):
                 "info": {"example": "everything"},
             }
         }
-        notype = [True, False, True, True, True, True, True, True, True, True, True]
+        notype = [True, False, True, True, True,
+                  True, True, True, True, True, True]
         xds = Xdataset.read_json(example)
         self.assertEqual(
             xds.to_json(notype=notype, noshape=True, header=False), example
@@ -577,7 +597,8 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
         examples = [
             xr.DataArray(np.array([1, 2, 3, 4]).reshape([2, 2])),
             xr.Dataset(
-                {"var": (["date", "y"], np.array([1, 2, 3, 4]).reshape([2, 2]))},
+                {"var": (["date", "y"], np.array(
+                    [1, 2, 3, 4]).reshape([2, 2]))},
                 coords={
                     "date": np.array(
                         ["2021-02-04", "2022-02-04"], dtype="datetime64[ns]"
@@ -586,22 +607,26 @@ class TestXdatasetXarrayScipp(unittest.TestCase):
                 },
             ),
             xr.Dataset(
-                {"var": (["date", "y"], np.array([1, 2, 3, 4]).reshape([2, 2]))},
+                {"var": (["date", "y"], np.array(
+                    [1, 2, 3, 4]).reshape([2, 2]))},
                 coords={
                     "date": (
                         ["date"],
-                        np.array(["2021-02-04", "2022-02-04"], dtype="datetime64[ns]"),
+                        np.array(["2021-02-04", "2022-02-04"],
+                                 dtype="datetime64[ns]"),
                         {"ntv_type": "date"},
                     ),
                     "y": np.array([10, 20]),
                 },
             ),
             xr.Dataset(
-                {"var": (["date", "y"], np.array([1, 2, 3, 4]).reshape([2, 2]))},
+                {"var": (["date", "y"], np.array(
+                    [1, 2, 3, 4]).reshape([2, 2]))},
                 coords={
                     "date": (
                         ["date"],
-                        np.array(["2021-02-04", "2022-02-04"], dtype="datetime64[ns]"),
+                        np.array(["2021-02-04", "2022-02-04"],
+                                 dtype="datetime64[ns]"),
                         {"ntv_type": "date"},
                     ),
                     "y": np.array([Point([1, 2]), Point([3, 4])]),
@@ -709,7 +734,8 @@ class TestXdatasetPandas(unittest.TestCase):
                 "year": [2020, 2021],
                 "point": (
                     ("x", "y"),
-                    np.array(["pt1", "pt2", "pt3", "pt4", "pt5", "pt6"]).reshape(2, 3),
+                    np.array(["pt1", "pt2", "pt3", "pt4",
+                             "pt5", "pt6"]).reshape(2, 3),
                 ),
                 "along_x": ("x", np.random.randn(2)),
                 "scalar": 123,
@@ -842,7 +868,8 @@ class TestXdatasetPandas(unittest.TestCase):
         a_df = df1.npd.analysis(distr=True)
         xdt = Xdataset.from_dataframe(df1)
         df3 = xdt.to_dataframe(ntv_type=False).reset_index()
-        df2 = df1.sort_values(a_df.partitions(mode="id")[0]).reset_index(drop=True)
+        df2 = df1.sort_values(a_df.partitions(mode="id")
+                              [0]).reset_index(drop=True)
         df4 = df3.sort_values(a_df.partitions(mode="id")[0]).reset_index(drop=True)[
             df2.columns
         ]
@@ -859,7 +886,8 @@ class TestXdatasetPandas(unittest.TestCase):
             "e": [1, 1, 1, 1, 1],
         }
         df1 = pd.DataFrame(simple)
-        df3 = Xdataset.from_dataframe(df1).to_dataframe(ntv_type=False)[df1.columns]
+        df3 = Xdataset.from_dataframe(df1).to_dataframe(
+            ntv_type=False)[df1.columns]
         self.assertTrue(df3.equals(df1))
 
         simple = {
