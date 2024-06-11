@@ -17,7 +17,7 @@ from shapely.geometry import Point, LineString
 import xarray as xr
 import ntv_pandas
 
-from ntv_numpy import Darray, Dfull, Dcomplete, Dsparse, Drelative, Ndarray, Xndarray, Xdataset, Dutil
+from ntv_numpy import Darray, Dfull, Dcomplete, Dsparse, Drelative, Dimplicit, Ndarray, Xndarray, Xdataset, Dutil
 from ntv_numpy.xconnector import PandasConnec
 
 ana = ntv_pandas.to_analysis  # uniquement pour le pre-commit
@@ -71,30 +71,31 @@ class TestDarray(unittest.TestCase):
             [1, 2, 3],
             [[1, 2], [2, 3], 4, [2, 3]],
             [[1, 2], {'a': 2, 'b': 3}, 4, [2, 3]],
-            [[1, 2], [2, 3, 4], [2, 3]],
-            ]
+            [[1, 2], [2, 3, 4], [2, 3]]]
 
         for ex in example:
             for forma in [Dfull, Dcomplete, Dsparse]:
                 # print(ex, forma)
                 dar = forma(ex)
                 self.assertEqual(dar.coding, Darray.read_json(dar.to_json()).coding)
-                self.assertTrue(Dutil.equals(dar.values, Darray.read_json(dar.to_json()).values))
+                self.assertEqual(list(dar.values), list(Darray.read_json(dar.to_json()).values))
                 self.assertEqual(list(dar.values), ex)
 
-    def test_relative(self):
+    def test_relative_implicit(self):
         """test relative format"""
-        parent = [10, 20, 20, 30, 30, 40]
-        parent_keys = Dcomplete(parent).keys
+        parent = Dcomplete([10, 20, 20, 30, 30, 40])
         example = [
             [100, 200, 200, 100, 100, 200]
         ]
         for ex in example:
-            dr = Drelative(ex, ref=parent_keys)
-            self.assertEqual(Darray.read_json(
-                dr.to_json(), ref=parent_keys), dr)
-            self.assertEqual(list(dr.values), ex)
-
+            dr = Drelative(ex, ref=parent)
+            self.assertEqual(Darray.read_json(dr.to_json(), ref=parent), dr)
+            dr2 = Dimplicit(ex, ref=parent)
+            self.assertEqual(Darray.read_json(dr2.to_json(), ref=parent), dr2)            
+            dr3 = Dimplicit(dr2.codec, ref=parent)
+            self.assertEqual(Darray.read_json(dr3.to_json(), ref=parent), dr3)
+            self.assertTrue(list(dr3.values) == list(dr2.values) == list(dr.values) == ex)
+            
     def test_darray_simple(self):
         """test Darray"""
         example = [
@@ -276,7 +277,7 @@ class TestNdarray(unittest.TestCase):
                 js = arr.to_json(format=forma)
                 # print(js, ex, forma)
                 ex_rt = Ndarray.read_json(js)
-                # print(js, ex, forma, ex_rt, arr)
+                # print(js, ex, forma, ex_rt, arr) #!!!
                 self.assertEqual(ex_rt, arr)
                 # print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
 

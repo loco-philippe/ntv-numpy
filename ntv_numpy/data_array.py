@@ -98,6 +98,11 @@ class Darray(ABC):
         """Copy all the data"""
         return self.__class__(self)
 
+    def as_darray(self, data=None):
+        """return a copy of a Darray with a new data"""
+        return self.__class__(data, coding=self.coding, ref=self.ref)
+
+    
     @staticmethod
     def decode_json(jsn):
         """return a dict of parameters deduced from jsn
@@ -136,19 +141,21 @@ class Darray(ABC):
                 'coef': coef, 'sp_idx': sp_idx, 'custom': custom}
 
     @staticmethod
-    def read_json(val, dtype=None, ref=None):
-        """return a Darray entity from a list of data.
+    def read_json(jsn, dtype=None, ref=None):
+        """return a Darray entity from a json data.
 
         *Parameters*
 
-        - **val**: list of data
+        - **jsn**: json data
         - **dtype** : string (default None) - numpy.dtype to apply
         """
-        params = Darray.decode_json(val) | {'ref': ref}
+        params = Darray.decode_json(jsn) | {'ref': ref}
         list_params = [key for key, val in params.items() if val is not None]
         match list_params:
             case ['data']:
                 return Dfull(params['data'], dtype=dtype)
+            case ['data', 'ref']:
+                return Dimplicit(params['data'], ref=params['ref'], dtype=dtype)
             case ['data', 'keys']:
                 return Dcomplete(params['data'], coding=params['keys'], dtype=dtype)
             case ['data', 'keys', 'ref']:
@@ -243,12 +250,6 @@ class Dcomplete(Darray):
         self.codec = self.data
         return
 
-    @property
-    def values(self):
-        """return the np.ndarray of values"""
-        return self.data[self.coding]
-        # return self.codec[self.keys] #!!!
-
 
 class Dsparse(Darray):
     """Representation of a one dimensional Array with sparse representation
@@ -299,12 +300,6 @@ class Dsparse(Darray):
         self.codec = codec
         return
 
-    @property
-    def values(self):
-        """return the np.ndarray of values"""
-        #return Dsparse._decoding(self.coding, self.data)
-        return self.codec[self.keys]
-
     @staticmethod
     def _decoding(coding, data):
         """return values from coding and data"""
@@ -333,20 +328,21 @@ class Drelative(Darray):
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (values or data+coding)
+        - **data**: list, Darray or np.ndarray - data to represent (codec)
         - **coding**: List (default None) - relative data coding (relative keys)
         - **dtype**: string (default None) - numpy.dtype to apply
-        - **ref**: List (default None) - parent keys
+        - **ref**: List (default None) - parent darray
         """
         option = {'coding': None, 'dtype': None, 'ref': None} | kwargs
         super().__init__(data, **option)
+        parent_keys = option['ref'].keys if option['ref'] is not None else None
         self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:
-            self.keys = np.array(self.coding)[option['ref']]
+            self.keys = np.array(self.coding)[parent_keys]
             return
         self_dcomp = Dcomplete(self.data)
-        derkeys = np.full([max(option['ref'])+1], -1)
-        derkeys[option['ref']] = self_dcomp.keys
+        derkeys = np.full([max(parent_keys)+1], -1)
+        derkeys[parent_keys] = self_dcomp.keys
         if min(derkeys) < 0:
             raise DarrayError("parent is not a derive Field")
         self.data = self_dcomp.data
@@ -355,10 +351,6 @@ class Drelative(Darray):
         self.codec = self.data
         return
 
-    @property
-    def values(self):
-        """return the np.ndarray of values"""
-        return self.codec[self.keys]
 
 class Dimplicit(Darray):
     """Representation of a one dimensional Array with implicit representation
@@ -376,19 +368,19 @@ class Dimplicit(Darray):
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (values or data+coding)
+        - **data**: list, Darray or np.ndarray - data to represent (codec)
         - **dtype**: string (default None) - numpy.dtype to apply
         - **ref**: List (default None) - parent keys
         """
         option = {'dtype': None, 'ref': None} | kwargs
-        super().__init__(data, **option)
-        self.keys = np.array(option['ref'])
+        keys = option['ref'].keys if option['ref'] is not None else None
+        if len(data) == len(keys): 
+            codec = np.array(data)[np.unique(keys, return_index=True)[1]]
+        else:
+            codec = data
+        super().__init__(codec, **option)
+        self.keys = keys
         return
-
-    @property
-    def values(self):
-        """return the np.ndarray of values"""
-        return self.codec[self.keys]
 
 
 class Dutil:

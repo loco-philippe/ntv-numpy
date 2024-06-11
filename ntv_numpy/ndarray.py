@@ -261,10 +261,10 @@ class Ndarray:
         if isinstance(ntv_value[-1], str):
             return Ndarray(ntv_value[-1], shape=shape, ntv_type=ntv_type)
         darray = Darray.read_json(ntv_value[-1], dtype=Nutil.dtype(ntv_type))
-        darray.data = Nutil.convert(
-            ntv_type, darray.data, tojson=False, convert=option["convert"]
-        )
-        return Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
+        data_conv = Nutil.convert(ntv_type, darray.data, tojson=False, 
+                                  convert=option["convert"])
+        darray_conv = darray.as_darray(data_conv)
+        return Ndarray(darray_conv.values, shape=shape, ntv_type=ntv_type)
 
     def to_json(self, **kwargs):
         """convert a Ndarray into json-value
