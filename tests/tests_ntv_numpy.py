@@ -50,6 +50,20 @@ class TestDarray(unittest.TestCase):
                 else:
                     self.assertTrue(result[param] is None)
 
+    def test_not_json(self):
+        """test json conversion"""
+        example = [
+            [np.array([1, 2], dtype="int64"),
+             np.array(["test1", "test2"], dtype="str_")]
+            ]
+
+        for ex in example:
+            for forma in [Dfull, Dcomplete, Dsparse]:
+                # print(ex, forma)
+                dar = forma(ex)
+                self.assertEqual(dar.coding, Darray.read_json(dar.to_json()).coding)
+                self.assertTrue(dar.to_json(), Darray.read_json(dar.to_json()).to_json())
+
     def test_json(self):
         """test json conversion"""
         example = [
@@ -57,14 +71,15 @@ class TestDarray(unittest.TestCase):
             [1, 2, 3],
             [[1, 2], [2, 3], 4, [2, 3]],
             [[1, 2], {'a': 2, 'b': 3}, 4, [2, 3]],
-            [[1, 2], [2, 3, 4], [2, 3]]]
+            [[1, 2], [2, 3, 4], [2, 3]],
+            ]
 
         for ex in example:
             for forma in [Dfull, Dcomplete, Dsparse]:
                 # print(ex, forma)
                 dar = forma(ex)
                 self.assertEqual(dar.coding, Darray.read_json(dar.to_json()).coding)
-                self.assertEqual(list(dar.values), list(Darray.read_json(dar.to_json()).values))
+                self.assertTrue(Dutil.equals(dar.values, Darray.read_json(dar.to_json()).values))
                 self.assertEqual(list(dar.values), ex)
 
     def test_relative(self):
@@ -261,7 +276,7 @@ class TestNdarray(unittest.TestCase):
                 js = arr.to_json(format=forma)
                 # print(js, ex, forma)
                 ex_rt = Ndarray.read_json(js)
-                print(js, ex, forma, ex_rt, arr)
+                # print(js, ex, forma, ex_rt, arr)
                 self.assertEqual(ex_rt, arr)
                 # print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
 
