@@ -63,7 +63,9 @@ class TestDarray(unittest.TestCase):
             for forma in [Dfull, Dcomplete, Dsparse]:
                 # print(ex, forma)
                 dar = forma(ex)
-                self.assertEqual(dar, Darray.read_json(dar.to_json()))
+                self.assertEqual(dar.coding, Darray.read_json(dar.to_json()).coding)
+                self.assertEqual(list(dar.values), list(Darray.read_json(dar.to_json()).values))
+                self.assertEqual(list(dar.values), ex)
 
     def test_relative(self):
         """test relative format"""
@@ -76,6 +78,7 @@ class TestDarray(unittest.TestCase):
             dr = Drelative(ex, ref=parent_keys)
             self.assertEqual(Darray.read_json(
                 dr.to_json(), ref=parent_keys), dr)
+            self.assertEqual(list(dr.values), ex)
 
     def test_darray_simple(self):
         """test Darray"""
@@ -258,6 +261,7 @@ class TestNdarray(unittest.TestCase):
                 js = arr.to_json(format=forma)
                 # print(js, ex, forma)
                 ex_rt = Ndarray.read_json(js)
+                print(js, ex, forma, ex_rt, arr)
                 self.assertEqual(ex_rt, arr)
                 # print(nd_equals(ex_rt, arr),  ex_rt, ex_rt.dtype)
 

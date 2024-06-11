@@ -54,6 +54,7 @@ class Darray(ABC):
             self.ref = data.ref
             self.coding = data.coding
             self.keys = data.keys
+            self.codec = data.codec
             return
         data = data if isinstance(data, (list, np.ndarray)) else [data]
         dtype = data.dtype if isinstance(data, np.ndarray) else option['dtype']
@@ -62,6 +63,7 @@ class Darray(ABC):
         self.ref = option['ref']
         self.coding = None
         self.keys = None
+        self.codec = self.data
         return
 
     def __repr__(self):
@@ -78,7 +80,7 @@ class Darray(ABC):
 
     def __len__(self):
         """len of values"""
-        return self._len_val
+        return len(self.keys) if self.keys.ndim > 0 else 0
 
     def __contains__(self, item):
         """item of values"""
@@ -166,14 +168,9 @@ class Darray(ABC):
         return Dutil.list_json(self.data)
 
     @property
-    @abstractmethod
     def values(self):
         """return the np.ndarray of values"""
-
-    @property
-    @abstractmethod
-    def _len_val(self):
-        """return the length of the entity"""
+        return self.codec[self.keys]
 
 
 class Dfull(Darray):
@@ -197,18 +194,12 @@ class Dfull(Darray):
         """
         option = {'dtype': None} | kwargs
         super().__init__(data, **option)
-        self.coding = None
-        self.keys = None
+        self.keys = np.arange(len(self.data))
 
     @property
     def values(self):
         """return the np.ndarray of values"""
         return self.data
-
-    @property
-    def _len_val(self):
-        """return the length of the Dfull entity"""
-        return len(self.data) if self.data.ndim > 0 else 0
 
 
 class Dcomplete(Darray):
@@ -249,17 +240,14 @@ class Dcomplete(Darray):
         self.data = values
         self.coding = coding.tolist()
         self.keys = coding
+        self.codec = self.data
         return
 
     @property
     def values(self):
         """return the np.ndarray of values"""
         return self.data[self.coding]
-
-    @property
-    def _len_val(self):
-        """return the length of the Dcomplete entity"""
-        return len(self.keys) if self.keys is not None else 0
+        # return self.codec[self.keys] #!!!
 
 
 class Dsparse(Darray):
@@ -286,20 +274,20 @@ class Dsparse(Darray):
         super().__init__(data, **option)
         self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:
-            self.keys = Dsparse.decoding(
-                self.coding, np.arange(len(self.coding)))
+            self.keys = Dsparse._decoding(self.coding, np.arange(len(self.coding[1])))
             return
         leng = len(self.data)
         try:
-            cat, count = np.unique(self.data, return_inverse=True,
-                                   return_counts=True)[1:]
+            codec, cat, count = np.unique(self.data, return_inverse=True,
+                                   return_counts=True)
         except (TypeError, ValueError):
-            cat, count = np.unique(
+            index, cat, count = np.unique(
                 np.frompyfunc(Ntv.from_obj, 1, 1)(self.data),
                 return_index=True,
                 return_inverse=True,
                 return_counts=True
-            )[2:]
+            )[1:]
+            codec = self.data[index]
         idx_fill = list(count).index(max(count))
         sp_index = [row for row, cat in zip(range(len(cat)), cat)
                     if cat != idx_fill] + [idx_fill]
@@ -308,15 +296,17 @@ class Dsparse(Darray):
         self.coding = [leng, sp_index]
         self.data = sp_values
         self.keys = cat
+        self.codec = codec
         return
 
     @property
     def values(self):
         """return the np.ndarray of values"""
-        return Dsparse.decoding(self.coding, self.data)
+        #return Dsparse._decoding(self.coding, self.data)
+        return self.codec[self.keys]
 
     @staticmethod
-    def decoding(coding, data):
+    def _decoding(coding, data):
         """return values from coding and data"""
         leng, sp_index = coding
         try:
@@ -325,11 +315,6 @@ class Dsparse(Darray):
             values = np.fromiter([data[-1]] * leng, dtype='object')
         values[sp_index[:-1]] = data[:-1]
         return values
-
-    @property
-    def _len_val(self):
-        """return the length of the Dsparse entity"""
-        return self.coding[0]
 
 
 class Drelative(Darray):
@@ -349,7 +334,7 @@ class Drelative(Darray):
         *Parameters*
 
         - **data**: list, Darray or np.ndarray - data to represent (values or data+coding)
-        - **coding**: List (default None) - sparse data coding (leng + sp_index)
+        - **coding**: List (default None) - relative data coding (relative keys)
         - **dtype**: string (default None) - numpy.dtype to apply
         - **ref**: List (default None) - parent keys
         """
@@ -367,17 +352,43 @@ class Drelative(Darray):
         self.data = self_dcomp.data
         self.coding = derkeys.tolist()
         self.keys = self_dcomp.keys
+        self.codec = self.data
         return
 
     @property
     def values(self):
         """return the np.ndarray of values"""
-        return self.data[self.keys]
+        return self.codec[self.keys]
+
+class Dimplicit(Darray):
+    """Representation of a one dimensional Array with implicit representation
+
+    *dynamic values (@property)*
+    - `values`
+
+    *methods*
+    - `read_json` (staticmethod)
+    - `to_json`
+    """
+
+    def __init__(self, data, **kwargs):
+        """Drelative constructor.
+
+        *Parameters*
+
+        - **data**: list, Darray or np.ndarray - data to represent (values or data+coding)
+        - **dtype**: string (default None) - numpy.dtype to apply
+        - **ref**: List (default None) - parent keys
+        """
+        option = {'dtype': None, 'ref': None} | kwargs
+        super().__init__(data, **option)
+        self.keys = np.array(option['ref'])
+        return
 
     @property
-    def _len_val(self):
-        """return the length of the Dsparse entity"""
-        return len(self.keys) if self.keys.ndim > 0 else 0
+    def values(self):
+        """return the np.ndarray of values"""
+        return self.codec[self.keys]
 
 
 class Dutil:
