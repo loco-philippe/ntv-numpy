@@ -218,7 +218,7 @@ class TestNdarray(unittest.TestCase):
         for ex in example:
             # print(ex[0], ex[1])
             arr = Ndarray(ex[0], ntv_type=ex[1])
-            for forma in ["full", "complete"]:
+            for forma in ["full", "complete", "sparse"]:
                 js = arr.to_json(format=forma)
                 # print(js)
                 ex_rt = Ndarray.read_json(js)

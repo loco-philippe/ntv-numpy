@@ -291,9 +291,14 @@ class Dsparse(Darray):
             codec = self.data[index]
         idx_fill = list(count).index(max(count))
         sp_index = [row for row, cat in zip(range(len(cat)), cat)
+                    if cat != idx_fill]
+        sp_values = self.data[sp_index]
+        sp_index += [-1]
+        sp_values = np.append(sp_values, np.fromiter([codec[idx_fill]], dtype='object'))
+        '''sp_index = [row for row, cat in zip(range(len(cat)), cat)
                     if cat != idx_fill] + [idx_fill]
         sp_values = self.data[sp_index]
-        sp_index[-1] = -1
+        sp_index[-1] = -1'''
         self.coding = [leng, sp_index]
         self.data = sp_values
         self.keys = cat

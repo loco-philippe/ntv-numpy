@@ -21,7 +21,7 @@ import json
 from decimal import Decimal
 import numpy as np
 from json_ntv import Ntv, ShapelyConnec, NtvConnector  # , Datatype
-from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
+from ntv_numpy.data_array import Dfull, Dcomplete, Dsparse, Darray, Dutil
 from ntv_numpy.ndtype import Ndtype, NP_NTYPE
 
 
@@ -378,7 +378,7 @@ class Nutil:
     DT_LOCATION = {val: key for key, val in LOCATION_DT.items()}
     DT_NTVTYPE = DT_LOCATION | DT_CONNECTOR | DT_PYTHON
 
-    FORMAT_CLS = {"full": Dfull, "complete": Dcomplete}
+    FORMAT_CLS = {"full": Dfull, "complete": Dcomplete, "sparse": Dsparse}
     STRUCT_DT = {"Ntv": "object", "NtvSingle": "object", "NtvList": "object"}
     CONVERT_DT = {
         "object": "object",
