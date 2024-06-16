@@ -59,6 +59,7 @@ class Darray(ABC):
         data = data if isinstance(data, (list, np.ndarray)) else [data]
         dtype = data.dtype if isinstance(data, np.ndarray) else option['dtype']
         dtype = dtype if dtype else 'object'
+        #data = data.tolist() if isinstance(data, np.ndarray) else data
         self.data = np.fromiter(data, dtype='object').astype(dtype)
         self.ref = option['ref']
         self.coding = None
@@ -294,7 +295,13 @@ class Dsparse(Darray):
                     if cat != idx_fill]
         sp_values = self.data[sp_index]
         sp_index += [-1]
-        sp_values = np.append(sp_values, np.fromiter([codec[idx_fill]], dtype='object'))
+        #sp_values = np.concatenate((sp_values, [codec[idx_fill]]), axis=0)
+        #sp_values = np.concatenate((sp_values, np.fromiter([codec[idx_fill]], dtype='object')), axis=0)
+        #sp_values = np.concatenate((sp_values, Darray([codec[idx_fill]]).data), axis=0)
+        #sp_values = np.append(sp_values, Darray([codec[idx_fill]]).data, axis=0)
+        #sp_values = np.append(sp_values, np.fromiter([codec[idx_fill]], dtype='object'), axis=0)
+        sp_values = np.append(sp_values, np.fromiter([codec[idx_fill]], dtype=sp_values.dtype), axis=0)
+        #sp_values = np.append(sp_values, [codec[idx_fill]], axis=0)
         '''sp_index = [row for row, cat in zip(range(len(cat)), cat)
                     if cat != idx_fill] + [idx_fill]
         sp_values = self.data[sp_index]
