@@ -148,6 +148,7 @@ class Darray(ABC):
 
         - **jsn**: json data
         - **dtype** : string (default None) - numpy.dtype to apply
+        - **ref**: Darray (default None) - parent Darray
         """
         params = Darray.decode_json(jsn) | {'ref': ref}
         list_params = [key for key, val in params.items() if val is not None]

@@ -29,6 +29,13 @@ from ntv_numpy.ndtype import Ndtype, NP_NTYPE
 class Ndarray:
     """The Ndarray class is the JSON interface of numpy.ndarrays.
 
+    *Attributes :*
+    - **uri** :  string - location of the Ndarray
+    - **darray**: np.ndarray - flattened multidimensional data ordered with row_major order
+    - **shape**: list - order and length of axes
+    - **is_json**: Boolean - True if darray is json data
+    - **ntvtype**: string - semantic data type
+    
     *static methods*
     - `read_json`
     - `to_json`
@@ -243,8 +250,10 @@ class Ndarray:
         - **shape** : list (default None) - If shape is not in json data
         - **convert** : boolean (default True) - If True, convert json data with
         non Numpy ntv_type into data with python type
+        - **ref**: Darray (default None) - parent Darray
+
         """
-        option = {"convert": True, "shape": None, "ntv_type": None} | kwargs
+        option = {"convert": True, "shape": None, "ntv_type": None, "ref": None} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         (ntv_value,) = Ntv.decode_json(jso)[:1]
 
@@ -261,7 +270,8 @@ class Ndarray:
                 ...
         if isinstance(ntv_value[-1], str):
             return Ndarray(ntv_value[-1], shape=shape, ntv_type=ntv_type)
-        darray = Darray.read_json(ntv_value[-1], dtype=Nutil.dtype(ntv_type))
+        darray = Darray.read_json(ntv_value[-1], dtype=Nutil.dtype(ntv_type), 
+                                  ref=option["ref"])
         data_conv = Nutil.convert(ntv_type, darray.data, tojson=False, 
                                   convert=option["convert"])
         darray_conv = darray.as_darray(data_conv)

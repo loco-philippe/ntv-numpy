@@ -335,10 +335,13 @@ class TestNdarray(unittest.TestCase):
             [100, 200, 200, 100, 100, 200]
         ]
         for ex in example:
-            self.assertEqual(Ndarray(ex).to_json(ref=parent, format='relative'), 
-                             {':ndarray': ['int32', [[100, 200], [0, 1, 0, 1]]]})
-            self.assertEqual(Ndarray(ex).to_json(ref=parent, format='implicit'), 
-                             {':ndarray': ['int32', [100, 200, 100, 200]]})
+            jsn_ful = Ndarray(ex).to_json()
+            jsn_rel = Ndarray(ex).to_json(ref=parent, format='relative')
+            self.assertEqual(jsn_rel, {':ndarray': ['int32', [[100, 200], [0, 1, 0, 1]]]})            
+            self.assertEqual(Ndarray.read_json(jsn_rel, ref=parent).to_json(), jsn_ful)
+            jsn_imp = Ndarray(ex).to_json(ref=parent, format='implicit')
+            self.assertEqual(jsn_imp, {':ndarray': ['int32', [100, 200, 100, 200]]})
+            self.assertEqual(Ndarray.read_json(jsn_imp, ref=parent).to_json(), jsn_ful)
             """dr = Drelative(ex, ref=parent)
             self.assertEqual(Darray.read_json(dr.to_json(), ref=parent), dr)
             dr2 = Dimplicit(ex, ref=parent)

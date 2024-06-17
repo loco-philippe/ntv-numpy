@@ -254,6 +254,7 @@ class Xndarray:
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **format** : string (default 'full') - representation format of the ndarray,
         - **extension** : string (default None) - type extension
+        - **ref**: Darray (default None) - parent darray
         """
         option = {
             "notype": False,
@@ -263,8 +264,10 @@ class Xndarray:
             "encoded": False,
             "novalue": False,
             "noname": False,
+            "extension": None,
+            "ref": None
         } | kwargs
-        if option["format"] not in ["full", "complete"]:
+        if option["format"] not in ["full", "complete", "relative", "implicit"]:
             option["noshape"] = False
         opt_nda = option | {"header": False, "modelist": False}
         nda_dic = self.nda.to_json(**opt_nda) if self.nda is not None else {}
