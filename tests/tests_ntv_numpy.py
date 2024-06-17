@@ -328,6 +328,25 @@ class TestNdarray(unittest.TestCase):
             nda = Ndarray(ex[0], ex[1], ex[2])
             self.assertEqual(Ndarray.read_json(nda.to_json()), nda)'''
 
+    def test_relative_implicit(self):
+        """test relative format"""
+        parent = Dcomplete([10, 20, 20, 30, 30, 40])
+        example = [
+            [100, 200, 200, 100, 100, 200]
+        ]
+        for ex in example:
+            self.assertEqual(Ndarray(ex).to_json(ref=parent, format='relative'), 
+                             {':ndarray': ['int32', [[100, 200], [0, 1, 0, 1]]]})
+            self.assertEqual(Ndarray(ex).to_json(ref=parent, format='implicit'), 
+                             {':ndarray': ['int32', [100, 200, 100, 200]]})
+            """dr = Drelative(ex, ref=parent)
+            self.assertEqual(Darray.read_json(dr.to_json(), ref=parent), dr)
+            dr2 = Dimplicit(ex, ref=parent)
+            self.assertEqual(Darray.read_json(dr2.to_json(), ref=parent), dr2)            
+            dr3 = Dimplicit(dr2.codec, ref=parent)
+            self.assertEqual(Darray.read_json(dr3.to_json(), ref=parent), dr3)
+            self.assertTrue(list(dr3.values) == list(dr2.values) == list(dr.values) == ex)
+            """
 
 class TestXndarray(unittest.TestCase):
     """test Xndarray class"""

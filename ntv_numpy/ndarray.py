@@ -21,7 +21,8 @@ import json
 from decimal import Decimal
 import numpy as np
 from json_ntv import Ntv, ShapelyConnec, NtvConnector  # , Datatype
-from ntv_numpy.data_array import Dfull, Dcomplete, Dsparse, Darray, Dutil
+from ntv_numpy.data_array import Dfull, Dcomplete, Dsparse, Drelative, Dimplicit
+from ntv_numpy.data_array import Darray, Dutil
 from ntv_numpy.ndtype import Ndtype, NP_NTYPE
 
 
@@ -278,7 +279,7 @@ class Ndarray:
         - **encoded** : Boolean (default False) - json-value if False else json-text
         - **header** : Boolean (default True) - including ndarray type
         - **modelist** : Boolean (default True) - return a list if True else a dict
-        - **ref**: Ndarray (default None) - parent Ndarray
+        - **ref**: Darray (default None) - parent Darray
         """
         option = {
             "format": "full",
@@ -300,14 +301,13 @@ class Ndarray:
             if not self.shape or (len(self.shape) < 2 and option["noshape"])
             else self.shape
         )
-        ref = option["ref"].darray if option['ref'] else None
+        #ref = option["ref"].darray if option['ref'] else None
         if self.mode == "relative":
             js_darray = self.uri
         else:
             js_darray = (
                 Nutil.ntv_val(self.ntv_type, self.darray, option["format"], 
-                              is_json=self.is_json, ref=ref
-                )
+                              is_json=self.is_json, ref=option["ref"])
                 if not option["novalue"]
                 else ["-"]
             )
@@ -380,7 +380,8 @@ class Nutil:
     DT_LOCATION = {val: key for key, val in LOCATION_DT.items()}
     DT_NTVTYPE = DT_LOCATION | DT_CONNECTOR | DT_PYTHON
 
-    FORMAT_CLS = {"full": Dfull, "complete": Dcomplete, "sparse": Dsparse}
+    FORMAT_CLS = {"full": Dfull, "complete": Dcomplete, "sparse": Dsparse,
+                  "relative": Drelative, "implicit": Dimplicit}
     STRUCT_DT = {"Ntv": "object", "NtvSingle": "object", "NtvList": "object"}
     CONVERT_DT = {
         "object": "object",
@@ -495,20 +496,27 @@ class Nutil:
         *Parameters*
 
         - **ntv_type** : string - NTVtype deduced from the ndarray, name_type and dtype,
-        - **nda** : ndarray to be converted.
+        - **nda** : np.ndarray to be converted.
         - **form** : format of data ('full', 'complete', 'sparse', 'relative', 'implicit').
         - **is_json** : boolean (defaut False) - True if nda data is Json data
         - **ref** : Darray (default None) - parent darray
 
         """
         if form in ["complete", "sparse"] and len(nda) < 2:
-            raise NdarrayError( form + " format is not available with length < 2")
+            raise NdarrayError( form + " format is not available with length < 2")       
         Format = Nutil.FORMAT_CLS[form]
-        darray = Format(nda)
-        #ref = darray.ref
-        coding = darray.coding
         if is_json:
-            return Format(darray.data, ref=ref, coding=coding).to_json()
+            return Format(nda, ref=ref).to_json()
+        if form == "relative":
+            darray = Dcomplete(nda)
+            coding = Format(darray.keys, ref=ref).coding
+        elif form == "implicit":
+            coding = ref.coding
+            data = nda[np.unique(ref.keys, return_index=True)[1]]
+            darray = Dcomplete(data, coding=coding)
+        else:
+            darray = Format(nda)
+            coding = darray.coding
         match ntv_type:
             case "narray":
                 data = [Ndarray(nd).to_json(header=False) for nd in darray.data]

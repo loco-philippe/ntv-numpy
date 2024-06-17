@@ -25,7 +25,7 @@ class Darray(ABC):
 
     *Attributes :*
     - **data** :  np.ndarray - data after coding (unidimensional)
-    - **ref**:  list - list of parent keys
+    - **ref**: Darray (default None) - parent darray
     - **coding**: list - parameters to cpnvert data to values
     - **keys**: np.ndarray of int - mapping between data and the values
 
