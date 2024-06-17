@@ -273,6 +273,8 @@ class Dsparse(Darray):
         - **dtype**: string (default None) - numpy.dtype to apply
         """
         option = {'coding': None, 'dtype': None} | kwargs
+        if len(data) < 2:
+            raise DarrayError("sparse format is not available with a single element")            
         super().__init__(data, **option)
         self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:

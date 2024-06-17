@@ -219,27 +219,28 @@ class TestNdarray(unittest.TestCase):
             # print(ex[0], ex[1])
             arr = Ndarray(ex[0], ntv_type=ex[1])
             for forma in ["full", "complete", "sparse"]:
-                js = arr.to_json(format=forma)
-                # print(js)
-                ex_rt = Ndarray.read_json(js)
-                self.assertTrue(ex_rt.shape == arr.shape == [2])
-                self.assertEqual(ex_rt, arr)
-                self.assertEqual(js, ex_rt.to_json(format=forma))
-                ex_rt = Ndarray.read_json(js, convert=False)
-                # print(js, ex_rt.to_json(format=format))
-                self.assertEqual(
-                    js[":ndarray"][1], ex_rt.to_json(format=forma)[
-                        ":ndarray"][1]
-                )
-                # print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
-            if len(ex[0]) == 2:
-                arr = Ndarray(ex[0], ntv_type=ex[1], shape=[2, 1])
-                for forma in ["full", "complete"]:
-                    # print(ex, format)
+                if len(arr) > 1 or forma != "sparse": 
                     js = arr.to_json(format=forma)
-                    # print(js)
+                    print(js, forma)
                     ex_rt = Ndarray.read_json(js)
+                    self.assertTrue(ex_rt.shape == arr.shape == [2])
                     self.assertEqual(ex_rt, arr)
+                    self.assertEqual(js, ex_rt.to_json(format=forma))
+                    ex_rt = Ndarray.read_json(js, convert=False)
+                    # print(js, ex_rt.to_json(format=format))
+                    self.assertEqual(
+                        js[":ndarray"][1], ex_rt.to_json(format=forma)[
+                            ":ndarray"][1]
+                    )
+                    # print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
+                if len(ex[0]) == 2:
+                    arr = Ndarray(ex[0], ntv_type=ex[1], shape=[2, 1])
+                    for forma in ["full", "complete"]:
+                        # print(ex, format)
+                        js = arr.to_json(format=forma)
+                        # print(js)
+                        ex_rt = Ndarray.read_json(js)
+                        self.assertEqual(ex_rt, arr)
 
     def test_ndarray_nested2(self):
         """test Ndarray"""
