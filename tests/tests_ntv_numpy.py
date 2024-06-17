@@ -219,9 +219,9 @@ class TestNdarray(unittest.TestCase):
             # print(ex[0], ex[1])
             arr = Ndarray(ex[0], ntv_type=ex[1])
             for forma in ["full", "complete", "sparse"]:
-                if len(arr) > 1 or forma != "sparse": 
+                if forma != "sparse" or (len(arr) > 1 and not np.all(arr.darray==np.full(len(arr), arr[0]))): 
                     js = arr.to_json(format=forma)
-                    print(js, forma)
+                    # print(js, forma)
                     ex_rt = Ndarray.read_json(js)
                     self.assertTrue(ex_rt.shape == arr.shape == [2])
                     self.assertEqual(ex_rt, arr)
@@ -233,9 +233,10 @@ class TestNdarray(unittest.TestCase):
                             ":ndarray"][1]
                     )
                     # print(np.array_equal(ex_rt, arr),  ex_rt, ex_rt.dtype)
-                if len(ex[0]) == 2:
-                    arr = Ndarray(ex[0], ntv_type=ex[1], shape=[2, 1])
-                    for forma in ["full", "complete"]:
+            if len(ex[0]) == 2:
+                arr = Ndarray(ex[0], ntv_type=ex[1], shape=[2, 1])
+                for forma in ["full", "complete", "sparse"]:
+                    if forma != "sparse" or not np.all(arr.darray==np.full(len(arr), arr[0])): 
                         # print(ex, format)
                         js = arr.to_json(format=forma)
                         # print(js)
@@ -274,7 +275,7 @@ class TestNdarray(unittest.TestCase):
         ]
         for ex in example:
             arr = Ndarray(ex[0], shape=[2], ntv_type=ex[1])
-            for forma in ["full", "complete"]:
+            for forma in ["full", "complete", "sparse"]:
                 js = arr.to_json(format=forma)
                 # print(js, ex, forma)
                 ex_rt = Ndarray.read_json(js)
@@ -301,7 +302,7 @@ class TestNdarray(unittest.TestCase):
         ]
         for ex in example:
             arr = Ndarray(ex[1], ntv_type=ex[0])
-            for forma in ["full", "complete"]:
+            for forma in ["full", "complete", "sparse"]:
                 js = arr.to_json(format=forma)
                 # print(js)
                 ex_rt = Ndarray.read_json(js)

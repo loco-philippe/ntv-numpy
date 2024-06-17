@@ -44,7 +44,7 @@ class Darray(ABC):
         *Parameters*
 
         - **data**: list, Darray or np.ndarray - unidimensional data to represent (after coding)
-        - **ref** : String or integer (default None) - name or index of another Darray
+        - **ref**: Darray (default None) - parent darray
         - **coding**: List of integer (default None) - mapping between data and the list of values
         - **dtype**: string (default None) - numpy.dtype to apply
         """
@@ -59,7 +59,6 @@ class Darray(ABC):
         data = data if isinstance(data, (list, np.ndarray)) else [data]
         dtype = data.dtype if isinstance(data, np.ndarray) else option['dtype']
         dtype = dtype if dtype else 'object'
-        #data = data.tolist() if isinstance(data, np.ndarray) else data
         self.data = np.fromiter(data, dtype='object').astype(dtype)
         self.ref = option['ref']
         self.coding = None
@@ -297,17 +296,7 @@ class Dsparse(Darray):
                     if cat != idx_fill]
         sp_values = self.data[sp_index]
         sp_index += [-1]
-        #sp_values = np.concatenate((sp_values, [codec[idx_fill]]), axis=0)
-        #sp_values = np.concatenate((sp_values, np.fromiter([codec[idx_fill]], dtype='object')), axis=0)
-        #sp_values = np.concatenate((sp_values, Darray([codec[idx_fill]]).data), axis=0)
-        #sp_values = np.append(sp_values, Darray([codec[idx_fill]]).data, axis=0)
-        #sp_values = np.append(sp_values, np.fromiter([codec[idx_fill]], dtype='object'), axis=0)
         sp_values = np.append(sp_values, np.fromiter([codec[idx_fill]], dtype=sp_values.dtype), axis=0)
-        #sp_values = np.append(sp_values, [codec[idx_fill]], axis=0)
-        '''sp_index = [row for row, cat in zip(range(len(cat)), cat)
-                    if cat != idx_fill] + [idx_fill]
-        sp_values = self.data[sp_index]
-        sp_index[-1] = -1'''
         self.coding = [leng, sp_index]
         self.data = sp_values
         self.keys = cat
@@ -345,7 +334,7 @@ class Drelative(Darray):
         - **data**: list, Darray or np.ndarray - data to represent (codec)
         - **coding**: List (default None) - relative data coding (relative keys)
         - **dtype**: string (default None) - numpy.dtype to apply
-        - **ref**: List (default None) - parent darray
+        - **ref**: Darray (default None) - parent darray
         """
         option = {'coding': None, 'dtype': None, 'ref': None} | kwargs
         super().__init__(data, **option)
@@ -384,7 +373,7 @@ class Dimplicit(Darray):
 
         - **data**: list, Darray or np.ndarray - data to represent (codec)
         - **dtype**: string (default None) - numpy.dtype to apply
-        - **ref**: List (default None) - parent keys
+        - **ref**: Darray (default None) - parent keys
         """
         option = {'dtype': None, 'ref': None} | kwargs
         keys = option['ref'].keys if option['ref'] is not None else None

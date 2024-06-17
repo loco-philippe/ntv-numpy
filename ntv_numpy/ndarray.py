@@ -278,6 +278,7 @@ class Ndarray:
         - **encoded** : Boolean (default False) - json-value if False else json-text
         - **header** : Boolean (default True) - including ndarray type
         - **modelist** : Boolean (default True) - return a list if True else a dict
+        - **ref**: Ndarray (default None) - parent Ndarray
         """
         option = {
             "format": "full",
@@ -287,6 +288,7 @@ class Ndarray:
             "noshape": True,
             "novalue": False,
             "modelist": True,
+            "ref": None
         } | kwargs
         if self.mode in ["undefined", "inconsistent"]:
             return None
@@ -298,13 +300,13 @@ class Ndarray:
             if not self.shape or (len(self.shape) < 2 and option["noshape"])
             else self.shape
         )
-
+        ref = option["ref"].darray if option['ref'] else None
         if self.mode == "relative":
             js_darray = self.uri
         else:
             js_darray = (
-                Nutil.ntv_val(
-                    self.ntv_type, self.darray, option["format"], self.is_json
+                Nutil.ntv_val(self.ntv_type, self.darray, option["format"], 
+                              is_json=self.is_json, ref=ref
                 )
                 if not option["novalue"]
                 else ["-"]
@@ -487,23 +489,23 @@ class Nutil:
         # float.fromhex(x.hex()) == x, bytes(bytearray.fromhex(x.hex())) == x
 
     @staticmethod
-    def ntv_val(ntv_type, nda, form, is_json=False):
+    def ntv_val(ntv_type, nda, form, is_json=False, ref=None):
         """convert a np.ndarray into NTV json-value.
 
         *Parameters*
 
         - **ntv_type** : string - NTVtype deduced from the ndarray, name_type and dtype,
         - **nda** : ndarray to be converted.
-        - **form** : format of data ('full', 'complete', 'sparse', 'primary').
+        - **form** : format of data ('full', 'complete', 'sparse', 'relative', 'implicit').
         - **is_json** : boolean (defaut False) - True if nda data is Json data
+        - **ref** : Darray (default None) - parent darray
+
         """
-        if form == "complete" and len(nda) < 2:
-            raise NdarrayError(
-                "complete format is not available with ndarray length < 2"
-            )
+        if form in ["complete", "sparse"] and len(nda) < 2:
+            raise NdarrayError( form + " format is not available with length < 2")
         Format = Nutil.FORMAT_CLS[form]
         darray = Format(nda)
-        ref = darray.ref
+        #ref = darray.ref
         coding = darray.coding
         if is_json:
             return Format(darray.data, ref=ref, coding=coding).to_json()
