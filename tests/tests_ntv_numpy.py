@@ -437,6 +437,19 @@ class TestXndarray(unittest.TestCase):
             # print(ex, ex2)
             self.assertEqual(Xndarray.read_json(ex2).to_json(header=False), ex)
 
+    def test_relative_implicit(self):
+        """test relative format"""
+        parent = Dcomplete([10, 20, 30, 30, 40, 50])
+        example = [
+            {"ranking:int": [["var1"], [2, 3], [1, 2, 1, 1, 2, 6]]}
+        ]
+        for ex in example:
+            jsn = Xndarray.read_json(ex).to_json(format='sparse')
+            xnda = Xndarray.read_json(jsn)
+            xndb = Xndarray.read_json(xnda.to_json(ref=parent, format='relative'), ref=parent)            
+            self.assertEqual(xnda, xndb)      
+            xndc = Xndarray.read_json(xnda.to_json(ref=parent, format='implicit'), ref=parent)            
+            self.assertEqual(xnda, xndc)      
 
 class TestXdataset(unittest.TestCase):
     """test Xdataset class"""

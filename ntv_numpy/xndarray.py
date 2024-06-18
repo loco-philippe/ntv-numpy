@@ -193,8 +193,9 @@ class Xndarray:
 
         - **convert** : boolean (default True) - If True, convert json data with
         non Numpy ntv_type into data with python type
+        - **ref**: Darray (default None) - parent Darray
         """
-        option = {"convert": True} | kwargs
+        option = {"convert": True, "ref": None} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
         xnda_lst, full_name, ntv_type = Ntv.decode_json(jso)[:3]
         if ntv_type == "xndarray":
@@ -219,7 +220,7 @@ class Xndarray:
         if isinstance(da_jsn, str):
             nda = Ndarray(da_jsn, shape=shape, ntv_type=ntv_type)
         elif da_jsn:
-            darray = Darray.read_json(da_jsn, dtype=Nutil.dtype(ntv_type))
+            darray = Darray.read_json(da_jsn, dtype=Nutil.dtype(ntv_type), ref=option["ref"])
             darray.data = Nutil.convert(
                 ntv_type, darray.data, tojson=False, convert=option["convert"]
             )
