@@ -521,9 +521,9 @@ class Nutil:
             darray = Dcomplete(nda)
             coding = Format(darray.keys, ref=ref).coding
         elif form == "implicit":
-            coding = ref.coding
             data = nda[np.unique(ref.keys, return_index=True)[1]]
-            darray = Dcomplete(data, coding=coding)
+            darray = Dcomplete(data, coding=ref.coding)
+            coding = None
         else:
             darray = Format(nda)
             coding = darray.coding

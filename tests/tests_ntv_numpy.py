@@ -95,6 +95,21 @@ class TestDarray(unittest.TestCase):
             dr3 = Dimplicit(dr2.codec, ref=parent)
             self.assertEqual(Darray.read_json(dr3.to_json(), ref=parent), dr3)
             self.assertTrue(list(dr3.values) == list(dr2.values) == list(dr.values) == ex)
+
+    def test_cast(self):
+        parent = Dcomplete([10, 20, 20, 30, 30, 40], dtype='int32')
+        example = [
+            np.array([100, 200, 200, 100, 100, 200])
+        ]    
+        for ex in example:
+            dr = Drelative(ex, ref=parent)
+            di = Dimplicit(ex, ref=parent)
+            dc = Dcomplete(ex)
+            self.assertTrue(np.array_equal(dr.values, di.values, equal_nan=False) and
+                            np.array_equal(dc.values, di.values, equal_nan=False))
+            self.assertEqual(di, Dimplicit(Dcomplete(Drelative(dc, ref=parent)), ref=parent))
+            self.assertEqual(dr, Drelative(Dcomplete(Dimplicit(dr, ref=parent)), ref=parent))
+            
             
     def test_darray_simple(self):
         """test Darray"""
@@ -342,14 +357,7 @@ class TestNdarray(unittest.TestCase):
             jsn_imp = Ndarray(ex).to_json(ref=parent, format='implicit')
             self.assertEqual(jsn_imp, {':ndarray': ['int32', [100, 200, 100, 200]]})
             self.assertEqual(Ndarray.read_json(jsn_imp, ref=parent).to_json(), jsn_ful)
-            """dr = Drelative(ex, ref=parent)
-            self.assertEqual(Darray.read_json(dr.to_json(), ref=parent), dr)
-            dr2 = Dimplicit(ex, ref=parent)
-            self.assertEqual(Darray.read_json(dr2.to_json(), ref=parent), dr2)            
-            dr3 = Dimplicit(dr2.codec, ref=parent)
-            self.assertEqual(Darray.read_json(dr3.to_json(), ref=parent), dr3)
-            self.assertTrue(list(dr3.values) == list(dr2.values) == list(dr.values) == ex)
-            """
+
 
 class TestXndarray(unittest.TestCase):
     """test Xndarray class"""

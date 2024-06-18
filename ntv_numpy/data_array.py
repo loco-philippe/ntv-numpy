@@ -48,7 +48,7 @@ class Darray(ABC):
         - **coding**: List of integer (default None) - mapping between data and the list of values
         - **dtype**: string (default None) - numpy.dtype to apply
         """
-        option = {'ref': None, 'dtype': None} | kwargs
+        option = {'ref': None, 'dtype': None, 'coding': None} | kwargs
         if isinstance(data, Darray):
             self.data = data.data
             self.ref = data.ref
@@ -61,7 +61,7 @@ class Darray(ABC):
         dtype = dtype if dtype else 'object'
         self.data = np.fromiter(data, dtype='object').astype(dtype)
         self.ref = option['ref']
-        self.coding = None
+        self.coding = list(option['coding']) if option['coding'] is not None else None
         self.keys = None
         self.codec = self.data
         return
@@ -76,7 +76,8 @@ class Darray(ABC):
 
     def __eq__(self, other):
         """equal if values are equal"""
-        return np.array_equal(self.values, other.values, equal_nan=False)
+        return (np.array_equal(self.values, other.values, equal_nan=False) and 
+                self.__class__.__name__ == other.__class__.__name__)
 
     def __len__(self):
         """len of values"""
@@ -102,6 +103,13 @@ class Darray(ABC):
         """return a copy of a Darray with a new data"""
         return self.__class__(data, coding=self.coding, ref=self.ref)
 
+    def to_relative(self, parent):
+        """convert a Dfull or Dcomplete or Dsparse into Drelative"""
+        return Drelative(self.values, ref=parent)
+
+    def to_complete(self):
+        """convert a Drelative into Dfull"""
+        return Dcomplete(self.codec, coding=self.keys)
     
     @staticmethod
     def decode_json(jsn):
@@ -193,13 +201,16 @@ class Dfull(Darray):
     """
 
     def __init__(self, data, **kwargs):
-        """Dfull constructor.
+        """Dfull constructor (values).
 
         *Parameters*
 
         - **data**: list, Darray or np.ndarray - data to represent (after coding)
         - **dtype**: string (default None) - numpy.dtype to apply
         """
+        if isinstance(data, Darray) and not isinstance(data, Dfull):
+            kwargs['dtype'] = data.data.dtype
+            data = data.values
         option = {'dtype': None} | kwargs
         super().__init__(data, **option)
         self.keys = np.arange(len(self.data))
@@ -222,17 +233,20 @@ class Dcomplete(Darray):
     """
 
     def __init__(self, data, **kwargs):
-        """Dcomplete constructor.
+        """Dcomplete constructor (values or codec + keys).
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (values or codec+coding)
-        - **coding**: List of integer (default None) - mapping between data and the list of values
+        - **data**: list, Darray or np.ndarray - data to represent (values or codec)
+        - **coding**: List of integer (default None) - mapping between data and the list of values (keys)
         - **dtype**: string (default None) - numpy.dtype to apply
         """
+        if isinstance(data, Darray) and not isinstance(data, Dcomplete):
+            kwargs['dtype'] = data.data.dtype
+            kwargs['coding'] = None
+            data = data.values
         option = {'coding': None, 'dtype': None} | kwargs
         super().__init__(data, **option)
-        self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:
             self.keys = np.array(self.coding)
             return
@@ -264,19 +278,22 @@ class Dsparse(Darray):
     """
 
     def __init__(self, data, **kwargs):
-        """Dsparse constructor.
+        """Dsparse constructor (values) or (sp_values + sp_index).
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (values or data+coding)
+        - **data**: list, Darray or np.ndarray - data to represent (values or sp_values)
         - **coding**: List (default None) - sparse data coding (leng + sp_index)
         - **dtype**: string (default None) - numpy.dtype to apply
         """
+        if isinstance(data, Darray) and not isinstance(data, Dsparse):
+            kwargs['dtype'] = data.data.dtype
+            kwargs['coding'] = None
+            data = data.values
         option = {'coding': None, 'dtype': None} | kwargs
         if len(data) < 2:
             raise DarrayError("sparse format is not available with a single element")            
         super().__init__(data, **option)
-        self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:
             self.keys = Dsparse._decoding(self.coding, np.arange(len(self.coding[1])))
             return
@@ -328,33 +345,61 @@ class Drelative(Darray):
     """
 
     def __init__(self, data, **kwargs):
-        """Drelative constructor.
+        """Drelative constructor (codec + coding) or (values + ref).
 
         *Parameters*
 
-        - **data**: list, Darray or np.ndarray - data to represent (codec)
+        - **data**: list, Darray or np.ndarray - data to represent (codec or values)
         - **coding**: List (default None) - relative data coding (relative keys)
         - **dtype**: string (default None) - numpy.dtype to apply
         - **ref**: Darray (default None) - parent darray
         """
+        if isinstance(data, Darray) and not isinstance(data, Drelative):
+            kwargs['dtype'] = data.data.dtype
+            kwargs['coding'] = None
+            data = data.values
         option = {'coding': None, 'dtype': None, 'ref': None} | kwargs
         super().__init__(data, **option)
         parent_keys = option['ref'].keys if option['ref'] is not None else None
-        self.coding = self.coding if self.coding is not None else option['coding']
         if self.coding is not None:
-            self.keys = np.array(self.coding)[parent_keys]
+            self.keys = Drelative.keys_from_derkeys(parent_keys, np.array(self.coding))
             return
         self_dcomp = Dcomplete(self.data)
-        derkeys = np.full([max(parent_keys)+1], -1)
-        derkeys[parent_keys] = self_dcomp.keys
-        if min(derkeys) < 0:
-            raise DarrayError("parent is not a derive Field")
+        derkeys = Drelative.der_keys(self_dcomp.keys, parent_keys)
         self.data = self_dcomp.data
         self.coding = derkeys.tolist()
         self.keys = self_dcomp.keys
         self.codec = self.data
         return
+        
+    @staticmethod
+    def der_keys(keys, parent_keys):
+        '''return keys derived from parent keys
 
+        *Parameters*
+
+        - **keys** : np.ndarray - keys
+        - **parent_keys** : np.ndarray - parent keys
+
+        *Returns* : np.ndarray of derived keys'''
+        der_keys = np.full([max(parent_keys)+1], -1)
+        der_keys[parent_keys] = keys
+        if min(der_keys) < 0:
+            raise DarrayError("parent is not a derive Field")
+        return der_keys
+
+    @staticmethod
+    def keys_from_derkeys(parent_keys, der_keys):
+        '''return keys from parent keys and derived keys
+
+        *Parameters*
+
+        - **parent_keys** : np.ndarray - keys from parent
+        - **der_keys** : np.ndarray - derived keys
+
+        *Returns* : np.ndarray of keys'''
+        return der_keys[parent_keys]
+    
 
 class Dimplicit(Darray):
     """Representation of a one dimensional Array with implicit representation
@@ -368,7 +413,7 @@ class Dimplicit(Darray):
     """
 
     def __init__(self, data, **kwargs):
-        """Drelative constructor.
+        """Dimplicit constructor (codec or values).
 
         *Parameters*
 
@@ -376,6 +421,9 @@ class Dimplicit(Darray):
         - **dtype**: string (default None) - numpy.dtype to apply
         - **ref**: Darray (default None) - parent keys
         """
+        if isinstance(data, Darray) and not isinstance(data, Dimplicit):
+            kwargs['dtype'] = data.data.dtype
+            data = data.values
         option = {'dtype': None, 'ref': None} | kwargs
         keys = option['ref'].keys if option['ref'] is not None else None
         if len(data) == len(keys): 
