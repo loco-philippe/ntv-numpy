@@ -220,31 +220,13 @@ class XdatasetInterface(ABC):
         forma = {name: 'full' for name in self.names} | kwargs.get("format", {})
         def_notype = True if kwargs.get("notype") == 'all' else False
         notype = {name: def_notype for name in self.names} | {name: True for name in kwargs.get("notype", [])}
-        '''notype = (
-            kwargs["notype"]
-            if (
-                "notype" in kwargs
-                and isinstance(kwargs["notype"], list)
-                and len(kwargs["notype"]) == len(self)
-            )
-            else [False] * len(self)
-        )'''
-        '''forma = (
-            kwargs["format"]
-            if (
-                "format" in kwargs
-                and isinstance(kwargs["format"], dict)
-                #and len(kwargs["format"]) == len(self)
-            )
-            else ["full"] * len(self)
-        )'''
         noshape = kwargs.get("noshape", True)
         dic_xnd = {}
         for xna in self.xnd:
             form = forma[xna.name]
             ref = None
             if xna.links and len(xna.links) == 1 and forma[self[xna.links[0]].name] == 'complete':
-                form = 'derived'
+                form = 'relative'
                 p_name = xna.links[0]
                 js_name = p_name if notype[p_name] else self[p_name].json_name
                 ref = dic_xnd[js_name][-1][-1]
