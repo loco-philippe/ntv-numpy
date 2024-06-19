@@ -25,7 +25,7 @@ class Darray(ABC):
 
     *Attributes :*
     - **data** :  np.ndarray - data after coding (unidimensional)
-    - **ref**: Darray (default None) - parent darray
+    - **ref**: np.ndarray (default None) - parent keys
     - **coding**: list - parameters to cpnvert data to values
     - **keys**: np.ndarray of int - mapping between data and the values
 
@@ -60,7 +60,16 @@ class Darray(ABC):
         dtype = data.dtype if isinstance(data, np.ndarray) else option['dtype']
         dtype = dtype if dtype else 'object'
         self.data = np.fromiter(data, dtype='object').astype(dtype)
-        self.ref = option['ref']
+        refer = option['ref']
+        match refer:
+            case np.ndarray() | list():
+                ref = np.array(refer)
+            case Dcomplete() | Dfull() | Drelative() | Dimplicit() | Dsparse(): 
+                ref = option['ref'].keys
+            case _:
+                ref = None
+        self.ref = ref
+        #print(self.ref)
         self.coding = list(option['coding']) if option['coding'] is not None else None
         self.keys = None
         self.codec = self.data
@@ -345,7 +354,7 @@ class Drelative(Darray):
     """
 
     def __init__(self, data, **kwargs):
-        """Drelative constructor (codec + coding) or (values + ref).
+        """Drelative constructor (codec + rel_keys + ref) or (values + ref).
 
         *Parameters*
 
@@ -354,13 +363,16 @@ class Drelative(Darray):
         - **dtype**: string (default None) - numpy.dtype to apply
         - **ref**: Darray (default None) - parent darray
         """
+        #kwargs['coding'] = None if kwargs['ref'] is not None else kwargs['coding']
         if isinstance(data, Darray) and not isinstance(data, Drelative):
             kwargs['dtype'] = data.data.dtype
             kwargs['coding'] = None
             data = data.values
         option = {'coding': None, 'dtype': None, 'ref': None} | kwargs
         super().__init__(data, **option)
-        parent_keys = option['ref'].keys if option['ref'] is not None else None
+        #parent_keys = option['ref'].keys if option['ref'] is not None else None
+        parent_keys = self.ref
+        #print(parent_keys, type(parent_keys))
         if self.coding is not None:
             self.keys = Drelative.keys_from_derkeys(parent_keys, np.array(self.coding))
             return
@@ -425,7 +437,11 @@ class Dimplicit(Darray):
             kwargs['dtype'] = data.data.dtype
             data = data.values
         option = {'dtype': None, 'ref': None} | kwargs
-        keys = option['ref'].keys if option['ref'] is not None else None
+        #keys = option['ref'].keys if option['ref'] is not None else None
+        #keys = np.array(option['ref']) if option['ref'] is not None else None
+        keys = option['ref']
+        if option['ref'] is not None:
+            keys = keys.keys if isinstance(keys, Darray) else np.array(keys)
         if len(data) == len(keys): 
             codec = np.array(data)[np.unique(keys, return_index=True)[1]]
         else:

@@ -215,9 +215,12 @@ class XdatasetInterface(ABC):
         - **novalue** : Boolean (default False) - including value if False
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **format** : list of string (default list of 'full') - representation
-        format of the ndarray,
+        format of the ndarray ('full', 'complete', 'sparse'),
         """
-        notype = (
+        forma = {name: 'full' for name in self.names} | kwargs.get("format", {})
+        def_notype = True if kwargs.get("notype") == 'all' else False
+        notype = {name: def_notype for name in self.names} | {name: True for name in kwargs.get("notype", [])}
+        '''notype = (
             kwargs["notype"]
             if (
                 "notype" in kwargs
@@ -225,25 +228,33 @@ class XdatasetInterface(ABC):
                 and len(kwargs["notype"]) == len(self)
             )
             else [False] * len(self)
-        )
-        forma = (
+        )'''
+        '''forma = (
             kwargs["format"]
             if (
                 "format" in kwargs
-                and isinstance(kwargs["format"], list)
-                and len(kwargs["format"]) == len(self)
+                and isinstance(kwargs["format"], dict)
+                #and len(kwargs["format"]) == len(self)
             )
             else ["full"] * len(self)
-        )
+        )'''
         noshape = kwargs.get("noshape", True)
         dic_xnd = {}
-        for xna, notyp, forma in zip(self.xnd, notype, forma):
+        for xna in self.xnd:
+            form = forma[xna.name]
+            ref = None
+            if xna.links and len(xna.links) == 1 and forma[self[xna.links[0]].name] == 'complete':
+                form = 'derived'
+                p_name = xna.links[0]
+                js_name = p_name if notype[p_name] else self[p_name].json_name
+                ref = dic_xnd[js_name][-1][-1]
             dic_xnd |= xna.to_json(
-                notype=notyp,
+                notype=notype[xna.name],
                 novalue=kwargs.get("novalue", False),
                 noshape=noshape,
-                format=forma,
+                format=form,
                 header=False,
+                ref=ref
             )
         return Nutil.json_ntv(
             None if kwargs.get("noname", False) else self.name,

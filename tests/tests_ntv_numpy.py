@@ -471,8 +471,10 @@ class TestXdataset(unittest.TestCase):
                 "info": {"example": "everything"},
             }
         }
-        notype = [True, False, True, True, True,
-                  True, True, True, True, True, True]
+        #notype = [True, False, True, True, True,
+        #          True, True, True, True, True, True]
+        notype = ['var1', 'ranking', 'x', 'y', 'z', 'x.mask1', 'x.variance',
+         'z.variance', 'unit', 'info']
         xds = Xdataset.read_json(example)
         self.assertEqual(
             xds.to_json(notype=notype, noshape=True, header=False), example
