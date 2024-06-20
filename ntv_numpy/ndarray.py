@@ -144,7 +144,7 @@ class Ndarray:
 
     def set_shape(self, shape):
         """update the shape"""
-        if Ndarray.len_shape(shape) != len(self.darray):
+        if Nutil.len_shape(shape) != len(self.darray):
             raise NdarrayError("shape is not consistent with the ndarray length")
         self.shape = list(shape)
 
@@ -169,7 +169,7 @@ class Ndarray:
         ):
             return False
         if nda_uri:
-            len_s = self.len_shape(self.shape)
+            len_s = Nutil.len_shape(self.shape)
             if len_s and len(nda) and len_s != len(nda):
                 return False
             self.ntvtype = nda.ntvtype if self.ntv_type is None else self.ntvtype
@@ -193,7 +193,7 @@ class Ndarray:
         new_shape = shape if self.shape is None else self.shape
         new_ntv_type = ntv_type if self.ntv_type is None else self.ntv_type
         if (
-            len(darray) != Ndarray.len_shape(new_shape)
+            len(darray) != Nutil.len_shape(new_shape)
             or new_ntv_type != ntv_type
             or new_shape != shape
         ):
@@ -356,16 +356,6 @@ class Ndarray:
         inf["uri"] = self.uri
         return {key: val for key, val in inf.items() if val}
 
-    @staticmethod
-    def len_shape(shape):
-        """return a length from a shape (product of dimensions)"""
-        if not shape:
-            return 0
-        prod = 1
-        for dim in shape:
-            prod *= dim
-        return prod
-
 
 class Nutil:
     """ntv-ndarray utilities.
@@ -509,6 +499,16 @@ class Nutil:
                     return nda.astype(dtype)
 
         # float.fromhex(x.hex()) == x, bytes(bytearray.fromhex(x.hex())) == x
+
+    @staticmethod
+    def len_shape(shape):
+        """return a length from a shape (product of dimensions)"""
+        if not shape:
+            return 0
+        prod = 1
+        for dim in shape:
+            prod *= dim
+        return prod
 
     @staticmethod
     def ntv_val(ntv_type, nda, form, is_json=False, ref=None):

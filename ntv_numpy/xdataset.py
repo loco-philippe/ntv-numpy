@@ -216,7 +216,6 @@ class XdatasetInterface(ABC):
         return dic_xnda
 
     @staticmethod
-    #def read_json2(jsn, **kwargs):
     def read_json(jsn, **kwargs):
         """convert json data into a Xdataset.
 
@@ -236,33 +235,22 @@ class XdatasetInterface(ABC):
 
     @staticmethod 
     def decode_darray(name, dic_xnd):
-        """convert Darray list into Darray object"""
-        if isinstance(dic_xnd[name], dict) and not isinstance(dic_xnd[name]['darray'], Darray):
+        """replace Darray list with Darray object in dic_xnd for name"""
+        if (isinstance(dic_xnd[name], dict) and 
+                dic_xnd[name]['darray'] is not None and 
+                not isinstance(dic_xnd[name]['darray'], (str, Darray))):
             data = dic_xnd[name]
             link = data['links']
             dtype=Nutil.dtype(dic_xnd[name]['ntv_type'])
             ref = None
+            darray = dic_xnd[name]['darray']
             if link and len(link) == 1:
                 XdatasetInterface.decode_darray(link[0], dic_xnd)
                 ref = dic_xnd[link[0]]['darray']
-            dic_xnd[name]['darray'] = Darray.read_json(
-                dic_xnd[name]['darray'], dtype=dtype, ref=ref)
-
-    '''@staticmethod
-    def read_json(jsn, **kwargs):
-        """convert json data into a Xdataset.
-
-        *Parameters*
-
-        - **convert** : boolean (default True) - If True, convert json data with
-        non Numpy ntv_type into Xndarray with python type
-        """
-        option = {"convert": True} | kwargs
-        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
-        value, name = Ntv.decode_json(jso)[:2]
-
-        xnd = [Xndarray.read_json({key: val}, **option) for key, val in value.items()]
-        return Xdataset(xnd, name)'''
+            if not isinstance(darray, str):
+                if len(darray) == Nutil.len_shape(data['shape']):
+                    ref = None
+                dic_xnd[name]['darray'] = Darray.read_json(darray, dtype=dtype, ref=ref)
 
     def to_json(self, **kwargs):
         """convert a Xdataset into json-value.

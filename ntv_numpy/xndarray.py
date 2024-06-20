@@ -196,20 +196,12 @@ class Xndarray:
         non Numpy ntv_type into data with python type
         - **ref_xnda**: Xndarray (default None) - parent Xndarray
         """
-        '''option = {"convert": True, "ref_xnda": None} | kwargs
-        if option['ref_xnda']:
-            print(xnda['full_name'] + option['ref_xnda'])
-        else: 
-            print(xnda['full_name'])
-        return xnda['full_name'] + ' ok '
-        '''
         option = {"convert": True, "ref_xnda": None} | kwargs
         nda = None
         if isinstance(xnda['darray'], str):
             nda = Ndarray(xnda['darray'], shape=xnda['shape'], ntv_type=xnda['ntv_type'])
         elif xnda['darray'] is not None:
             darray = xnda['darray']
-            #darray = Darray.read_json(xnda['darray'], dtype=Nutil.dtype(xnda['ntv_type']), ref=option["ref_xnda"])
             darray.data = Nutil.convert(
                 xnda['ntv_type'], darray.data, tojson=False, convert=option["convert"]
             )
