@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 import json
 import pprint
 from json_ntv import Ntv
+from ntv_numpy.data_array import Darray
 from ntv_numpy.ndarray import Nutil
 from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyNDDataConnec
@@ -187,6 +188,90 @@ class XdatasetInterface(ABC):
     name: str = NotImplemented
     xnd: list = NotImplemented
 
+    @staticmethod 
+    def decode_json(jsn):
+        """convert json dict data in a dict of Xndarray dict data"""
+        dic_xnda = {}
+        for name, data in jsn.items():
+            xnda_lst, full_name, ntv_type = Ntv.decode_json({name: data})[:3] 
+            shape = meta = links = da_jsn = None
+            match xnda_lst:
+                case str(meta) | dict(meta):
+                    ...
+                case list(data) if len(data) > 0:
+                    for val in data[:-1]:
+                        if isinstance(val, dict):
+                            meta = val
+                        elif isinstance(val, list) and len(val) > 0:
+                            if isinstance(val[0], int):
+                                shape = val
+                            elif isinstance(val[0], str):
+                                links = val
+                    da_jsn = data[-1]
+                case _:
+                    raise XdatasetError("Unable to decode json data")
+            dic_xnda[full_name] = {
+                'full_name': full_name, 'darray': da_jsn, 'ntv_type': ntv_type, 
+                'shape': shape, 'meta': meta, 'links': links}
+        return dic_xnda
+
+    @staticmethod
+    def read_json2(jsn, **kwargs):
+        """convert json data into a Xdataset.
+
+        *Parameters*
+
+        - **convert** : boolean (default True) - If True, convert json data with
+        non Numpy ntv_type into Xndarray with python type
+        """
+        option = {"convert": True} | kwargs
+        jso = json.loads(jsn) if isinstance(jsn, str) else jsn
+        value, name = Ntv.decode_json(jso)[:2]
+        dic_xnd = XdatasetInterface.decode_json(value)
+        for name in dic_xnd:
+            XdatasetInterface.decode_darray(name, dic_xnd)
+        #print(list(dic_xnd.values()))
+        return dic_xnd
+            
+        xnd = [Xndarray.read_json({key: val}, **option) for key, val in value.items()]
+        return Xdataset(xnd, name)
+
+    @staticmethod 
+    def decode_darray(name, dic_xnd):
+        if isinstance(dic_xnd[name], dict) and not isinstance(dic_xnd[name]['darray'], Darray):
+            print(name)
+            data = dic_xnd[name]
+            link = data['links']
+            if link and len(link) == 1:
+                XdatasetInterface.decode_dict(link[0], dic_xnd)
+                dic_xnd[name]['darray'] = Darray.read_json(
+                    dic_xnd[name]['darray'], dtype=None, ref=dic_xnd[link[0]]['darray'])
+                #dic_xnd[name] = Xndarray.read_dict(data, ref_xnda=dic_xnd[link[0]])
+                print(dic_xnd[name])
+            else:
+                dic_xnd[name]['darray'] = Darray.read_json(
+                    dic_xnd[name]['darray'], dtype=None)
+                print(dic_xnd[name])
+                #dic_xnd[name] = Xndarray.read_dict(data)
+                
+    @staticmethod 
+    def decode_dict(name, dic_xnd):
+        if isinstance(dic_xnd[name], dict) and '_data_' in dic_xnd[name]:
+            print(name)
+            data = dic_xnd[name]['_data_']
+            link = data['links']
+            if link and len(link) == 1:
+                XdatasetInterface.decode_dict(link[0], dic_xnd)
+                dic_xnd[name]['_data_']['darray'] = Darray.read_json(
+                    dic_xnd[name]['_data_']['darray'], dtype=None, ref=dic_xnd[link[0]]['_data_']['darray'])
+                #dic_xnd[name] = Xndarray.read_dict(data, ref_xnda=dic_xnd[link[0]])
+                print(dic_xnd[name])
+            else:
+                dic_xnd[name]['_data_']['darray'] = Darray.read_json(
+                    dic_xnd[name]['_data_']['darray'], dtype=None)
+                print(dic_xnd[name])
+                #dic_xnd[name] = Xndarray.read_dict(data)
+        
     @staticmethod
     def read_json(jsn, **kwargs):
         """convert json data into a Xdataset.
@@ -610,3 +695,6 @@ class Xdataset(XdatasetCategory, XdatasetInterface):
         if data.dtype.name[:8] == "datetime":
             data = data.astype("datetime64[ns]")
         return data
+
+class XdatasetError(Exception):
+    """Xdataset exception"""

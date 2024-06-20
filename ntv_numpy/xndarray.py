@@ -185,6 +185,35 @@ class Xndarray:
         add_ntv_type = ":" + self.ntv_type if self.ntv_type else ""
         return self.full_name + add_ntv_type
 
+    @staticmethod 
+    def read_dict(xnda, **kwargs):
+        """convert json dict data into a Xndarray.
+
+        *Parameters*
+
+        - **xnda** : dict - Xndarray data
+        - **convert** : boolean (default True) - If True, convert json data with
+        non Numpy ntv_type into data with python type
+        - **ref_xnda**: Xndarray (default None) - parent Xndarray
+        """
+        '''option = {"convert": True, "ref_xnda": None} | kwargs
+        if option['ref_xnda']:
+            print(xnda['full_name'] + option['ref_xnda'])
+        else: 
+            print(xnda['full_name'])
+        return xnda['full_name'] + ' ok '
+        '''
+        if isinstance(xnda['darray'], str):
+            nda = Ndarray(xnda['darray'], shape=xnda['shape'], ntv_type=xnda['ntv_type'])
+        elif xnda['darray']:
+            darray = Darray.read_json(xnda['darray'], dtype=Nutil.dtype(xnda['ntv_type']), ref=option["ref_xnda"])
+            darray.data = Nutil.convert(
+                ntv_type, darray.data, tojson=False, convert=option["convert"]
+            )
+            nda = Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
+
+        return Xndarray(full_name, links=links, meta=meta, nda=nda)
+        
     @staticmethod
     def read_json(jsn, **kwargs):
         """convert json data into a Xndarray.
