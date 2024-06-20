@@ -454,7 +454,7 @@ class TestXndarray(unittest.TestCase):
 class TestXdataset(unittest.TestCase):
     """test Xdataset class"""
 
-    def test_xdataset_new_full(self):
+    def test_xdataset_full(self):
         """test Xdataset"""
         example = {
             "test": {
@@ -503,7 +503,7 @@ class TestXdataset(unittest.TestCase):
             },
         )
 
-    def test_xdataset_new_info(self):
+    def test_xdataset_info(self):
         """test Xdataset"""
         xd = Xdataset([Xndarray("example", np.array(["x1", "x2"]))], "test")
         self.assertEqual(
@@ -614,7 +614,37 @@ class TestXdataset(unittest.TestCase):
             },
         )
 
-
+    def test_xdataset_json_relative(self):
+        """test json format"""
+        simple = {
+            "a": [1, 2, 3, 4, 5],
+            "b": [10, 20, 30, 40, 50],
+            "f": [10, 20, 30, 40, 40],
+            "c": [1, 1, 3, 4, 4],
+            "d": [1, 1, 1, 4, 4],
+            "e": [1, 1, 1, 1, 1],
+        }
+        df1 = pd.DataFrame(simple)
+        xds = Xdataset.from_dataframe(df1)
+        forma= {name:'complete' for name in xds.names}
+        jsn = xds.to_json(notype='all', format=forma, header=False)
+        self.assertEqual(jsn,
+                         {'a': [[[1, 2, 3, 4, 5], [0, 1, 2, 3, 4]]],
+                          'b': [['a'], [[10, 20, 30, 40, 50], [0, 1, 2, 3, 4]]],
+                          'f': [['a'], [[10, 20, 30, 40], [0, 1, 2, 3, 3]]],
+                          'c': [['f'], [[1, 3, 4], [0, 0, 1, 2]]],
+                          'd': [['c'], [[1, 4], [0, 0, 1]]],
+                          'e': [[1]]})
+        df2 = df1.copy(deep=True)
+        df1['g'] = 'paris'
+        df2['g'] = 'london'
+        df3 = pd.concat([df1, df2])
+        xds3 = Xdataset.from_dataframe(df3)
+        forma= {name:'complete' for name in xds3.names}
+        jsn3 = xds3.to_json(notype='all', header=False, format=forma)
+        self.assertEqual(jsn['d'], jsn3['d'])
+        self.assertEqual(jsn3['g'], [[['london', 'paris'], [0, 1]]])
+        
 class TestXdatasetXarrayScipp(unittest.TestCase):
     """test Scipp interface"""
 

@@ -293,8 +293,6 @@ class Ndarray:
         """
         option = {
             "format": "full",
-            "header": True,
-            "encoded": False,
             "notype": False,
             "noshape": True,
             "novalue": False,
@@ -311,7 +309,6 @@ class Ndarray:
             if not self.shape or (len(self.shape) < 2 and option["noshape"])
             else self.shape
         )
-        #ref = option["ref"].darray if option['ref'] else None
         if self.mode == "relative":
             js_darray = self.uri
         else:
@@ -322,19 +319,33 @@ class Ndarray:
                 else ["-"]
             )
         js_ntv_type = self.ntv_type if not option["notype"] else None
+        dic = {"ntv_type": js_ntv_type, "shape": js_shape, "darray": js_darray}
+        
+        if not option["modelist"]:
+            return dic        
+        return Ndarray.dic_to_list(dic, **option)
 
-        lis = [js_ntv_type, js_shape, js_darray]
+    @staticmethod 
+    def dic_to_list(dic, **kwargs):
+        """convert a dict Ndarray into a list Ndarray
 
-        if option["modelist"]:
-            return Nutil.json_ntv(
-                None,
-                "ndarray",
-                [val for val in lis if val is not None],
-                header=option["header"],
-                encoded=option["encoded"],
-            )
-        return {"ntv_type": js_ntv_type, "shape": js_shape, "darray": js_darray}
+        *Parameters*
 
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including ndarray type
+        """
+        option = {"header": True, "encoded": False} | kwargs
+        js_darray = dic["darray"]
+        jsd = js_darray.to_json() if isinstance(js_darray, Darray) else js_darray
+        lis = [dic["ntv_type"], dic["shape"], jsd]
+        return Nutil.json_ntv(
+            None,
+            "ndarray",
+            [val for val in lis if val is not None],
+            header=option["header"],
+            encoded=option["encoded"],
+        )
+        
     @property
     def info(self):
         """infos of the Ndarray"""
@@ -509,14 +520,14 @@ class Nutil:
         - **nda** : np.ndarray to be converted.
         - **form** : format of data ('full', 'complete', 'sparse', 'relative', 'implicit').
         - **is_json** : boolean (defaut False) - True if nda data is Json data
-        - **ref** : Darray (default None) - parent darray
+        - **ref** : Darray (default None) - parent darray keys
 
         """
         if form in ["complete", "sparse"] and len(nda) < 2:
-            raise NdarrayError( form + " format is not available with length < 2")       
+            form = 'full'      
         Format = Nutil.FORMAT_CLS[form]
         if is_json:
-            return Format(nda, ref=ref).to_json()
+            return Format(nda, ref=ref)
         if form == "relative":
             darray = Dcomplete(nda)
             coding = Format(darray.keys, ref=ref).coding
@@ -540,7 +551,7 @@ class Nutil:
                 data = nda
             case _:
                 data = Nutil.convert(ntv_type, darray.data)
-        return Format(data, ref=ref, coding=coding).to_json()
+        return Format(data, ref=ref, coding=coding)
 
     @staticmethod
     def add_ext(typ, ext):

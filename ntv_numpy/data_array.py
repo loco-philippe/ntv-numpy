@@ -363,6 +363,7 @@ class Drelative(Darray):
         - **dtype**: string (default None) - numpy.dtype to apply
         - **ref**: Darray (default None) - parent darray
         """
+        #print('Drel', data, kwargs)
         #kwargs['coding'] = None if kwargs['ref'] is not None else kwargs['coding']
         if isinstance(data, Darray) and not isinstance(data, Drelative):
             kwargs['dtype'] = data.data.dtype

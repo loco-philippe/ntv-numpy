@@ -228,20 +228,23 @@ class XdatasetInterface(ABC):
             if xna.links and len(xna.links) == 1 and forma[self[xna.links[0]].name] == 'complete':
                 form = 'relative'
                 p_name = xna.links[0]
-                js_name = p_name if notype[p_name] else self[p_name].json_name
-                ref = dic_xnd[js_name][-1][-1]
-            dic_xnd |= xna.to_json(
+                ref = dic_xnd[p_name]["darray"]
+            dic_xna = xna.to_json(
                 notype=notype[xna.name],
                 novalue=kwargs.get("novalue", False),
                 noshape=noshape,
                 format=form,
-                header=False,
-                ref=ref
+                ref=ref,
+                modelist=False
             )
+            dic_xnd |= {dic_xna["full_name"]: dic_xna}
+        jsn_xnd = {}
+        for dic_xna in dic_xnd.values():
+            jsn_xnd |= Xndarray.dic_to_list(dic_xna, header=False)       
         return Nutil.json_ntv(
             None if kwargs.get("noname", False) else self.name,
             "xdataset",
-            dic_xnd,
+            jsn_xnd,
             header=kwargs.get("header", True),
             encoded=kwargs.get("encoded", False),
         )

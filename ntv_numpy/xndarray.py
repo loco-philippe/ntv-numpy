@@ -254,30 +254,48 @@ class Xndarray:
         - **novalue** : Boolean (default False) - including value if False
         - **noshape** : Boolean (default True) - if True, without shape if dim < 1
         - **format** : string (default 'full') - representation format of the ndarray,
-        - **extension** : string (default None) - type extension
+        - **modelist** : Boolean (default True) - return a list if True else a dict
         - **ref**: Darray (default None) - parent darray
         """
         option = {
             "notype": False,
             "format": "full",
             "noshape": True,
-            "header": True,
-            "encoded": False,
             "novalue": False,
-            "noname": False,
-            "extension": None,
+            "modelist": True,
             "ref": None
         } | kwargs
         if option["format"] not in ["full", "complete", "relative", "implicit"]:
             option["noshape"] = False
         opt_nda = option | {"header": False, "modelist": False}
         nda_dic = self.nda.to_json(**opt_nda) if self.nda is not None else {}
-        lis = [self.links, self.meta, nda_dic.get("shape"), nda_dic.get("darray")]
+        dic = {"links": self.links, "meta": self.meta, "shape": nda_dic.get("shape"),
+               "darray": nda_dic.get("darray"), "ntv_type": nda_dic.get("ntv_type"),
+               "full_name": self.full_name}
+        if not option["modelist"]:
+            return dic
+        return Xndarray.dic_to_list(dic, **option)
+
+    @staticmethod 
+    def dic_to_list(dic, **kwargs):
+        """convert a dict Xndarray into a list Xndarray
+
+        *Parameters*
+
+        - **encoded** : Boolean (default False) - json-value if False else json-text
+        - **header** : Boolean (default True) - including ndarray type
+        - **noname** : Boolean (default False) - including data type and name if False
+        """
+        option = {"header": True, "encoded": False, "noname": False} | kwargs
+        
+        dar = dic["darray"]
+        js_array = dar.to_json() if isinstance(dar, Darray) else dar
+        lis = [dic["links"], dic["meta"], dic["shape"], js_array]
         lis = [val for val in lis if val is not None]
         xnda_jsn = Nutil.json_ntv(
-            None if option["noname"] else self.full_name,
-            nda_dic.get("ntv_type"),
-            lis[0] if lis == [self.meta] else lis,
+            None if option["noname"] else dic["full_name"],
+            dic["ntv_type"],
+            lis[0] if lis == [dic["meta"]] else lis,
             header=True,
             encoded=False,
         )
@@ -287,8 +305,8 @@ class Xndarray:
             xnda_jsn,
             header=option["header"],
             encoded=option["encoded"],
-        )
-
+        )        
+        
     def _to_json(self):
         """return dict of attributes"""
         return {
