@@ -203,16 +203,19 @@ class Xndarray:
             print(xnda['full_name'])
         return xnda['full_name'] + ' ok '
         '''
+        option = {"convert": True, "ref_xnda": None} | kwargs
+        nda = None
         if isinstance(xnda['darray'], str):
             nda = Ndarray(xnda['darray'], shape=xnda['shape'], ntv_type=xnda['ntv_type'])
-        elif xnda['darray']:
-            darray = Darray.read_json(xnda['darray'], dtype=Nutil.dtype(xnda['ntv_type']), ref=option["ref_xnda"])
+        elif xnda['darray'] is not None:
+            darray = xnda['darray']
+            #darray = Darray.read_json(xnda['darray'], dtype=Nutil.dtype(xnda['ntv_type']), ref=option["ref_xnda"])
             darray.data = Nutil.convert(
-                ntv_type, darray.data, tojson=False, convert=option["convert"]
+                xnda['ntv_type'], darray.data, tojson=False, convert=option["convert"]
             )
-            nda = Ndarray(darray.values, shape=shape, ntv_type=ntv_type)
+            nda = Ndarray(darray.values, shape=xnda['shape'], ntv_type=xnda['ntv_type'])
 
-        return Xndarray(full_name, links=links, meta=meta, nda=nda)
+        return Xndarray(xnda['full_name'], links=xnda['links'], meta=xnda['meta'], nda=nda)
         
     @staticmethod
     def read_json(jsn, **kwargs):

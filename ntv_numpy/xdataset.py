@@ -216,7 +216,8 @@ class XdatasetInterface(ABC):
         return dic_xnda
 
     @staticmethod
-    def read_json2(jsn, **kwargs):
+    #def read_json2(jsn, **kwargs):
+    def read_json(jsn, **kwargs):
         """convert json data into a Xdataset.
 
         *Parameters*
@@ -226,53 +227,28 @@ class XdatasetInterface(ABC):
         """
         option = {"convert": True} | kwargs
         jso = json.loads(jsn) if isinstance(jsn, str) else jsn
-        value, name = Ntv.decode_json(jso)[:2]
-        dic_xnd = XdatasetInterface.decode_json(value)
+        xd_value, xd_name = Ntv.decode_json(jso)[:2]
+        dic_xnd = XdatasetInterface.decode_json(xd_value)
         for name in dic_xnd:
             XdatasetInterface.decode_darray(name, dic_xnd)
-        #print(list(dic_xnd.values()))
-        return dic_xnd
-            
-        xnd = [Xndarray.read_json({key: val}, **option) for key, val in value.items()]
-        return Xdataset(xnd, name)
+        xnd = [Xndarray.read_dict(xnda, **option) for xnda in dic_xnd.values()]
+        return Xdataset(xnd, xd_name)
 
     @staticmethod 
     def decode_darray(name, dic_xnd):
+        """convert Darray list into Darray object"""
         if isinstance(dic_xnd[name], dict) and not isinstance(dic_xnd[name]['darray'], Darray):
-            print(name)
             data = dic_xnd[name]
             link = data['links']
+            dtype=Nutil.dtype(dic_xnd[name]['ntv_type'])
+            ref = None
             if link and len(link) == 1:
-                XdatasetInterface.decode_dict(link[0], dic_xnd)
-                dic_xnd[name]['darray'] = Darray.read_json(
-                    dic_xnd[name]['darray'], dtype=None, ref=dic_xnd[link[0]]['darray'])
-                #dic_xnd[name] = Xndarray.read_dict(data, ref_xnda=dic_xnd[link[0]])
-                print(dic_xnd[name])
-            else:
-                dic_xnd[name]['darray'] = Darray.read_json(
-                    dic_xnd[name]['darray'], dtype=None)
-                print(dic_xnd[name])
-                #dic_xnd[name] = Xndarray.read_dict(data)
-                
-    @staticmethod 
-    def decode_dict(name, dic_xnd):
-        if isinstance(dic_xnd[name], dict) and '_data_' in dic_xnd[name]:
-            print(name)
-            data = dic_xnd[name]['_data_']
-            link = data['links']
-            if link and len(link) == 1:
-                XdatasetInterface.decode_dict(link[0], dic_xnd)
-                dic_xnd[name]['_data_']['darray'] = Darray.read_json(
-                    dic_xnd[name]['_data_']['darray'], dtype=None, ref=dic_xnd[link[0]]['_data_']['darray'])
-                #dic_xnd[name] = Xndarray.read_dict(data, ref_xnda=dic_xnd[link[0]])
-                print(dic_xnd[name])
-            else:
-                dic_xnd[name]['_data_']['darray'] = Darray.read_json(
-                    dic_xnd[name]['_data_']['darray'], dtype=None)
-                print(dic_xnd[name])
-                #dic_xnd[name] = Xndarray.read_dict(data)
-        
-    @staticmethod
+                XdatasetInterface.decode_darray(link[0], dic_xnd)
+                ref = dic_xnd[link[0]]['darray']
+            dic_xnd[name]['darray'] = Darray.read_json(
+                dic_xnd[name]['darray'], dtype=dtype, ref=ref)
+
+    '''@staticmethod
     def read_json(jsn, **kwargs):
         """convert json data into a Xdataset.
 
@@ -286,7 +262,7 @@ class XdatasetInterface(ABC):
         value, name = Ntv.decode_json(jso)[:2]
 
         xnd = [Xndarray.read_json({key: val}, **option) for key, val in value.items()]
-        return Xdataset(xnd, name)
+        return Xdataset(xnd, name)'''
 
     def to_json(self, **kwargs):
         """convert a Xdataset into json-value.
