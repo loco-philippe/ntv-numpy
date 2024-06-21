@@ -360,7 +360,8 @@ class XdatasetInterface(ABC):
 
         *Parameters*
 
-        - dims: list of string (default None) - order of dimensions to apply
+        - **dims**: list of string (default None) - order of dimensions to apply
+        - **distr**: boolean (default True) - True if multi-dimensional analysis
         """
         return PandasConnec.ximport(dfr, Xdataset, **kwargs)
 

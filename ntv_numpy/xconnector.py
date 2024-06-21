@@ -177,9 +177,13 @@ class PandasConnec:
 
         *Parameters*
 
-        - dims: list of string (default None) - order of dimensions to apply
+        - **dims**: list of string (default None) - order of dimensions to apply
+        - **distr** : boolean (default True) - True if multi-dimensional analysis
         """
-        opt = {"dims": None} | kwargs
+        from time import time
+        t0 = time()
+        
+        opt = {"dims": None, "distr": True} | kwargs
         xnd = []
         dfr = df.reset_index()
         if "index" in dfr.columns and "index" not in df.columns:
@@ -200,30 +204,75 @@ class PandasConnec:
             dimensions = dfr.attrs["info"]["dimensions"]
             data = dfr.attrs["info"]["data"]
         else:
-            dimensions, data = PandasConnec._ximport_analysis(dfr, opt["dims"])
+            dimensions, data = PandasConnec._ximport_analysis(dfr, opt["dims"],
+                                                              distr=opt['distr'])
+        
+        t1 = time()
+        print('t1 : ', t1-t0)
+        
         shape_dfr = (
             [data[dim]["shape"][0] for dim in dimensions] if dimensions else len(dfr)
         )
+
+        t2 = time()
+        print('t2 : ', t2-t1)
+
         dfr = dfr.sort_values(dimensions)
+
+        t3 = time()
+        print('t3 : ', t3-t2)
+
         for name in df_names:
             xnd += [
                 PandasConnec._ximport_series(
                     data, name, dfr, dimensions, shape_dfr, df_ntv_types, **opt
                 )
             ]
-        return Xclass(xnd, dfr.attrs.get("name")).to_canonical()
+        
+        t4 = time()
+        print('t4 : ', t4-t3)
+
+        dts = Xclass(xnd, dfr.attrs.get("name")).to_canonical()
+        
+        t5 = time()
+        print('t5 : ', t5-t4)
+       
+        return dts
 
     @staticmethod
-    def _ximport_analysis(dfr, opt_dims):
+    def _ximport_analysis(dfr, opt_dims, distr=True):
         """return data and dimensions from analysis module
-        - opt_dims: partition to apply
-        - dfr: dataframe to analyse"""
+        - **opt_dims**: partition to apply
+        - **dfr**: dataframe to analyse
+        - **distr** : boolean (default True) - True if multi-dimensional analysis
+        """
+        from time import time
+        t0 = time()
+        
         dfr_idx = list(dfr.index.names)
         opt_dims = dfr_idx if dfr_idx != [None] else opt_dims
-        ana = dfr.npd.analysis(distr=True)
+        ana = dfr.npd.analysis(distr=distr)
+        
+        t1 = time()
+        print('ta1 : ', t1-t0)
+        
         partition = ana.field_partition(partition=opt_dims, mode="id")
+                        
+        t21 = time()
+        print('ta21 : ', t21-t1)
+ 
         part_rel = ana.relation_partition(partition=opt_dims, noroot=True)
+
+                
+        t22 = time()
+        print('ta22 : ', t22-t21)
+        
         part_dim = ana.relation_partition(partition=opt_dims, noroot=True, primary=True)
+        
+                
+        t23 = time()
+        print('ta23 : ', t23-t22)
+        
         dimensions = partition["primary"]
         len_fields = {fld.idfield: fld.lencodec for fld in ana.fields}
         data = {
@@ -235,6 +284,10 @@ class PandasConnec:
             }
             for fld in ana.fields
         }
+        
+        t2 = time()
+        print('ta2 : ', t2-t1)
+        
         for json_name in data:
             if not data[json_name]["shape"]:
                 name = Nutil.split_name(Nutil.split_json_name(json_name)[0])[0]
@@ -244,6 +297,10 @@ class PandasConnec:
                     if Nutil.split_json_name(js_name)[0] == name
                 ][0]
                 data[json_name]["shape"] = data[p_name]["shape"]
+        
+        t3 = time()
+        print('ta3 : ', t3-t2)
+        
         return (dimensions, data)
 
     @staticmethod

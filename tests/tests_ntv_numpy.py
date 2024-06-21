@@ -635,6 +635,7 @@ class TestXdataset(unittest.TestCase):
                           'c': [['f'], [[1, 3, 4], [0, 0, 1, 2]]],
                           'd': [['c'], [[1, 4], [0, 0, 1]]],
                           'e': [[1]]})
+        self.assertEqual(Xdataset.read_json(xds.to_json(format=forma)), xds)
         df2 = df1.copy(deep=True)
         df1['g'] = 'paris'
         df2['g'] = 'london'
@@ -644,6 +645,7 @@ class TestXdataset(unittest.TestCase):
         jsn3 = xds3.to_json(notype='all', header=False, format=forma)
         self.assertEqual(jsn['d'], jsn3['d'])
         self.assertEqual(jsn3['g'], [[['london', 'paris'], [0, 1]]])
+        self.assertEqual(Xdataset.read_json(xds3.to_json(format=forma)), xds3)
         
 class TestXdatasetXarrayScipp(unittest.TestCase):
     """test Scipp interface"""
