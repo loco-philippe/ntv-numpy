@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 @author: Philippe@loco-labs.io
 
@@ -13,8 +12,9 @@ For more information, see the
  or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 """
 
-from abc import ABC, abstractmethod
 import json
+from abc import ABC, abstractmethod
+
 import numpy as np
 import pandas as pd
 from json_ntv import Ntv, NtvConnector
@@ -111,15 +111,13 @@ class Darray(ABC):
                 and max(coding) < len(data)
             ):
                 return None
-            case [data, ref] if (
-                isinstance(data, list) and isinstance(ref, (int, str))
-            ):
+            case [data, ref] if isinstance(data, list) and isinstance(ref, (int, str)):
                 return None
             case [data, list(coef)] if len(coef) == 1:
                 return None
-            case [data, list(coding)] if (
-                isinstance(coding[0], int) and max(coding) < len(data)
-            ):
+            case [data, list(coding)] if isinstance(coding[0], int) and max(
+                coding
+            ) < len(data):
                 return Dcomplete(data, None, coding, dtype=dtype, unidim=unidim)
             case _:
                 return Dfull(val, dtype=dtype, unidim=unidim)

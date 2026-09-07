@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 ***NTV-NumPy Package***
 
@@ -55,24 +54,23 @@ This package contains the following classes and functions:
     - `ntv-numpy.ntv_numpy.xarray_accessors.NxrDatasetAccessor`
 """
 
-from ntv_numpy.numpy_ntv_connector import XndarrayConnec, NdarrayConnec
-from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
+from ntv_numpy import xarray_accessors
+from ntv_numpy.data_array import Darray, Dcomplete, Dfull, Dutil
 from ntv_numpy.ndarray import Ndarray, Nutil
-from ntv_numpy.xndarray import Xndarray
+from ntv_numpy.numpy_ntv_connector import NdarrayConnec, XndarrayConnec
 from ntv_numpy.xdataset import Xdataset
-
-import ntv_numpy.xarray_accessors as xarray_accessors
+from ntv_numpy.xndarray import Xndarray
 
 __all__ = [
-    "XndarrayConnec",
-    "NdarrayConnec",
-    "Dfull",
-    "Dcomplete",
     "Darray",
+    "Dcomplete",
+    "Dfull",
     "Dutil",
     "Ndarray",
+    "NdarrayConnec",
     "Nutil",
-    "Xndarray",
     "Xdataset",
+    "Xndarray",
+    "XndarrayConnec",
     "xarray_accessors",
 ]

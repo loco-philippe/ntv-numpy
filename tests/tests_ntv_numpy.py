@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 @author: Philippe@loco-labs.io
 
@@ -7,17 +6,17 @@ The `test_ntv_numpy` module contains the unit tests (class unittest) for the
 """
 
 import unittest
-from decimal import Decimal
 from datetime import date, time
+from decimal import Decimal
 
-import requests
+import ntv_pandas
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point, LineString
+import requests
 import xarray as xr
-import ntv_pandas
+from shapely.geometry import LineString, Point
 
-from ntv_numpy import Darray, Dfull, Ndarray, Xndarray, Xdataset, Dutil
+from ntv_numpy import Darray, Dfull, Dutil, Ndarray, Xdataset, Xndarray
 from ntv_numpy.xconnector import PandasConnec
 
 ana = ntv_pandas.to_analysis  # uniquement pour le pre-commit
