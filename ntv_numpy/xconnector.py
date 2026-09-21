@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 @author: Philippe@loco-labs.io
 
@@ -24,15 +23,13 @@ import importlib
 # import pandas as pd
 import numpy as np
 
-from ntv_numpy.ndarray import Nutil, Ndarray
+from ntv_numpy.ndarray import Ndarray, Nutil
 from ntv_numpy.xndarray import Xndarray
 
 
 def import_optional_dependency(name):
     """raise an error if the dependency is not present"""
-    msg = (
-        f"Missing optional dependency '{name}' " f"Use pip or conda to install {name}."
-    )
+    msg = f"Missing optional dependency '{name}' Use pip or conda to install {name}."
     try:
         importlib.import_module(name)
     except ImportError as err:
@@ -46,9 +43,11 @@ class AstropyNDDataConnec:
     import astropy
     from astropy import wcs
     from astropy.nddata import NDData
-    from astropy.nddata.nduncertainty import StdDevUncertainty
-    from astropy.nddata.nduncertainty import VarianceUncertainty
-    from astropy.nddata.nduncertainty import InverseVariance
+    from astropy.nddata.nduncertainty import (
+        InverseVariance,
+        StdDevUncertainty,
+        VarianceUncertainty,
+    )
 
     @staticmethod
     def xexport(xdt, **kwargs):
