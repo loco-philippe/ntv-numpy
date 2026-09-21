@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 @author: Philippe@loco-labs.io
 
@@ -17,12 +16,13 @@ For more information, see the
 
 import datetime
 import json
-
 from decimal import Decimal
+
 import numpy as np
-from json_ntv import Ntv, ShapelyConnec, NtvConnector  # , Datatype
-from ntv_numpy.data_array import Dfull, Dcomplete, Darray, Dutil
-from ntv_numpy.ndtype import Ndtype, NP_NTYPE
+from json_ntv import Ntv, NtvConnector, ShapelyConnec  # , Datatype
+
+from ntv_numpy.data_array import Darray, Dcomplete, Dfull, Dutil
+from ntv_numpy.ndtype import NP_NTYPE, Ndtype
 
 
 class Ndarray:
