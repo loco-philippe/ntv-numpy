@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 @author: Philippe@loco-labs.io
 
@@ -22,8 +21,8 @@ It contains the child classes of `NTV.json_ntv.ntv.NtvConnector` abstract class:
 from json_ntv import NtvConnector
 
 from ntv_numpy.ndarray import Ndarray
-from ntv_numpy.xndarray import Xndarray
 from ntv_numpy.xdataset import Xdataset
+from ntv_numpy.xndarray import Xndarray
 
 
 class NarrayConnec(NtvConnector):
