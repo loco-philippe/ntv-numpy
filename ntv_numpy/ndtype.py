@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 @author: Philippe@loco-labs.io
 
@@ -13,9 +12,11 @@ For more information, see the
 """
 
 import configparser
-from pathlib import Path
 import json
+from pathlib import Path
+
 from json_ntv import Datatype
+
 import ntv_numpy
 
 
