@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The `xdataset` module is part of the `ntv-numpy.ntv_numpy` package.
 
@@ -10,14 +9,20 @@ For more information, see the
  or the [github repository](https://github.com/loco-philippe/ntv-numpy).
 """
 
-from abc import ABC, abstractmethod
 import json
 import pprint
+from abc import ABC, abstractmethod
+
 from json_ntv import Ntv
+
 from ntv_numpy.ndarray import Nutil
+from ntv_numpy.xconnector import (
+    AstropyNDDataConnec,
+    PandasConnec,
+    ScippConnec,
+    XarrayConnec,
+)
 from ntv_numpy.xndarray import Xndarray
-from ntv_numpy.xconnector import XarrayConnec, ScippConnec, AstropyNDDataConnec
-from ntv_numpy.xconnector import PandasConnec
 
 
 class XdatasetCategory(ABC):

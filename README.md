@@ -234,27 +234,24 @@ Out[3]: True
 In the example, only structural data is exchanged with json format.
 
 ```python
-In [1]: example = {
-                'example:xdataset': {
-                        'var1': [['float[kg]', [2, 2], 'var1.ntv'], ['x', 'y']],
-                        'var1.variance': [[[2, 2], 'var1_variance.ntv']],
-                        'var1.mask1': [['var1_mask1.ntv'], ['x']],
-                        'var1.mask2': [[[2, 2], 'var1_mask2.ntv']],
-
-                        'var2': [['var2.ntv'], ['x', 'y']],
-
-                        'x': [['x.ntv'], {'test': 21}],
-                        'y': [['date', 'y.ntv']],
-
-                        'ranking': [['month', [2, 2], 'ranking.ntv'], ['var1']],
-                        'z': [['float', 'z.ntv'], ['x']],
-                        'z.uncertainty': [['z_uncertainty.ntv']],
-
-                        'z_bis': [['z_bis.ntv']],
-
-                        'info': {'path': 'https://github.com/loco-philippe/ntv-numpy/tree/main/example/'}
-                }
-        }
+In[1]: example = {
+    "example:xdataset": {
+        "var1": [["float[kg]", [2, 2], "var1.ntv"], ["x", "y"]],
+        "var1.variance": [[[2, 2], "var1_variance.ntv"]],
+        "var1.mask1": [["var1_mask1.ntv"], ["x"]],
+        "var1.mask2": [[[2, 2], "var1_mask2.ntv"]],
+        "var2": [["var2.ntv"], ["x", "y"]],
+        "x": [["x.ntv"], {"test": 21}],
+        "y": [["date", "y.ntv"]],
+        "ranking": [["month", [2, 2], "ranking.ntv"], ["var1"]],
+        "z": [["float", "z.ntv"], ["x"]],
+        "z.uncertainty": [["z_uncertainty.ntv"]],
+        "z_bis": [["z_bis.ntv"]],
+        "info": {
+            "path": "https://github.com/loco-philippe/ntv-numpy/tree/main/example/"
+        },
+    }
+}
 ```
 
 The complete example can be rebuild with loading data (path + file name).
