@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The `xarray_accessors` module is part of the `ntv-numpy.ntv_numpy` package.
 
