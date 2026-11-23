@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 @author: Philippe@loco-labs.io
 
@@ -13,8 +12,10 @@ For more information, see the
 """
 
 import json
+
 from json_ntv import Ntv
-from ntv_numpy.ndarray import Darray, Ndarray, Nutil, NdarrayError
+
+from ntv_numpy.ndarray import Darray, Ndarray, NdarrayError, Nutil
 
 
 class Xndarray:
